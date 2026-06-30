@@ -1,0 +1,90 @@
+---
+layout: ../layouts/DocLayout.astro
+title: Authentication
+eyebrow: Core concepts
+description: How to authenticate to the Qeet APIs with API keys and OAuth 2.0 / OIDC tokens.
+---
+
+import CodeTabs from "../components/CodeTabs.astro";
+import EnvTable from "../components/EnvTable.astro";
+
+export const apiKeyId = [
+  { label: "cURL", lang: "bash", code: `curl https://api.id.qeet.in/v1/auth/me \\
+  -H "Authorization: ApiKey qk_live_..."` },
+  { label: "JavaScript", lang: "js", code: `fetch("https://api.id.qeet.in/v1/auth/me", {
+  headers: { Authorization: "ApiKey qk_live_..." },
+});` },
+];
+
+export const apiKeyNotify = [
+  { label: "cURL", lang: "bash", code: `curl https://api.notify.qeet.in/v1/events \\
+  -H "X-Qeet-Api-Key: qn_live_..."` },
+  { label: "JavaScript", lang: "js", code: `fetch("https://api.notify.qeet.in/v1/events", {
+  method: "POST",
+  headers: { "X-Qeet-Api-Key": "qn_live_..." },
+});` },
+];
+
+export const bearer = [
+  { label: "cURL", lang: "bash", code: `curl https://api.id.qeet.in/v1/auth/me \\
+  -H "Authorization: Bearer eyJhbGciOi..."` },
+  { label: "Get a token", lang: "bash", code: `curl -X POST https://api.id.qeet.in/oauth/token \\
+  -H "Content-Type: application/x-www-form-urlencoded" \\
+  -d "grant_type=client_credentials" \\
+  -d "client_id=cid_..." \\
+  -d "client_secret=csec_..." \\
+  -d "scope=identity.read"` },
+];
+
+The Qeet APIs accept two kinds of credentials: **API keys** for server-to-server
+calls, and **OAuth 2.0 / OIDC bearer tokens** for user- and app-delegated
+access. Every request must travel over HTTPS.
+
+## API keys
+
+API keys identify a machine principal. Create them per product in the
+[console](https://id.qeet.in). **Qeet ID** accepts a key on the standard
+`Authorization` header with the `ApiKey` scheme:
+
+<CodeTabs tabs={apiKeyId} />
+
+**Qeet Notify** uses a dedicated header instead:
+
+<CodeTabs tabs={apiKeyNotify} />
+
+> Treat keys like passwords: store them in a secret manager, scope them
+> narrowly, rotate them regularly, and revoke any key that may have leaked.
+
+## OAuth 2.0 / OIDC bearer tokens
+
+For user logins and delegated access, Qeet ID is a full OIDC provider. Exchange
+your client credentials (or an authorization code) for a JWT, then send it as a
+bearer token:
+
+<CodeTabs tabs={bearer} />
+
+Qeet ID supports the standard OAuth flows — authorization code with PKCE,
+client credentials, refresh tokens, and token exchange — plus device and CIBA
+where enabled. The full set of token endpoints and grant types is documented in
+the [Authentication & Access reference](/reference#qeet-id-auth).
+
+## Scopes
+
+Both API keys and tokens are **scoped**: a credential can only call the
+endpoints its scopes permit. Request the minimum set your integration needs —
+each operation lists its required scopes under **Security** in the reference. A
+credential missing a scope receives a `403`.
+
+## Environments
+
+Point your credential at the matching host for each environment. Switch between
+them per-request from the **Servers** dropdown in the reference.
+
+<EnvTable />
+
+## Verifying a credential
+
+Call `GET /v1/auth/me` at any time to confirm a credential works and to inspect
+the principal, tenant, session and scopes it resolves to. A `401` means the
+credential is missing, malformed, or expired — see
+[Errors & rate limits](/errors).

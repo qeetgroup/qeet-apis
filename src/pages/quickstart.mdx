@@ -1,0 +1,104 @@
+---
+layout: ../layouts/DocLayout.astro
+title: Quickstart
+eyebrow: Get started
+description: Go from zero to your first authenticated Qeet API call in under a minute.
+---
+
+import CodeTabs from "../components/CodeTabs.astro";
+import EnvTable from "../components/EnvTable.astro";
+
+export const firstRequest = [
+  { label: "cURL", lang: "bash", code: `curl https://api.id.qeet.in/v1/auth/me \\
+  -H "Authorization: ApiKey qk_live_..."` },
+  { label: "JavaScript", lang: "js", code: `const res = await fetch("https://api.id.qeet.in/v1/auth/me", {
+  headers: { Authorization: "ApiKey qk_live_..." },
+});
+const principal = await res.json();` },
+  { label: "Go", lang: "go", code: `req, _ := http.NewRequest("GET", "https://api.id.qeet.in/v1/auth/me", nil)
+req.Header.Set("Authorization", "ApiKey qk_live_...")
+res, _ := http.DefaultClient.Do(req)` },
+  { label: "Python", lang: "python", code: `import requests
+
+res = requests.get(
+    "https://api.id.qeet.in/v1/auth/me",
+    headers={"Authorization": "ApiKey qk_live_..."},
+)
+print(res.json())` },
+];
+
+export const notifyEvent = [
+  { label: "cURL", lang: "bash", code: `curl -X POST https://api.notify.qeet.in/v1/events \\
+  -H "X-Qeet-Api-Key: qn_live_..." \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "event": "user.welcome",
+    "subscriber_id": "8f1c...",
+    "payload": { "name": "Ada" }
+  }'` },
+  { label: "JavaScript", lang: "js", code: `await fetch("https://api.notify.qeet.in/v1/events", {
+  method: "POST",
+  headers: {
+    "X-Qeet-Api-Key": "qn_live_...",
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    event: "user.welcome",
+    subscriber_id: "8f1c...",
+    payload: { name: "Ada" },
+  }),
+});` },
+];
+
+The fastest path to a working integration. You'll create a key, pick an
+environment, and make a live call — then explore everything else in the
+[interactive reference](/reference).
+
+## 1. Create an API key
+
+API keys are issued per product from the **Qeet console**. Open the console,
+choose the product (Qeet ID, Qeet Notify, …), and create a key scoped to what
+your integration needs.
+
+> Keep secret keys server-side. Never embed a live key in client-side code, a
+> public repo, or a mobile app bundle.
+
+[Open the console →](https://id.qeet.in)
+
+## 2. Pick an environment
+
+Every API runs in three environments. Use **Local** while developing against
+the Docker Compose stack, **Staging** to integrate, and **Production** to ship.
+Switch environments inside the reference's per-request **Servers** dropdown.
+
+<EnvTable />
+
+## 3. Make your first request
+
+Call `GET /v1/auth/me` to return the principal (user, tenant, session and
+scopes) behind your credential. Send the key as an `Authorization: ApiKey`
+header.
+
+<CodeTabs tabs={firstRequest} />
+
+A `200` returns the current principal; a `401` means the credential is missing
+or invalid. See [Authentication](/authentication) for OAuth tokens and scopes,
+and [Errors & rate limits](/errors) for the error envelope.
+
+## 4. Send a notification
+
+Qeet Notify uses its own `X-Qeet-Api-Key` header. Trigger a transactional
+event and Notify fans it out across the channels you've configured (email, SMS,
+WhatsApp, in-app, webhook).
+
+<CodeTabs tabs={notifyEvent} />
+
+A `202` means the event was accepted for processing.
+
+## Next steps
+
+- Browse the full surface in the **[API Reference](/reference)** and run
+  requests with the built-in console.
+- Learn the auth model in **[Authentication](/authentication)**.
+- Handle failures cleanly with **[Errors & rate limits](/errors)**.
+- Wire it into your stack with the **[SDKs](/sdks)**.

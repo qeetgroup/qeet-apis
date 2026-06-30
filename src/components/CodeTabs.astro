@@ -1,0 +1,89 @@
+---
+import { Code } from "astro:components";
+import Icon from "./Icon.astro";
+
+interface Tab {
+  label: string;
+  lang: string;
+  code: string;
+}
+interface Props {
+  tabs: Tab[];
+}
+const { tabs } = Astro.props;
+---
+
+<div class="codetabs not-prose overflow-hidden rounded-lg border border-rule bg-surface shadow-[var(--shadow-sm)]">
+  <div class="codetabs__bar flex items-center gap-1 overflow-x-auto border-b border-rule bg-surface-2 px-2 py-1.5" role="tablist">
+    {
+      tabs.map((t, i) => (
+        <button
+          type="button"
+          class="codetabs__tab whitespace-nowrap rounded-sm px-3 py-1.5 font-ui text-[0.85rem] font-semibold text-ink-subtle transition hover:text-ink"
+          role="tab"
+          aria-selected={i === 0 ? "true" : "false"}
+          data-tab={i}
+        >
+          {t.label}
+        </button>
+      ))
+    }
+    <button
+      type="button"
+      class="codetabs__copy ml-auto grid h-8 w-8 place-items-center rounded-sm text-ink-faint transition hover:bg-surface-3 hover:text-ink"
+      aria-label="Copy code"
+    >
+      <Icon name="copy" class="copy h-4 w-4" />
+      <Icon name="check" class="check h-4 w-4" />
+    </button>
+  </div>
+  {
+    tabs.map((t, i) => (
+      <div
+        class="codetabs__panel"
+        data-panel={i}
+        data-active={i === 0 ? "" : undefined}
+        role="tabpanel"
+      >
+        <Code
+          code={t.code}
+          lang={t.lang as any}
+          themes={{ light: "github-light", dark: "github-dark" }}
+          defaultColor={false}
+          wrap
+        />
+      </div>
+    ))
+  }
+</div>
+
+<script>
+  document.querySelectorAll(".codetabs").forEach((root) => {
+    const tabs = root.querySelectorAll(".codetabs__tab");
+    const panels = root.querySelectorAll(".codetabs__panel");
+    const copy = root.querySelector(".codetabs__copy");
+
+    tabs.forEach((tab) => {
+      tab.addEventListener("click", () => {
+        const i = tab.getAttribute("data-tab");
+        tabs.forEach((t) =>
+          t.setAttribute("aria-selected", t === tab ? "true" : "false"),
+        );
+        panels.forEach((p) => {
+          if (p.getAttribute("data-panel") === i) p.setAttribute("data-active", "");
+          else p.removeAttribute("data-active");
+        });
+      });
+    });
+
+    copy?.addEventListener("click", async () => {
+      const active = root.querySelector<HTMLElement>(".codetabs__panel[data-active]");
+      const text = active?.innerText ?? "";
+      try {
+        await navigator.clipboard.writeText(text.trim());
+        copy.classList.add("is-copied");
+        setTimeout(() => copy.classList.remove("is-copied"), 1500);
+      } catch {}
+    });
+  });
+</script>

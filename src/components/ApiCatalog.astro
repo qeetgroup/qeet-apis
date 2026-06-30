@@ -1,0 +1,31 @@
+---
+import Icon from "./Icon.astro";
+import { SPECS, LINKS } from "../data/catalog";
+---
+
+<div class="grid gap-[1.1rem] sm:grid-cols-2 lg:grid-cols-3">
+  {
+    SPECS.map((s) => (
+      <a
+        class="group flex h-full flex-col gap-3 rounded-lg border border-rule bg-surface p-[1.4rem] transition hover:-translate-y-[3px] hover:border-[color-mix(in_oklab,var(--brand)_40%,var(--rule))] hover:shadow-[var(--shadow-lg)]"
+        href={`${LINKS.reference}#${s.slug}`}
+      >
+        <div class="flex items-center justify-between gap-2">
+          <span class="font-ui text-[0.74rem] font-semibold uppercase tracking-wider text-brand-deep">
+            {s.product}
+          </span>
+          <span class="pill">OpenAPI</span>
+        </div>
+        <h3 class="font-display text-[1.2rem]">{s.title}</h3>
+        <p class="m-0 flex-1 text-[0.93rem] text-ink-subtle">{s.blurb}</p>
+        <span class="flex items-center gap-2 font-ui text-[0.9rem] font-semibold text-brand-deep">
+          Open reference
+          <Icon
+            name="arrow-right"
+            class="h-[1em] w-[1em] transition-transform group-hover:translate-x-[3px]"
+          />
+        </span>
+      </a>
+    ))
+  }
+</div>

@@ -1,0 +1,263 @@
+/* Tailwind v4 entry for the Qeet developer portal.
+ * Raw brand tokens + @font-face live in tokens.css; here we map them into the
+ * Tailwind theme (so utilities like bg-brand / text-ink / font-display work and
+ * flip automatically under [data-theme="dark"]), plus a thin base + component
+ * layer for things utilities can't express cleanly (prose, generated markup). */
+
+@import "tailwindcss";
+@import "./tokens.css";
+@plugin "@tailwindcss/typography";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+/* Static scales → Tailwind namespaces (fonts, radii). */
+@theme {
+  --font-display: "Cal Sans Display", ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Cal Sans Text", ui-sans-serif, system-ui, sans-serif;
+  --font-ui: "Cal Sans UI", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --radius-sm: 0.375rem;
+  --radius: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+}
+
+/* Semantic colors mapped to the theme-flipping vars (inline → utilities use the
+ * var() directly, so overriding it under [data-theme=dark] flips every util). */
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-ink: var(--ink);
+  --color-ink-muted: var(--ink-muted);
+  --color-ink-subtle: var(--ink-subtle);
+  --color-ink-faint: var(--ink-faint);
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+  --color-brand: var(--brand);
+  --color-brand-deep: var(--brand-deep);
+  --color-brand-bright: var(--brand-bright);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-faint: var(--brand-faint);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-top: calc(var(--header-h) + 1rem);
+    color-scheme: light;
+  }
+  html[data-theme="dark"] {
+    color-scheme: dark;
+  }
+  body {
+    @apply bg-bg text-ink font-sans antialiased;
+    line-height: 1.65;
+    font-feature-settings: "ss01", "cv01";
+  }
+  h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    text-wrap: balance;
+  }
+  a {
+    color: var(--brand-deep);
+    text-decoration: none;
+    transition: color 0.15s var(--ease);
+  }
+  a:hover {
+    color: var(--brand);
+  }
+  code, kbd, samp {
+    font-family: var(--font-mono);
+    font-feature-settings: "liga" 0;
+  }
+  ::selection {
+    background: color-mix(in oklab, var(--brand) 28%, transparent);
+  }
+  :focus-visible {
+    outline: 2px solid var(--brand);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+
+  /* MDX prose overrides live unlayered below so they beat the typography
+     plugin's layered defaults (needed for the dark-mode color inversion). */
+
+  @media (prefers-reduced-motion: reduce) {
+    * {
+      scroll-behavior: auto !important;
+      transition-duration: 0.01ms !important;
+      animation-duration: 0.01ms !important;
+    }
+  }
+}
+
+@layer components {
+  .container {
+    @apply mx-auto w-full px-6;
+    max-width: var(--container);
+  }
+  .container-wide {
+    max-width: var(--container-wide);
+  }
+  .eyebrow {
+    @apply font-ui font-semibold uppercase text-brand-deep;
+    font-size: 0.78rem;
+    letter-spacing: 0.16em;
+  }
+  .pill {
+    @apply inline-flex items-center gap-1.5 font-mono font-medium rounded-full bg-surface-2 text-ink-subtle border border-rule;
+    font-size: 0.72rem;
+    padding: 0.2rem 0.5rem;
+  }
+  .pill--brand {
+    @apply bg-brand-soft text-brand-deep border-transparent;
+  }
+
+  /* Button recipe (reused across components). */
+  .btn {
+    @apply inline-flex items-center gap-2 font-ui font-semibold rounded border border-rule-strong bg-surface text-ink whitespace-nowrap cursor-pointer transition;
+    font-size: 0.95rem;
+    line-height: 1;
+    padding: 0.72rem 1.15rem;
+  }
+  .btn:hover {
+    @apply -translate-y-px;
+  }
+  .btn svg {
+    width: 1.05em;
+    height: 1.05em;
+  }
+  .btn-primary {
+    @apply bg-brand text-brand-ink border-transparent;
+    box-shadow: var(--shadow-glow);
+  }
+  .btn-primary:hover {
+    @apply bg-brand-deep text-brand-ink;
+  }
+  .btn-ghost {
+    @apply bg-transparent border-transparent text-ink-muted;
+  }
+  .btn-ghost:hover {
+    @apply bg-surface-2 text-ink;
+  }
+  .btn-lg {
+    font-size: 1.02rem;
+    padding: 0.9rem 1.4rem;
+  }
+
+  /* CodeTabs stateful bits (chrome is utilities in the component). */
+  .codetabs__panel {
+    @apply hidden;
+  }
+  .codetabs__panel[data-active] {
+    @apply block;
+  }
+  .codetabs__tab[aria-selected="true"] {
+    @apply text-brand-deep bg-brand-soft;
+  }
+  .codetabs__copy .check {
+    @apply hidden;
+  }
+  .codetabs__copy.is-copied .copy {
+    @apply hidden;
+  }
+  .codetabs__copy.is-copied .check {
+    @apply block;
+    color: var(--success);
+  }
+  .codetabs__panel :where(pre) {
+    margin: 0;
+    padding: 1.1rem 1.25rem;
+    overflow-x: auto;
+    font-family: var(--font-mono);
+    font-size: 0.86rem;
+    line-height: 1.6;
+  }
+
+  .reference-main {
+    min-height: calc(100vh - var(--header-h));
+  }
+}
+
+/* MDX prose — unlayered so these beat the typography plugin's layered defaults,
+ * mapping prose to brand tokens that flip under [data-theme="dark"]. */
+.prose {
+  --tw-prose-body: var(--ink-muted);
+  --tw-prose-headings: var(--ink);
+  --tw-prose-links: var(--brand-deep);
+  --tw-prose-bold: var(--ink);
+  --tw-prose-counters: var(--brand-deep);
+  --tw-prose-bullets: var(--brand);
+  --tw-prose-hr: var(--rule);
+  --tw-prose-quotes: var(--ink-subtle);
+  --tw-prose-quote-borders: var(--brand);
+  --tw-prose-code: var(--brand-deep);
+  --tw-prose-pre-bg: transparent;
+  --tw-prose-pre-code: inherit;
+  --tw-prose-th-borders: var(--rule);
+  --tw-prose-td-borders: var(--rule);
+}
+.prose :where(h1, h2, h3, h4) {
+  font-family: var(--font-display);
+}
+.prose :where(code):not(:where(pre *)) {
+  font-family: var(--font-mono);
+  font-weight: 500;
+  font-size: 0.86em;
+  background: var(--surface-2);
+  border: 1px solid var(--rule);
+  padding: 0.1rem 0.36rem;
+  border-radius: 5px;
+}
+.prose :where(code):not(:where(pre *))::before,
+.prose :where(code):not(:where(pre *))::after {
+  content: none;
+}
+.prose :where(pre) {
+  font-family: var(--font-mono);
+  border: 1px solid var(--rule);
+}
+.prose :where(blockquote) {
+  background: var(--brand-faint);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  padding-block: 0.4rem;
+  font-style: normal;
+  font-weight: 400;
+}
+
+/* Hero entrance animations (kept global so Tailwind/inline refs aren't scoped-renamed). */
+@keyframes rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes floatIn {
+  from { opacity: 0; transform: translateY(22px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Shiki dual-theme for MDX fenced code (generated markup; needs !important to
+ * beat the inline default-color styles). Switches on [data-theme="dark"]. */
+.astro-code,
+.astro-code span {
+  color: var(--shiki-light) !important;
+}
+.astro-code {
+  background-color: var(--shiki-light-bg) !important;
+}
+[data-theme="dark"] .astro-code,
+[data-theme="dark"] .astro-code span {
+  color: var(--shiki-dark) !important;
+}
+[data-theme="dark"] .astro-code {
+  background-color: var(--shiki-dark-bg) !important;
+}

@@ -1,0 +1,67 @@
+---
+layout: ../layouts/DocLayout.astro
+title: Errors & rate limits
+eyebrow: Core concepts
+description: The canonical Qeet error envelope, HTTP status codes, and how rate limiting works.
+---
+
+Every Qeet API returns a single, predictable error shape and standard HTTP
+status codes, so you can handle failures the same way across products.
+
+## The error envelope
+
+Errors are returned as JSON under a top-level `error` object
+(`internal/platform/httpx.WriteError`):
+
+```json
+{
+  "error": {
+    "code": "unauthorized",
+    "message": "authentication required",
+    "detail": "the ApiKey credential was missing or expired",
+    "request_id": "req_8f1c2a9e"
+  }
+}
+```
+
+| Field | Type | Description |
+| --- | --- | --- |
+| `code` | string | Stable, machine-readable error code — branch on this, not the message. |
+| `message` | string | Short human-readable summary. |
+| `detail` | string | Optional extra context (may be omitted). |
+| `request_id` | string | Correlates with the `X-Request-Id` response header — quote it in support requests. |
+
+> Always switch on `error.code`, never on `message` — messages may be reworded,
+> codes are stable.
+
+## HTTP status codes
+
+| Status | Typical `code` | Meaning |
+| --- | --- | --- |
+| `400` | `bad_request` | Malformed request — bad JSON, missing or invalid parameters. |
+| `401` | `unauthorized` | Missing, malformed, or expired credential. |
+| `403` | `forbidden` | Authenticated, but the credential lacks the required scope or permission. |
+| `404` | `not_found` | The resource doesn't exist (or isn't visible to your tenant). |
+| `409` | `conflict` | The request conflicts with current state (e.g. a duplicate). |
+| `422` | `unprocessable_entity` | The request was well-formed but failed validation. |
+| `429` | `too_many_requests` | You've hit a rate limit — back off and retry. |
+| `5xx` | `internal` | Something went wrong on our side; retry idempotent requests with backoff. |
+
+## Rate limits
+
+To keep the platform fast and fair, endpoints are rate limited per credential
+and tenant. When you exceed a limit the API responds with **`429 Too Many
+Requests`** and the canonical error envelope.
+
+- **Back off.** When a `Retry-After` header is present, wait at least that many
+  seconds before retrying.
+- **Use exponential backoff with jitter** for retries on `429` and `5xx`
+  responses — don't retry tightly in a loop.
+- **Retry only idempotent operations** (`GET`, `PUT`, `DELETE`) automatically;
+  for `POST`, make sure a retry won't create a duplicate.
+
+## Debugging with request IDs
+
+Every response carries an `X-Request-Id`, echoed as `error.request_id` on
+failures. Log it on your side and include it when contacting support — it lets
+us trace the exact request through the platform.

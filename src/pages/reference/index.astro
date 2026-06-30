@@ -1,0 +1,63 @@
+---
+import BaseLayout from "../../layouts/BaseLayout.astro";
+import { ScalarComponent } from "@scalar/astro";
+import { SCALAR_SOURCES } from "../../data/catalog";
+
+// Brand Scalar with the Qeet type system + accent; keep Scalar's excellent
+// neutral palette. theme:"none" disables presets so these vars take effect.
+const customCss = `
+  :root, .light-mode, .dark-mode {
+    --scalar-font: "Cal Sans Text", ui-sans-serif, system-ui, sans-serif;
+    --scalar-font-code: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  }
+  .light-mode { --scalar-color-accent: #d85301; }
+  .dark-mode  { --scalar-color-accent: #ff7d1f; }
+`;
+---
+
+<BaseLayout
+  title="API Reference"
+  description="Interactive reference for every Qeet product API — explore endpoints, schemas and run live requests for Qeet ID and Qeet Notify."
+  showFooter={false}
+  fullBleed
+>
+  <ScalarComponent
+    configuration={{
+      sources: SCALAR_SOURCES,
+      theme: "none",
+      layout: "modern",
+      hideDarkModeToggle: true,
+      withDefaultFonts: false,
+      favicon: "/brand/favicon.svg",
+      metaData: { title: "Qeet APIs · Reference" },
+      customCss,
+    }}
+  />
+</BaseLayout>
+
+<script>
+  // Drive Scalar's light/dark from the single site theme toggle. Scalar gates
+  // its palette behind .light-mode / .dark-mode classes on its root, so we
+  // mirror the site theme onto whichever root it mounts and re-apply when it
+  // re-renders (e.g. switching documents).
+  function apply(theme: string) {
+    const dark = theme === "dark";
+    document
+      .querySelectorAll(".scalar-app, .light-mode, .dark-mode")
+      .forEach((el) => {
+        el.classList.toggle("dark-mode", dark);
+        el.classList.toggle("light-mode", !dark);
+      });
+  }
+  const current = () => document.documentElement.dataset.theme || "light";
+
+  new MutationObserver(() => apply(current())).observe(document.body, {
+    childList: true,
+    subtree: true,
+  });
+  window.addEventListener("qeet:theme", (e) =>
+    apply((e as CustomEvent).detail),
+  );
+  apply(current());
+  setTimeout(() => apply(current()), 800);
+</script>

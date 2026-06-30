@@ -1,0 +1,108 @@
+---
+import Icon from "./Icon.astro";
+import { LINKS, SPECS } from "../data/catalog";
+const specCount = SPECS.length;
+
+// Decorative request/response shown in the preview card (mirrors the real
+// GET /v1/auth/me operation + Principal schema used across the portal).
+const reqHtml = `<span class="text-ink-faint">$</span> curl https://api.id.qeet.in/v1/auth/me \\
+  -H <span class="text-brand-deep">"Authorization: ApiKey qk_live_…"</span>`;
+
+const resHtml = `{
+  <span class="text-brand-deep">"user_id"</span>:    <span class="text-success">"8f1c2a9e-4b7d-…"</span>,
+  <span class="text-brand-deep">"tenant_id"</span>:  <span class="text-success">"ace1-9f2c-…"</span>,
+  <span class="text-brand-deep">"session_id"</span>: <span class="text-success">"se_3rd0…"</span>,
+  <span class="text-brand-deep">"scopes"</span>:     [<span class="text-success">"identity.read"</span>, <span class="text-success">"openid"</span>]
+}`;
+
+const meta = [
+  { k: `${specCount}`, v: "APIs" },
+  { k: "OpenAPI 3.1", v: "specs" },
+  { k: "Live", v: "request console" },
+  { k: "cURL · JS · Go · Python", v: "" },
+];
+---
+
+<section class="relative overflow-hidden">
+  <div
+    class="pointer-events-none absolute inset-0"
+    style="background:radial-gradient(58% 55% at 82% 4%, var(--brand-soft), transparent 70%), radial-gradient(40% 45% at 8% 0%, color-mix(in oklab, var(--brand) 5%, transparent), transparent 70%)"
+  >
+  </div>
+
+  <div class="container container-wide relative grid items-center gap-12 py-[clamp(3.5rem,9vw,6.5rem)] lg:grid-cols-[1.05fr_0.95fr]">
+    <!-- copy -->
+    <div style="animation:rise .7s var(--ease) both">
+      <span class="eyebrow">Qeet Group · Developer Platform</span>
+      <h1 class="mt-4 text-[clamp(2.5rem,6vw,4.1rem)]">
+        The Qeet API,<br /><span class="text-brand">all in one place.</span>
+      </h1>
+      <p class="mt-5 max-w-[42ch] text-[clamp(1.05rem,2.1vw,1.3rem)] text-ink-muted">
+        One interactive reference for every Qeet product — authenticate, explore
+        endpoints, and run live requests with code in your language.
+      </p>
+      <div class="mt-7 flex flex-wrap gap-3.5">
+        <a class="btn btn-primary btn-lg" href={LINKS.reference}>
+          <Icon name="book" /> Explore the API
+        </a>
+        <a class="btn btn-lg" href={LINKS.quickstart}>
+          <Icon name="zap" /> Quickstart
+        </a>
+      </div>
+      <dl class="mt-8 flex flex-wrap gap-x-7 gap-y-2 font-ui text-[0.9rem] text-ink-subtle">
+        {
+          meta.map((m) => (
+            <div>
+              <dt class="inline font-semibold text-ink">{m.k}</dt>
+              {m.v && <dd class="m-0 inline"> {m.v}</dd>}
+            </div>
+          ))
+        }
+      </dl>
+    </div>
+
+    <!-- preview card -->
+    <div class="relative" aria-hidden="true" style="animation:floatIn .8s var(--ease) both">
+      <div
+        class="pointer-events-none absolute -inset-6 opacity-70 blur-2xl"
+        style="background:radial-gradient(55% 55% at 55% 25%, var(--brand-soft), transparent 70%)"
+      >
+      </div>
+
+      <div class="relative overflow-hidden rounded-2xl border border-rule bg-surface shadow-[var(--shadow-lg)]">
+        <!-- request line / window header -->
+        <div class="flex items-center gap-2.5 border-b border-rule bg-surface-2 px-4 py-3">
+          <span class="rounded bg-[color-mix(in_oklab,#1c6b4a_15%,transparent)] px-2 py-0.5 font-mono text-[0.7rem] font-semibold uppercase text-[#1c6b4a] dark:text-[#5bbd7a]">
+            GET
+          </span>
+          <code class="font-mono text-[0.82rem] text-ink-muted">/v1/auth/me</code>
+          <span class="ml-auto inline-flex items-center gap-1.5 rounded bg-brand px-2.5 py-1 font-ui text-[0.75rem] font-semibold text-brand-ink">
+            Send <Icon name="arrow-right" class="h-3 w-3" />
+          </span>
+        </div>
+
+        <!-- language tabs (decorative) -->
+        <div class="flex items-center gap-1 border-b border-rule px-3 py-1.5 font-ui text-[0.75rem]">
+          <span class="rounded-sm bg-brand-soft px-2 py-1 font-semibold text-brand-deep">cURL</span>
+          <span class="px-2 py-1 text-ink-faint">JavaScript</span>
+          <span class="px-2 py-1 text-ink-faint">Go</span>
+          <span class="px-2 py-1 text-ink-faint">Python</span>
+        </div>
+
+        <!-- request -->
+        <pre class="m-0 overflow-x-auto px-4 py-3.5 font-mono text-[0.8rem] leading-relaxed text-ink" set:html={reqHtml}></pre>
+
+        <!-- response status -->
+        <div class="flex items-center gap-2 border-y border-rule bg-surface-2 px-4 py-2 font-mono text-[0.72rem]">
+          <span class="rounded bg-[color-mix(in_oklab,#1c6b4a_15%,transparent)] px-1.5 py-0.5 font-semibold text-[#1c6b4a] dark:text-[#5bbd7a]">
+            200 OK
+          </span>
+          <span class="text-ink-faint">application/json</span>
+        </div>
+
+        <!-- response body -->
+        <pre class="m-0 overflow-x-auto px-4 py-3.5 font-mono text-[0.8rem] leading-relaxed text-ink-muted" set:html={resHtml}></pre>
+      </div>
+    </div>
+  </div>
+</section>

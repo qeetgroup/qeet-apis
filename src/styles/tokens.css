@@ -1,0 +1,120 @@
+/* Qeet design tokens for apis.qeet.in.
+ *
+ * Type system is the Qeet brand face from @qeetrix/ui (Cal Sans Display / Text /
+ * UI + Fira Code), self-hosted here so this portal stays a standalone repo
+ * (mirrors how qeet-in vendors the same family). Palette is the shared brand
+ * orange (#F26D0E) over a warm-neutral canvas, with a full light + dark scale.
+ * Toggle by setting `data-theme="dark"` on <html>. */
+
+/* ---- Cal Sans Display — large headlines, hero ---- */
+@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoLight.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoRegular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoMedium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoSemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoBold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+
+/* ---- Cal Sans Text — body copy ---- */
+@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Light.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-SemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+
+/* ---- Cal Sans UI — controls, labels, nav ---- */
+@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UILight.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UIRegular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UIMedium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UISemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UIBold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+
+/* ---- Fira Code — monospace (SIL OFL 1.1, see /fonts/FiraCode-OFL.txt) ---- */
+@font-face { font-family: "Fira Code"; src: url("/fonts/FiraCode-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Fira Code"; src: url("/fonts/FiraCode-Medium.ttf") format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Fira Code"; src: url("/fonts/FiraCode-SemiBold.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+
+:root {
+  /* type */
+  /* type + radii live in @theme (styles/global.css) so Tailwind generates
+     font-* / rounded-* utilities; everything else stays here as raw vars. */
+
+  /* brand */
+  --brand: #f26d0e;
+  --brand-deep: #d85301;
+  --brand-bright: #ff7d1f;
+  --brand-ink: #ffffff;
+  --brand-soft: color-mix(in oklab, var(--brand) 12%, transparent);
+  --brand-faint: color-mix(in oklab, var(--brand) 6%, transparent);
+
+  /* neutrals — light */
+  --bg: #fcfcfc;
+  --surface: #ffffff;
+  --surface-2: #f6f6f5;
+  --surface-3: #efeeec;
+  --ink: #0a0a0a;
+  --ink-muted: #474645;
+  --ink-subtle: #6e6c6a;
+  --ink-faint: #908d8a;
+  --rule: #e7e5e2;
+  --rule-strong: #d4d1cd;
+
+  /* semantic */
+  --success: #2f6b3e;
+  --warning: #8b5a1c;
+  --danger: #b3261e;
+  --info: #1c5b8b;
+
+  /* HTTP method accents */
+  --m-get: #1c6b4a;
+  --m-post: #1c5b8b;
+  --m-put: #8b5a1c;
+  --m-patch: #6b4a8b;
+  --m-delete: #b3261e;
+
+  /* elevation */
+  --shadow-sm: 0 1px 2px 0 color-mix(in oklab, var(--ink) 7%, transparent);
+  --shadow-md: 0 4px 16px -4px color-mix(in oklab, var(--ink) 12%, transparent), 0 2px 6px -2px color-mix(in oklab, var(--ink) 8%, transparent);
+  --shadow-lg: 0 18px 56px -12px color-mix(in oklab, var(--ink) 20%, transparent), 0 6px 16px -6px color-mix(in oklab, var(--ink) 10%, transparent);
+  --shadow-glow: 0 12px 48px -12px color-mix(in oklab, var(--brand) 42%, transparent);
+
+  /* rhythm (radii are in @theme) */
+  --container: 72rem;
+  --container-wide: 80rem;
+  --header-h: 4rem;
+  --ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+[data-theme="dark"] {
+  --brand: #ff7d1f;
+  --brand-deep: #f26d0e;
+  --brand-bright: #ff9347;
+  --brand-ink: #1a0f06;
+  --brand-soft: color-mix(in oklab, var(--brand) 18%, transparent);
+  --brand-faint: color-mix(in oklab, var(--brand) 9%, transparent);
+
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1b1b1a;
+  --surface-3: #232322;
+  --ink: #fafafa;
+  --ink-muted: #b8b6b3;
+  --ink-subtle: #908d8a;
+  --ink-faint: #6b6967;
+  --rule: #2a2928;
+  --rule-strong: #3a3937;
+
+  --success: #5bbd7a;
+  --warning: #d6a560;
+  --danger: #e7726a;
+  --info: #6aa8d8;
+
+  --m-get: #5bbd7a;
+  --m-post: #6aa8d8;
+  --m-put: #d6a560;
+  --m-patch: #b095d6;
+  --m-delete: #e7726a;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.7);
+  --shadow-glow: 0 12px 52px -10px color-mix(in oklab, var(--brand) 36%, transparent);
+}

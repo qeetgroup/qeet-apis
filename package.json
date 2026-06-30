@@ -1,0 +1,26 @@
+{
+  "name": "qeet-apis",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Qeet Group developer portal — every product's API, rendered with Scalar on Astro, at apis.qeet.in",
+  "scripts": {
+    "dev": "astro dev --port 3005",
+    "build": "astro build",
+    "preview": "astro preview --port 3005",
+    "sync": "node scripts/sync-specs.mjs",
+    "astro": "astro"
+  },
+  "devDependencies": {
+    "js-yaml": "^4.1.0"
+  },
+  "dependencies": {
+    "@astrojs/mdx": "^7.0.0",
+    "@astrojs/sitemap": "^3.7.3",
+    "@scalar/astro": "^0.4.6",
+    "@tailwindcss/typography": "^0.5.20",
+    "@tailwindcss/vite": "^4.3.2",
+    "astro": "^7.0.3",
+    "tailwindcss": "^4.3.2"
+  }
+}

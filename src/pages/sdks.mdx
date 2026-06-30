@@ -1,0 +1,109 @@
+---
+layout: ../layouts/DocLayout.astro
+title: SDKs & clients
+eyebrow: Tooling
+description: Official SDKs, calling the REST API directly, and generating a typed client from the OpenAPI specs.
+---
+
+import CodeTabs from "../components/CodeTabs.astro";
+import { SPECS } from "../data/catalog";
+
+export const restClient = [
+  { label: "JavaScript", lang: "js", code: `const qeet = (apiKey) => ({
+  base: "https://api.id.qeet.in",
+  async get(path) {
+    const res = await fetch(this.base + path, {
+      headers: { Authorization: \`ApiKey \${apiKey}\` },
+    });
+    if (!res.ok) throw new Error((await res.json()).error.code);
+    return res.json();
+  },
+});
+
+const me = await qeet("qk_live_...").get("/v1/auth/me");` },
+  { label: "Python", lang: "python", code: `import requests
+
+class Qeet:
+    def __init__(self, api_key, base="https://api.id.qeet.in"):
+        self.base, self.key = base, api_key
+
+    def get(self, path):
+        r = requests.get(self.base + path,
+                         headers={"Authorization": f"ApiKey {self.key}"})
+        r.raise_for_status()
+        return r.json()
+
+me = Qeet("qk_live_...").get("/v1/auth/me")` },
+  { label: "Go", lang: "go", code: `func get(key, path string, v any) error {
+    req, _ := http.NewRequest("GET", "https://api.id.qeet.in"+path, nil)
+    req.Header.Set("Authorization", "ApiKey "+key)
+    res, err := http.DefaultClient.Do(req)
+    if err != nil {
+        return err
+    }
+    defer res.Body.Close()
+    return json.NewDecoder(res.Body).Decode(v)
+}` },
+];
+
+export const generate = [
+  { label: "openapi-typescript", lang: "bash", code: `# Typed TypeScript types straight from the spec
+npx openapi-typescript \\
+  https://apis.qeet.in/specs/qeet-id/auth.yaml \\
+  -o ./qeet-id-auth.d.ts` },
+  { label: "openapi-generator", lang: "bash", code: `# A full client in your language of choice
+openapi-generator-cli generate \\
+  -i https://apis.qeet.in/specs/qeet-id/auth.yaml \\
+  -g typescript-fetch \\
+  -o ./qeet-id-sdk` },
+];
+
+There are three good ways to call the Qeet APIs: an official SDK, the REST API
+directly, or a client you generate from our OpenAPI specs.
+
+## Official SDKs
+
+The **Qeet ID JavaScript/React SDK** (`@qeet-id/react`) ships drop-in
+authentication components and a typed client for the browser — including an
+embeddable `<UserButton />` and hooks for sessions and organizations. It's the
+fastest way to add Qeet sign-in and account management to a React app.
+
+> Additional language SDKs are rolling out per product. Until an official SDK
+> exists for your stack, call the REST API directly or generate a typed client
+> from the specs below — both are fully supported.
+
+## Call the REST API directly
+
+Every endpoint is a plain HTTPS + JSON call, so a thin wrapper over your
+language's HTTP client is all you need:
+
+<CodeTabs tabs={restClient} />
+
+See [Authentication](/authentication) for the header each product expects and
+[Errors & rate limits](/errors) for the response envelope.
+
+## Generate a typed client
+
+Because every API publishes a versioned **OpenAPI 3.1** document, you can
+generate a fully-typed client and keep it in sync with each release:
+
+<CodeTabs tabs={generate} />
+
+### Download the specs
+
+The raw specs are served straight from this site — point any OpenAPI tool at
+them:
+
+<table>
+  <thead>
+    <tr><th>API</th><th>Spec</th></tr>
+  </thead>
+  <tbody>
+    {SPECS.map((s) => (
+      <tr>
+        <td>{s.product} · {s.title}</td>
+        <td><a href={s.url}><code>{s.url}</code></a></td>
+      </tr>
+    ))}
+  </tbody>
+</table>

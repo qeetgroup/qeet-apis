@@ -1,0 +1,56 @@
+---
+import Icon from "./Icon.astro";
+
+interface Action {
+  href: string;
+  label: string;
+  icon?: Parameters<typeof Icon>[0]["name"];
+  external?: boolean;
+}
+interface Props {
+  title: string;
+  text: string;
+  primary: Action;
+  secondary?: Action;
+}
+const { title, text, primary, secondary } = Astro.props;
+---
+
+<section class="container">
+  <div class="relative grid justify-items-center gap-[1.4rem] overflow-hidden rounded-xl bg-[#100f0e] px-6 py-12 text-center text-[#fafafa] sm:px-12 dark:border dark:border-rule dark:bg-surface-2">
+    <div
+      class="pointer-events-none absolute inset-0"
+      style="background:radial-gradient(50% 80% at 50% 0%, color-mix(in oklab, var(--brand) 30%, transparent), transparent 70%)"
+    >
+    </div>
+    <h2 class="relative text-white" style="font-size:clamp(1.7rem,3.5vw,2.4rem)">{title}</h2>
+    <p class="relative m-0 max-w-[50ch]" style="color:color-mix(in oklab,#fff 78%,transparent)">
+      {text}
+    </p>
+    <div class="relative mt-2 flex flex-wrap justify-center gap-3.5">
+      <a
+        class="btn btn-primary btn-lg"
+        href={primary.href}
+        rel={primary.external ? "noopener" : undefined}
+        target={primary.external ? "_blank" : undefined}
+      >
+        {primary.icon && <Icon name={primary.icon} />}
+        {primary.label}
+      </a>
+      {
+        secondary && (
+          <a
+            class="btn btn-lg"
+            href={secondary.href}
+            rel={secondary.external ? "noopener" : undefined}
+            target={secondary.external ? "_blank" : undefined}
+            style="background:transparent;border-color:color-mix(in oklab,#fff 28%,transparent);color:#fff"
+          >
+            {secondary.icon && <Icon name={secondary.icon} />}
+            {secondary.label}
+          </a>
+        )
+      }
+    </div>
+  </div>
+</section>

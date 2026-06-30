@@ -1,0 +1,28 @@
+---
+import Icon from "./Icon.astro";
+---
+
+<button
+  type="button"
+  class="grid h-[2.4rem] w-[2.4rem] place-items-center rounded border border-rule bg-surface text-ink-muted transition hover:border-rule-strong hover:text-ink"
+  id="theme-toggle"
+  aria-label="Toggle dark mode"
+  title="Toggle theme"
+>
+  <Icon name="moon" class="block h-[1.15rem] w-[1.15rem] dark:hidden" />
+  <Icon name="sun" class="hidden h-[1.15rem] w-[1.15rem] dark:block" />
+</button>
+
+<script>
+  const btn = document.getElementById("theme-toggle");
+  btn?.addEventListener("click", () => {
+    const root = document.documentElement;
+    const next = root.dataset.theme === "dark" ? "light" : "dark";
+    root.dataset.theme = next;
+    try {
+      localStorage.setItem("qeet-theme", next);
+    } catch {}
+    // Let other widgets (e.g. the Scalar reference) react to the change.
+    window.dispatchEvent(new CustomEvent("qeet:theme", { detail: next }));
+  });
+</script>

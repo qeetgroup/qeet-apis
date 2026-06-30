@@ -1,0 +1,16 @@
+# deps
+/node_modules
+
+# build output
+/dist
+.vite
+
+# astro generated types
+.astro
+
+# misc
+.DS_Store
+*.log
+.env
+.env.local
+.vercel

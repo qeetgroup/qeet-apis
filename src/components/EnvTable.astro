@@ -1,0 +1,32 @@
+---
+import { ENVIRONMENTS } from "../data/catalog";
+const th =
+  "border-b border-rule bg-surface-2 px-4 py-[0.7rem] text-left font-ui text-[0.76rem] uppercase tracking-wider text-ink-faint";
+const td = "px-4 py-[0.7rem] align-top";
+const code = "text-[0.85em] text-brand-deep";
+---
+
+<div class="not-prose overflow-x-auto rounded-lg border border-rule">
+  <table class="w-full border-collapse text-[0.92rem]">
+    <thead>
+      <tr>
+        <th class={th}>Product</th>
+        <th class={th}>Production</th>
+        <th class={th}>Staging</th>
+        <th class={th}>Local</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-rule">
+      {
+        ENVIRONMENTS.map((e) => (
+          <tr>
+            <td class={td}>{e.product}</td>
+            <td class={td}><code class={code}>{e.production}</code></td>
+            <td class={td}><code class={code}>{e.staging}</code></td>
+            <td class={td}><code class={code}>{e.local}</code></td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>

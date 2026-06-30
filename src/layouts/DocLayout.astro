@@ -1,0 +1,25 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+
+// MDX pages set `layout: ../layouts/DocLayout.astro` and export title /
+// description / eyebrow in frontmatter; the rendered content arrives as <slot>.
+const { frontmatter } = Astro.props;
+const { title, description, eyebrow } = frontmatter;
+---
+
+<BaseLayout title={title} description={description}>
+  <article class="mx-auto max-w-[52rem] px-6 py-[clamp(2.5rem,6vw,4rem)]">
+    <header class="mb-10 border-b border-rule pb-8">
+      {eyebrow && <span class="eyebrow">{eyebrow}</span>}
+      <h1 class="mt-2.5 text-[clamp(2.1rem,4.5vw,3rem)]">{title}</h1>
+      {
+        description && (
+          <p class="mt-4 max-w-[60ch] text-[1.1rem] text-ink-muted">{description}</p>
+        )
+      }
+    </header>
+    <div class="prose max-w-none">
+      <slot />
+    </div>
+  </article>
+</BaseLayout>
