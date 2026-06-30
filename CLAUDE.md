@@ -29,18 +29,23 @@ pnpm preview   # serve dist/ on :3005
   unchanged. Dual-theme code highlighting via `markdown.shikiConfig`
   (light/dark, switched on `[data-theme="dark"]` in `styles/global.css`).
 - **Reference = Scalar.** [src/pages/reference/index.astro](src/pages/reference/index.astro)
-  renders `<ScalarComponent>` with a `sources` array (one entry per spec → the
-  document switcher). The sources, environments, catalog cards and nav links all
-  derive from [src/data/catalog.ts](src/data/catalog.ts) — **edit specs there in
-  one place.** Scalar is brand-themed via `theme:"none"` + `customCss` (Qeet
+  renders `<ScalarComponent>` with a `sources` array — **one entry per product**
+  (Qeet ID + Qeet Notify, the document switcher), from `SCALAR_SOURCES` in
+  [src/data/catalog.ts](src/data/catalog.ts). The Qeet ID source is the **bundled**
+  `public/specs/qeet-id.yaml` (see below) whose `x-tagGroups` render as the
+  folder sidebar. Scalar is brand-themed via `theme:"none"` + `customCss` (Qeet
   accent + Cal Sans/Fira Code) and its dark mode is driven from the site toggle.
 - **Specs** live in [public/specs/](public/specs/) (`<product>/<name>.yaml`) —
   **vendored copies**, not edited by hand. Refresh with `pnpm sync`
   ([scripts/sync-specs.mjs](scripts/sync-specs.mjs)), which copies from the sibling
   repos and rewrites `servers:` per
   [`../qeet-files/DOMAIN-ARCHITECTURE.md`](../qeet-files/DOMAIN-ARCHITECTURE.md).
-  Vite copies `public/` into `dist/` verbatim, so **build/CI never needs the
-  sibling repos**; Scalar fetches the specs at runtime.
+  `pnpm sync` **also**: (a) merges the 5 Qeet ID specs into
+  `public/specs/qeet-id.yaml` with `x-tagGroups` (one folder per area — see
+  `QEET_ID_GROUPS`, tags derived from each spec) for the folder sidebar; (b) adds a
+  light `x-tagGroups` to the Qeet Notify spec; (c) vendors the qeet-id Postman
+  collection into `public/postman/`. Vite copies `public/` into `dist/` verbatim,
+  so **build/CI never needs the sibling repos**; Scalar fetches the specs at runtime.
 - **Brand.** Type system is the `@qeetrix/ui` brand family (Cal Sans Display/Text/UI
   + Fira Code), self-hosted under `public/fonts/` (this stays a standalone repo, so
   fonts are copied rather than depending on the unpublished `@qeetrix/ui`). Tokens
@@ -50,9 +55,10 @@ pnpm preview   # serve dist/ on :3005
 ## Adding a product
 
 1. Add the product to `PRODUCTS` in `scripts/sync-specs.mjs` (slug, srcDir, specs,
-   3-env servers).
-2. Add the spec(s) to `SPECS` in `src/data/catalog.ts` (catalog cards + Scalar
-   `sources` both derive from it).
+   3-env servers). For a multi-spec product, add a bundle step + `QEET_ID_GROUPS`-style
+   area→folder mapping so its specs merge into one `x-tagGroups` document.
+2. Add it to `SPECS` (catalog cards + spec downloads) **and** `SCALAR_SOURCES` (the
+   switcher) in `src/data/catalog.ts`.
 3. `pnpm sync && pnpm dev` to verify.
 
 ## Gotchas

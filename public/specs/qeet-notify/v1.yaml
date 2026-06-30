@@ -71,3 +71,11 @@ components:
       type: apiKey
       in: header
       name: X-Qeet-Api-Key
+tags:
+  - name: System
+  - name: Events
+x-tagGroups:
+  - name: Notifications
+    tags:
+      - System
+      - Events
