@@ -30,15 +30,18 @@ pnpm preview   # serve the built dist/
 ```
 
 `pnpm sync` reads the sibling repos (`../qeet-id`, `../qeet-notify`), rewrites each
-spec's `servers:` to the canonical hosts, and writes the vendored copy.
-**Build/CI never needs the sibling repos** — the vendored specs are committed and
-copied into `dist/` as-is.
+spec's `servers:` to the canonical hosts, and writes the vendored copy. It also
+**merges the 5 Qeet ID specs into `public/specs/qeet-id.yaml` with `x-tagGroups`**
+(so the reference sidebar shows a Postman-style folder tree) and **vendors the
+qeet-id Postman collection** into `public/postman/`. **Build/CI never needs the
+sibling repos** — everything generated is committed and copied into `dist/` as-is.
 
 ## Structure
 
 ```
 public/
-  specs/        vendored OpenAPI specs (do not hand-edit — run pnpm sync)
+  specs/        vendored OpenAPI specs + the generated qeet-id.yaml bundle (run pnpm sync; don't hand-edit)
+  postman/      vendored qeet-id Postman collection (run pnpm sync)
   fonts/        Cal Sans + Fira Code (the @qeetrix/ui brand faces, self-hosted)
   brand/        logos, favicon, OG image
 src/
@@ -56,8 +59,9 @@ src/
 
 1. Add the product to `PRODUCTS` in [`scripts/sync-specs.mjs`](scripts/sync-specs.mjs)
    (slug, srcDir, specs, 3-env servers).
-2. Add its spec(s) to `SPECS` in [`src/data/catalog.ts`](src/data/catalog.ts) — the
-   catalog cards and the Scalar `sources` both derive from there.
+2. Add it to `SPECS` (catalog cards + spec downloads) **and** `SCALAR_SOURCES` (the
+   reference switcher) in [`src/data/catalog.ts`](src/data/catalog.ts). For a
+   multi-spec product, add a bundle step in `sync-specs.mjs` (see `QEET_ID_GROUPS`).
 3. `pnpm sync && pnpm dev` to verify.
 
 ## Environments

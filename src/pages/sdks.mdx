@@ -6,7 +6,7 @@ description: Official SDKs, calling the REST API directly, and generating a type
 ---
 
 import CodeTabs from "../components/CodeTabs.astro";
-import { SPECS } from "../data/catalog";
+import { SPECS, LINKS } from "../data/catalog";
 
 export const restClient = [
   { label: "JavaScript", lang: "js", code: `const qeet = (apiKey) => ({
@@ -107,3 +107,20 @@ them:
     ))}
   </tbody>
 </table>
+
+The Qeet ID specs are also published as a single bundled document —
+<a href="/specs/qeet-id.yaml"><code>/specs/qeet-id.yaml</code></a> — which is what
+the [interactive reference](/reference) renders.
+
+## Postman
+
+Prefer Postman? Import the maintained Qeet ID collection — the same folder
+structure (Auth, Users, Tenants, RBAC, OIDC, SAML, SCIM, API Keys, Webhooks…) you
+see in the reference sidebar, with request scripts that capture IDs and tokens for
+you.
+
+<a class="btn btn-primary not-prose" href={LINKS.postman} download>Download Postman collection</a>
+
+In Postman, choose **Import → File** and select the downloaded
+`qeet-id.postman_collection.json`. Set the collection's `baseUrl` variable to the
+environment you're targeting (see [Authentication](/authentication)).

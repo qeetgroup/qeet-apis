@@ -65,12 +65,17 @@ export const SPECS: ApiSpec[] = [
   },
 ];
 
-/** Scalar `sources` array — one entry per spec, first one is the default. */
-export const SCALAR_SOURCES = SPECS.map((s) => ({
-  slug: s.slug,
-  title: `${s.product} · ${s.title}`,
-  url: s.url,
-}));
+/** Scalar `sources` — one entry per PRODUCT (the document switcher). Qeet ID is
+ * the bundle that `pnpm sync` builds from the 5 specs (with x-tagGroups → a
+ * folder sidebar). `SPECS` above still backs the catalog cards + spec downloads. */
+export const SCALAR_SOURCES = [
+  { slug: "qeet-id", title: "Qeet ID", url: "/specs/qeet-id.yaml" },
+  { slug: "qeet-notify", title: "Qeet Notify", url: "/specs/qeet-notify/v1.yaml" },
+];
+
+/** The Scalar document slug a catalog card points at (one per product). */
+export const sourceSlug = (product: ApiSpec["product"]) =>
+  product === "Qeet Notify" ? "qeet-notify" : "qeet-id";
 
 export interface Environment {
   product: string;
@@ -106,4 +111,5 @@ export const LINKS = {
   console: "https://id.qeet.in",
   docs: "https://docs.qeet.in",
   status: "https://status.qeet.in",
+  postman: "/postman/qeet-id.postman_collection.json",
 };
