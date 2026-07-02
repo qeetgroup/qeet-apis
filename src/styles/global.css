@@ -235,7 +235,14 @@
   font-weight: 400;
 }
 
-/* Hero entrance animations (kept global so Tailwind/inline refs aren't scoped-renamed). */
+/* ============================================================================
+ * Motion & decoration (global so Tailwind/inline refs aren't scoped-renamed).
+ * Scroll reveals degrade safely: content is visible unless `html.has-anim` is
+ * set (added pre-paint by an inline head script only when motion is allowed),
+ * and a `.anim-fallback` class force-reveals everything as a safety net.
+ * ========================================================================== */
+
+/* Hero entrance */
 @keyframes rise {
   from { opacity: 0; transform: translateY(14px); }
   to { opacity: 1; transform: none; }
@@ -243,6 +250,86 @@
 @keyframes floatIn {
   from { opacity: 0; transform: translateY(22px) scale(0.985); }
   to { opacity: 1; transform: none; }
+}
+
+/* Scroll-reveal: hide only while animating is armed and not yet revealed. */
+[data-reveal] {
+  transition:
+    opacity 0.7s var(--ease),
+    transform 0.7s var(--ease);
+}
+html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
+  opacity: 0;
+  transform: translateY(20px);
+}
+[data-reveal].is-in {
+  opacity: 1;
+  transform: none;
+}
+
+/* Aurora / mesh background drift (decorative layers set the gradient inline). */
+@keyframes aurora {
+  0% { transform: translate3d(0, 0, 0) scale(1); }
+  50% { transform: translate3d(1.5%, -2%, 0) scale(1.08); }
+  100% { transform: translate3d(0, 0, 0) scale(1); }
+}
+.aurora { animation: aurora 20s var(--ease) infinite; will-change: transform; }
+
+/* Gentle continuous float for the hero preview card. */
+@keyframes floaty {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.floaty { animation: floaty 6s ease-in-out infinite; }
+
+/* Brand gradient text. */
+.text-gradient {
+  background: linear-gradient(100deg, var(--brand-deep), var(--brand-bright) 55%, var(--brand));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Standards marquee — track is duplicated in markup, so -50% loops seamlessly. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 36s linear infinite;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* Live status dot — a soft outward pulse. */
+@keyframes ping {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--success) 50%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 7px transparent; }
+}
+.live-dot { animation: ping 2.2s ease-out infinite; }
+
+/* Card sheen: a brand glow that fades in on hover (paired with -translate-y). */
+.card-hover {
+  transition:
+    transform 0.32s var(--ease),
+    border-color 0.32s var(--ease),
+    box-shadow 0.32s var(--ease);
+}
+.card-hover:hover {
+  transform: translateY(-4px);
+  border-color: color-mix(in oklab, var(--brand) 45%, var(--rule));
+  box-shadow: var(--shadow-lg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Never leave revealed content hidden, and stop ambient motion. */
+  [data-reveal] { opacity: 1 !important; transform: none !important; }
+  .aurora, .floaty, .marquee-track, .live-dot { animation: none !important; }
 }
 
 /* Shiki dual-theme for MDX fenced code (generated markup; needs !important to

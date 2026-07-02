@@ -113,3 +113,115 @@ export const LINKS = {
   status: "https://status.qeet.in",
   postman: "/postman/qeet-id.postman_collection.json",
 };
+
+// ---- The Qeet platform (landing-page product suite) -----------------------
+// Qeet is a modular, best-of-breed suite that shares one platform (identity,
+// notifications, audit, design system). Only ID + Notify expose APIs on this
+// portal today; the rest are shown as "coming to the API" — honest, not hype.
+export interface Product {
+  name: string;
+  /** Category label under the name. */
+  kind: string;
+  /** One-line description for the card. */
+  blurb: string;
+  /** `live` → linked into the reference; `soon` → linked to product docs. */
+  status: "live" | "soon";
+  /** Icon name (see Icon.astro). */
+  icon: string;
+  /** Where the card points. */
+  href: string;
+  external?: boolean;
+}
+
+export const PRODUCTS: Product[] = [
+  {
+    name: "Qeet ID",
+    kind: "Identity & Access",
+    blurb:
+      "Passkeys-first authentication, MFA, OAuth 2.1 / OIDC, SAML SSO, SCIM, sessions and RBAC.",
+    status: "live",
+    icon: "fingerprint",
+    href: `${"/reference"}#qeet-id`,
+  },
+  {
+    name: "Qeet Notify",
+    kind: "Notifications",
+    blurb:
+      "Multi-channel transactional messaging — email, SMS, WhatsApp, in-app and webhooks.",
+    status: "live",
+    icon: "bell",
+    href: `${"/reference"}#qeet-notify`,
+  },
+  {
+    name: "Qeet Logs",
+    kind: "Observability",
+    blurb:
+      "Privacy-first, identity-aware log management — and the group's shared audit sink.",
+    status: "soon",
+    icon: "activity",
+    href: "https://docs.qeet.in/logs",
+    external: true,
+  },
+  {
+    name: "Qeet Pay",
+    kind: "Payments & Billing",
+    blurb:
+      "Payments, subscriptions and billing — India-first, with UPI and GST built in.",
+    status: "soon",
+    icon: "credit-card",
+    href: "https://docs.qeet.in/pay",
+    external: true,
+  },
+  {
+    name: "Qeet People",
+    kind: "Human Capital",
+    blurb:
+      "HCM for the modern org — directory, workforce records and people workflows.",
+    status: "soon",
+    icon: "users",
+    href: "https://docs.qeet.in/people",
+    external: true,
+  },
+  {
+    name: "Qeet News",
+    kind: "News & Media",
+    blurb:
+      "AI-first global news platform — multi-perspective, multilingual and trust-first.",
+    status: "soon",
+    icon: "newspaper",
+    href: "https://docs.qeet.in/",
+    external: true,
+  },
+];
+
+// Headline metrics for the hero counter row. Kept deliberately truthful:
+// the merged Qeet ID spec alone carries 250+ operations across 6 areas.
+export interface Stat {
+  value: number;
+  suffix?: string;
+  prefix?: string;
+  label: string;
+}
+export const STATS: Stat[] = [
+  { value: 250, suffix: "+", label: "API endpoints" },
+  { value: 6, label: "product areas" },
+  { value: 4, label: "code languages" },
+  { value: 100, suffix: "%", label: "OpenAPI 3.1" },
+];
+
+// Open standards the platform speaks — a credibility marquee (in lieu of
+// customer logos), and genuinely reflects the Qeet ID / federation surface.
+export const TECH: string[] = [
+  "OAuth 2.1",
+  "OpenID Connect",
+  "SAML 2.0",
+  "SCIM 2.0",
+  "WebAuthn",
+  "Passkeys",
+  "OpenAPI 3.1",
+  "JWT / JWKS",
+  "Webhooks",
+  "mTLS",
+  "RBAC / ReBAC",
+  "Multi-tenant",
+];
