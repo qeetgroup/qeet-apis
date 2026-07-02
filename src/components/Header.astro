@@ -44,7 +44,7 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
           <a
             href={item.href}
             aria-current={isActive(item.href) ? "page" : undefined}
-            class="rounded-sm px-2.5 py-2 text-[0.95rem] font-medium text-ink-muted transition hover:bg-surface-2 hover:text-ink aria-[current=page]:text-brand-deep"
+            class="nav-link relative px-2.5 py-2 text-[0.95rem] font-medium text-ink-muted transition-colors hover:text-ink aria-[current=page]:text-brand-deep"
           >
             {item.label}
           </a>
@@ -53,6 +53,15 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
     </nav>
 
     <div class="flex items-center gap-2.5">
+      <a
+        class="hidden h-[2.4rem] w-[2.4rem] place-items-center rounded border border-rule bg-surface text-ink-muted transition hover:border-rule-strong hover:text-ink sm:grid"
+        href={LINKS.github}
+        target="_blank"
+        rel="noopener"
+        aria-label="Qeet on GitHub"
+      >
+        <Icon name="github" />
+      </a>
       <a class="btn btn-primary" href={LINKS.reference}>
         <Icon name="book" />
         API Reference
@@ -73,6 +82,32 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
 </header>
 
 <style>
+  /* Desktop nav: brand underline that wipes in from the left on hover/active. */
+  @media (min-width: 768px) {
+    .nav-link::after {
+      content: "";
+      position: absolute;
+      left: 0.625rem;
+      right: 0.625rem;
+      bottom: 0.35rem;
+      height: 2px;
+      border-radius: 2px;
+      background: var(--brand);
+      transform: scaleX(0);
+      transform-origin: left center;
+      transition: transform 0.22s var(--ease);
+    }
+    .nav-link:hover::after,
+    .nav-link[aria-current="page"]::after {
+      transform: scaleX(1);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .nav-link::after {
+      transition: none;
+    }
+  }
+
   /* Mobile: collapse the nav into a toggled dropdown panel. */
   @media (max-width: 767px) {
     #site-nav {

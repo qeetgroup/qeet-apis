@@ -1,0 +1,44 @@
+---
+import Icon from "./Icon.astro";
+import { DOCS } from "../data/catalog";
+---
+
+<div class="grid gap-[1.1rem] sm:grid-cols-2 lg:grid-cols-3">
+  {
+    DOCS.map((d, i) => (
+      <a
+        href={d.href}
+        class="card-hover group flex h-full flex-col overflow-hidden rounded-xl border border-rule bg-surface"
+        data-reveal
+        style={`transition-delay:${i * 55}ms`}
+      >
+        {/* screenshot-style preview: a stylised doc-page header, not an image */}
+        <div class="relative h-[7.5rem] overflow-hidden border-b border-rule bg-surface-2" aria-hidden="true">
+          <div
+            class="pointer-events-none absolute inset-0 opacity-70"
+            style="background:radial-gradient(72% 82% at 18% -10%, var(--brand-soft), transparent 70%)"
+          />
+          <div class="absolute inset-0 flex flex-col gap-2.5 p-5">
+            <span class="grid h-8 w-8 place-items-center rounded-md bg-surface text-brand-deep shadow-[var(--shadow-sm)] transition-transform duration-300 group-hover:scale-110">
+              <Icon name={d.icon as any} class="h-[1.05rem] w-[1.05rem]" />
+            </span>
+            <span class="mt-1 h-2 w-2/5 rounded-full bg-rule-strong" />
+            <span class="h-1.5 w-4/5 rounded-full bg-rule" />
+            <span class="h-1.5 w-3/5 rounded-full bg-rule" />
+          </div>
+        </div>
+        <div class="flex flex-1 flex-col gap-2 p-[1.4rem]">
+          <h3 class="text-[1.12rem]">{d.title}</h3>
+          <p class="m-0 flex-1 text-[0.93rem] text-ink-subtle">{d.body}</p>
+          <span class="mt-1 flex items-center gap-2 font-ui text-[0.9rem] font-semibold text-brand-deep">
+            {d.cta}
+            <Icon
+              name="arrow-right"
+              class="h-[1em] w-[1em] transition-transform group-hover:translate-x-0.75"
+            />
+          </span>
+        </div>
+      </a>
+    ))
+  }
+</div>

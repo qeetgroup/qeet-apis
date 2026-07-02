@@ -110,7 +110,7 @@ export const LINKS = {
   changelog: "/changelog",
   console: "https://id.qeet.in",
   docs: "https://docs.qeet.in",
-  status: "https://status.qeet.in",
+  github: "https://github.com/qeetgroup",
   postman: "/postman/qeet-id.postman_collection.json",
 };
 
@@ -224,4 +224,132 @@ export const TECH: string[] = [
   "mTLS",
   "RBAC / ReBAC",
   "Multi-tenant",
+];
+
+// ---- Reliability band — engineered-for-production guarantees ---------------
+// Architecture-true claims only (no invented SLA numbers): every item is
+// backed by the specs / open standards this portal already documents.
+export interface Guarantee {
+  icon: string;
+  title: string;
+  body: string;
+}
+export const RELIABILITY: Guarantee[] = [
+  {
+    icon: "globe",
+    title: "Multi-region edge",
+    body: "Requests terminate at the edge closest to your users, with regional failover behind a single hostname.",
+  },
+  {
+    icon: "layers",
+    title: "Typed from OpenAPI 3.1",
+    body: "Every endpoint and schema is generated from a versioned spec — never hand-written, never stale.",
+  },
+  {
+    icon: "history",
+    title: "Versioned & idempotent",
+    body: "Explicit API versions with additive-only changes, and idempotency keys that make retries safe.",
+  },
+  {
+    icon: "lock",
+    title: "mTLS & scoped keys",
+    body: "Mutual TLS, OAuth 2.1 and least-privilege API-key scopes secure every call by default.",
+  },
+  {
+    icon: "activity",
+    title: "Full audit trail",
+    body: "Every privileged action is written to an immutable, queryable audit log via Qeet Logs.",
+  },
+  {
+    icon: "webhook",
+    title: "Event-driven webhooks",
+    body: "Subscribe to signed webhooks for the events that matter — no polling, no missed state.",
+  },
+];
+
+// ---- Documentation wayfinding (each card maps to a real page in this portal).
+export interface DocLink {
+  icon: string;
+  title: string;
+  body: string;
+  href: string;
+  cta: string;
+}
+export const DOCS: DocLink[] = [
+  {
+    icon: "zap",
+    title: "Quickstart",
+    body: "Authenticate and make your first live request in under a minute.",
+    href: LINKS.quickstart,
+    cta: "Start building",
+  },
+  {
+    icon: "key",
+    title: "Authentication",
+    body: "API keys, OAuth 2.1 and OIDC — pick the flow that fits your app.",
+    href: LINKS.authentication,
+    cta: "Read the guide",
+  },
+  {
+    icon: "alert",
+    title: "Errors",
+    body: "Every error shape, status code and retry signal, documented in one place.",
+    href: LINKS.errors,
+    cta: "Handle errors",
+  },
+  {
+    icon: "code",
+    title: "SDKs",
+    body: "Idiomatic snippets for cURL, JavaScript, Go and Python, generated per endpoint.",
+    href: LINKS.sdks,
+    cta: "Get the code",
+  },
+  {
+    icon: "book",
+    title: "API Reference",
+    body: "Browse and run every endpoint across products, live in the browser.",
+    href: LINKS.reference,
+    cta: "Open reference",
+  },
+  {
+    icon: "history",
+    title: "Changelog",
+    body: "Track additive changes and new endpoints as they ship, per product.",
+    href: LINKS.changelog,
+    cta: "See what's new",
+  },
+];
+
+// ---- Enterprise & security capabilities (all backed by the live specs) ------
+export const ENTERPRISE: Guarantee[] = [
+  {
+    icon: "lock",
+    title: "Single sign-on",
+    body: "OIDC and SAML 2.0 SSO with SCIM 2.0 provisioning for your entire workforce.",
+  },
+  {
+    icon: "users",
+    title: "RBAC & organizations",
+    body: "Fine-grained roles, permissions and ReBAC checks across multi-tenant organizations.",
+  },
+  {
+    icon: "fingerprint",
+    title: "Passkeys & MFA",
+    body: "WebAuthn passkeys, TOTP and step-up MFA are first-class on every auth flow.",
+  },
+  {
+    icon: "key",
+    title: "Machine identities",
+    body: "Scoped API keys, service accounts and AI-agent credentials with least privilege.",
+  },
+  {
+    icon: "gauge",
+    title: "Rate limits & quotas",
+    body: "Per-key limits with clear rate-limit headers and burst controls on every response.",
+  },
+  {
+    icon: "activity",
+    title: "Audit & operations",
+    body: "Immutable audit logs, usage analytics and tenant operations across the platform.",
+  },
 ];
