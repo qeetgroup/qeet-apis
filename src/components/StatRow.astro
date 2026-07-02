@@ -1,0 +1,22 @@
+---
+import { STATS } from "../data/catalog";
+interface Props { class?: string; [key: string]: unknown }
+const { class: className, ...rest } = Astro.props;
+---
+
+<dl class={`grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4 ${className ?? ""}`} {...rest}>
+  {
+    STATS.map((s) => (
+      <div>
+        <dt class="font-display text-[clamp(1.7rem,4vw,2.4rem)] font-semibold leading-none tracking-tight text-ink">
+          {s.prefix ?? ""}<span
+            class="tabular-nums"
+            data-count={s.value}
+            data-suffix={s.suffix ?? ""}
+          >{s.value}{s.suffix ?? ""}</span>
+        </dt>
+        <dd class="mt-2 m-0 font-ui text-[0.85rem] text-ink-subtle">{s.label}</dd>
+      </div>
+    ))
+  }
+</dl>

@@ -3,12 +3,16 @@ import Icon from "./Icon.astro";
 interface Props {
   icon: Parameters<typeof Icon>[0]["name"];
   title: string;
+  [key: string]: unknown;
 }
-const { icon, title } = Astro.props;
+const { icon, title, class: className, ...rest } = Astro.props;
 ---
 
-<div class="flex flex-col gap-2.5">
-  <span class="grid h-[2.7rem] w-[2.7rem] place-items-center rounded bg-brand-soft text-brand-deep">
+<div
+  class={`group flex h-full flex-col gap-2.5 rounded-xl border border-rule bg-surface p-[1.4rem] card-hover ${className ?? ""}`}
+  {...rest}
+>
+  <span class="grid h-[2.7rem] w-[2.7rem] place-items-center rounded-lg bg-brand-soft text-brand-deep transition-transform duration-300 group-hover:scale-110">
     <Icon name={icon} class="h-[1.35rem] w-[1.35rem]" />
   </span>
   <h3 class="text-[1.1rem]">{title}</h3>

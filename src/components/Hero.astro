@@ -1,12 +1,12 @@
 ---
 import Icon from "./Icon.astro";
-import { LINKS, SPECS } from "../data/catalog";
-const specCount = SPECS.length;
+import StatRow from "./StatRow.astro";
+import { LINKS } from "../data/catalog";
 
 // Decorative request/response shown in the preview card (mirrors the real
 // GET /v1/auth/me operation + Principal schema used across the portal).
 const reqHtml = `<span class="text-ink-faint">$</span> curl https://api.id.qeet.in/v1/auth/me \\
-  -H <span class="text-brand-deep">"Authorization: ApiKey qk_live_…"</span>`;
+  -H <span class="text-brand-deep">"Authorization: ApiKey qk_live_…"</span> <span class="caret"></span>`;
 
 const resHtml = `{
   <span class="text-brand-deep">"user_id"</span>:    <span class="text-success">"8f1c2a9e-4b7d-…"</span>,
@@ -14,34 +14,55 @@ const resHtml = `{
   <span class="text-brand-deep">"session_id"</span>: <span class="text-success">"se_3rd0…"</span>,
   <span class="text-brand-deep">"scopes"</span>:     [<span class="text-success">"identity.read"</span>, <span class="text-success">"openid"</span>]
 }`;
-
-const meta = [
-  { k: `${specCount}`, v: "APIs" },
-  { k: "OpenAPI 3.1", v: "specs" },
-  { k: "Live", v: "request console" },
-  { k: "cURL · JS · Go · Python", v: "" },
-];
 ---
 
 <section class="relative overflow-hidden">
+  <!-- animated aurora / mesh background -->
   <div
-    class="pointer-events-none absolute inset-0"
-    style="background:radial-gradient(58% 55% at 82% 4%, var(--brand-soft), transparent 70%), radial-gradient(40% 45% at 8% 0%, color-mix(in oklab, var(--brand) 5%, transparent), transparent 70%)"
+    class="aurora pointer-events-none absolute inset-0 -z-10"
+    style="background:radial-gradient(58% 55% at 82% 4%, var(--brand-soft), transparent 70%), radial-gradient(42% 46% at 6% 2%, color-mix(in oklab, var(--brand) 6%, transparent), transparent 72%), radial-gradient(38% 40% at 50% 120%, color-mix(in oklab, var(--brand) 5%, transparent), transparent 70%)"
+    aria-hidden="true"
+  >
+  </div>
+  <!-- faint grid overlay -->
+  <div
+    class="pointer-events-none absolute inset-0 -z-10 opacity-[0.35] dark:opacity-[0.25]"
+    style="background-image:linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size:44px 44px; -webkit-mask-image:radial-gradient(70% 60% at 50% 0%, #000, transparent 75%); mask-image:radial-gradient(70% 60% at 50% 0%, #000, transparent 75%)"
+    aria-hidden="true"
+  >
+  </div>
+
+  <!-- brand beam sweep -->
+  <div
+    class="beam pointer-events-none absolute left-1/2 top-[-38%] -z-10 aspect-square w-208 max-w-none -translate-x-1/2 opacity-40 blur-3xl dark:opacity-30"
+    style="background:conic-gradient(from 150deg at 50% 50%, transparent 0deg, var(--brand-soft) 42deg, transparent 128deg, transparent 232deg, color-mix(in oklab, var(--brand) 8%, transparent) 302deg, transparent 360deg)"
+    aria-hidden="true"
   >
   </div>
 
   <div class="container container-wide relative grid items-center gap-12 py-[clamp(3.5rem,9vw,6.5rem)] lg:grid-cols-[1.05fr_0.95fr]">
     <!-- copy -->
-    <div style="animation:rise .7s var(--ease) both">
-      <span class="eyebrow">Qeet Group · Developer Platform</span>
-      <h1 class="mt-4 text-[clamp(2.5rem,6vw,4.1rem)]">
-        The Qeet API,<br /><span class="text-brand">all in one place.</span>
+    <div>
+      <span
+        class="eyebrow inline-flex items-center gap-2 rounded-full border border-rule bg-surface/60 px-3 py-1"
+        data-reveal
+      >
+        <span class="h-1.5 w-1.5 rounded-full bg-brand"></span>
+        Qeet Group · Developer Platform
+      </span>
+      <h1 class="mt-5 text-[clamp(2.6rem,6.4vw,4.6rem)]" data-reveal style="transition-delay:60ms">
+        Build on the entire<br /><span class="text-gradient">Qeet platform.</span>
       </h1>
-      <p class="mt-5 max-w-[42ch] text-[clamp(1.05rem,2.1vw,1.3rem)] text-ink-muted">
-        One interactive reference for every Qeet product — authenticate, explore
-        endpoints, and run live requests with code in your language.
+      <p
+        class="mt-5 max-w-[46ch] text-[clamp(1.05rem,2.1vw,1.3rem)] text-ink-muted"
+        data-reveal
+        style="transition-delay:120ms"
+      >
+        One interactive reference for every Qeet product — identity, notifications
+        and a growing suite. Authenticate, explore endpoints, and run live
+        requests with code in your language.
       </p>
-      <div class="mt-7 flex flex-wrap gap-3.5">
+      <div class="mt-7 flex flex-wrap gap-3.5" data-reveal style="transition-delay:180ms">
         <a class="btn btn-primary btn-lg" href={LINKS.reference}>
           <Icon name="book" /> Explore the API
         </a>
@@ -49,29 +70,29 @@ const meta = [
           <Icon name="zap" /> Quickstart
         </a>
       </div>
-      <dl class="mt-8 flex flex-wrap gap-x-7 gap-y-2 font-ui text-[0.9rem] text-ink-subtle">
-        {
-          meta.map((m) => (
-            <div>
-              <dt class="inline font-semibold text-ink">{m.k}</dt>
-              {m.v && <dd class="m-0 inline"> {m.v}</dd>}
-            </div>
-          ))
-        }
-      </dl>
+      <StatRow class="mt-10 max-w-[34rem]" data-reveal style="transition-delay:240ms" />
     </div>
 
     <!-- preview card -->
-    <div class="relative" aria-hidden="true" style="animation:floatIn .8s var(--ease) both">
+    <div class="relative" aria-hidden="true" data-reveal style="transition-delay:140ms">
       <div
         class="pointer-events-none absolute -inset-6 opacity-70 blur-2xl"
         style="background:radial-gradient(55% 55% at 55% 25%, var(--brand-soft), transparent 70%)"
       >
       </div>
 
-      <div class="relative overflow-hidden rounded-2xl border border-rule bg-surface shadow-[var(--shadow-lg)]">
-        <!-- request line / window header -->
-        <div class="flex items-center gap-2.5 border-b border-rule bg-surface-2 px-4 py-3">
+      <div class="floaty relative overflow-hidden rounded-2xl border border-rule bg-surface shadow-[var(--shadow-lg)]">
+        <!-- window chrome -->
+        <div class="flex items-center gap-2 border-b border-rule bg-surface-2 px-4 py-2.5">
+          <span class="flex gap-1.5">
+            <span class="h-2.5 w-2.5 rounded-full" style="background:#ff5f57"></span>
+            <span class="h-2.5 w-2.5 rounded-full" style="background:#febc2e"></span>
+            <span class="h-2.5 w-2.5 rounded-full" style="background:#28c840"></span>
+          </span>
+          <span class="mx-auto font-mono text-[0.72rem] text-ink-faint">api.id.qeet.in</span>
+        </div>
+        <!-- request line / method header -->
+        <div class="flex items-center gap-2.5 border-b border-rule px-4 py-3">
           <span class="rounded bg-[color-mix(in_oklab,#1c6b4a_15%,transparent)] px-2 py-0.5 font-mono text-[0.7rem] font-semibold uppercase text-[#1c6b4a] dark:text-[#5bbd7a]">
             GET
           </span>
@@ -102,6 +123,15 @@ const meta = [
 
         <!-- response body -->
         <pre class="m-0 overflow-x-auto px-4 py-3.5 font-mono text-[0.8rem] leading-relaxed text-ink-muted" set:html={resHtml}></pre>
+      </div>
+
+      <!-- floating event chip for depth -->
+      <div
+        class="floaty absolute -right-3 -top-5 z-10 hidden items-center gap-2 rounded-full border border-rule bg-surface px-3 py-1.5 shadow-(--shadow-md) sm:flex"
+        style="animation-delay:-3s"
+      >
+        <span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span>
+        <span class="font-ui text-[0.72rem] font-medium text-ink-muted">webhook delivered</span>
       </div>
     </div>
   </div>

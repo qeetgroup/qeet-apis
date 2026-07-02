@@ -5,10 +5,12 @@ import { SPECS, LINKS, sourceSlug } from "../data/catalog";
 
 <div class="grid gap-[1.1rem] sm:grid-cols-2 lg:grid-cols-3">
   {
-    SPECS.map((s) => (
+    SPECS.map((s, i) => (
       <a
-        class="group flex h-full flex-col gap-3 rounded-lg border border-rule bg-surface p-[1.4rem] transition hover:-translate-y-[3px] hover:border-[color-mix(in_oklab,var(--brand)_40%,var(--rule))] hover:shadow-[var(--shadow-lg)]"
+        class="card-hover group flex h-full flex-col gap-3 rounded-xl border border-rule bg-surface p-[1.4rem]"
         href={`${LINKS.reference}#${sourceSlug(s.product)}`}
+        data-reveal
+        style={`transition-delay:${i * 55}ms`}
       >
         <div class="flex items-center justify-between gap-2">
           <span class="font-ui text-[0.74rem] font-semibold uppercase tracking-wider text-brand-deep">
@@ -22,7 +24,7 @@ import { SPECS, LINKS, sourceSlug } from "../data/catalog";
           Open reference
           <Icon
             name="arrow-right"
-            class="h-[1em] w-[1em] transition-transform group-hover:translate-x-[3px]"
+            class="h-[1em] w-[1em] transition-transform group-hover:translate-x-0.75"
           />
         </span>
       </a>

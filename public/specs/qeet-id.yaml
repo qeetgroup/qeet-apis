@@ -75,6 +75,8 @@ tags:
     description: Operational/admin endpoints (outbox DLQ).
   - name: Health
     description: Liveness, readiness, and Prometheus metrics.
+  - name: Rate Limits
+    description: Per-tenant rate-limit overrides (tenant / user / API-key buckets).
   - name: Log Sinks
   - name: Notifications
 x-tagGroups:
@@ -123,13 +125,14 @@ x-tagGroups:
       - Data Retention
       - Admin
       - Health
+      - Rate Limits
       - Log Sinks
       - Notifications
 paths:
   /v1/auth/forgot-password:
     post:
       operationId: post_v1_auth_forgot_password
-      summary: Start a password-reset flow (enumeration-safe)
+      summary: Forgot password
       tags:
         - Auth
       security: []
@@ -162,7 +165,7 @@ paths:
   /v1/auth/login:
     post:
       operationId: post_v1_auth_login
-      summary: Password login; issues a token pair, or an MFA challenge if a second factor is enrolled
+      summary: Sign in
       tags:
         - Auth
       security: []
@@ -202,7 +205,7 @@ paths:
   /v1/auth/mfa:
     post:
       operationId: post_v1_auth_mfa
-      summary: Complete a two-step login by verifying a second-factor code
+      summary: Complete MFA login
       description: Exchanges the mfa_token from /v1/auth/login plus a TOTP or recovery code for a token pair.
       tags:
         - Auth
@@ -238,7 +241,7 @@ paths:
   /v1/auth/logout:
     post:
       operationId: post_v1_auth_logout
-      summary: Revoke the caller's current session
+      summary: Logout
       tags:
         - Auth
       security:
@@ -267,7 +270,7 @@ paths:
   /v1/auth/magic-link/consume:
     post:
       operationId: post_v1_auth_magic_link_consume
-      summary: Consume a magic-link token and issue a token pair
+      summary: Magic link consume
       tags:
         - Auth
       security: []
@@ -298,7 +301,7 @@ paths:
   /v1/auth/magic-link/start:
     post:
       operationId: post_v1_auth_magic_link_start
-      summary: Send a passwordless magic-link email
+      summary: Magic link start
       tags:
         - Auth
       security: []
@@ -331,7 +334,7 @@ paths:
   /v1/auth/me:
     get:
       operationId: get_v1_auth_me
-      summary: Return the authenticated principal (user/tenant/session/scopes)
+      summary: Me
       tags:
         - Auth
       security:
@@ -349,7 +352,7 @@ paths:
   /v1/auth/refresh:
     post:
       operationId: post_v1_auth_refresh
-      summary: Rotate a refresh token (reuse triggers session revocation)
+      summary: Refresh
       tags:
         - Auth
       security: []
@@ -373,7 +376,7 @@ paths:
   /v1/auth/reset-password:
     post:
       operationId: post_v1_auth_reset_password
-      summary: Complete a password reset with a reset token
+      summary: Reset password
       tags:
         - Auth
       security: []
@@ -412,7 +415,7 @@ paths:
   /v1/auth/session:
     delete:
       operationId: delete_v1_auth_session
-      summary: 'Hosted-login logout: revoke the SSO session and clear the cookie'
+      summary: Destroy SSO session (logout)
       tags:
         - Auth
       security: []
@@ -421,7 +424,7 @@ paths:
           description: Session revoked, cookie cleared
     post:
       operationId: post_v1_auth_session
-      summary: 'Hosted-login: verify credentials and set the SSO cookie (qe_ls)'
+      summary: Create SSO session
       tags:
         - Auth
       security: []
@@ -464,7 +467,7 @@ paths:
   /v1/auth/session/mfa:
     post:
       operationId: post_v1_auth_session_mfa
-      summary: 'Hosted-login: complete a two-step login and set the SSO cookie'
+      summary: Complete SSO session MFA
       description: Exchanges the mfa_token from POST /v1/auth/session plus a TOTP or recovery code for the SSO cookie (qe_ls).
       tags:
         - Auth
@@ -507,7 +510,7 @@ paths:
   /v1/auth/register:
     post:
       operationId: post_v1_auth_register
-      summary: 'Hosted-login: end-user self-registration into a tenant (B2C)'
+      summary: Register (hosted, B2C)
       description: |
         Creates a new end-user in the client's tenant and sets the SSO cookie
         (qe_ls) so they continue into the OAuth authorize flow. Gated by the
@@ -557,7 +560,7 @@ paths:
   /v1/auth/sessions:
     get:
       operationId: get_v1_auth_sessions
-      summary: List the caller's active sessions
+      summary: List sessions
       tags:
         - Auth
       security:
@@ -580,7 +583,7 @@ paths:
   /v1/auth/sessions/{id}:
     delete:
       operationId: delete_v1_auth_sessions_ById
-      summary: Revoke one of the caller's sessions
+      summary: Revoke session
       tags:
         - Auth
       parameters:
@@ -611,7 +614,7 @@ paths:
   /v1/auth/signup:
     post:
       operationId: post_v1_auth_signup
-      summary: 'Self-service signup: create user + personal workspace, return token pair'
+      summary: Sign up
       tags:
         - Auth
       security: []
@@ -637,7 +640,7 @@ paths:
   /v1/auth/switch-tenant:
     post:
       operationId: post_v1_auth_switch_tenant
-      summary: Issue a token pair scoped to another tenant the caller belongs to
+      summary: Switch tenant
       tags:
         - Auth
       security:
@@ -673,7 +676,7 @@ paths:
   /v1/check:
     get:
       operationId: get_v1_check
-      summary: Authorize an action (permission check)
+      summary: Permission check
       tags:
         - RBAC
       parameters:
@@ -724,7 +727,7 @@ paths:
   /v1/mfa/otp/factors:
     get:
       operationId: get_v1_mfa_otp_factors
-      summary: Get factors
+      summary: List OTP factors
       tags:
         - MFA
       security:
@@ -751,7 +754,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     post:
       operationId: post_v1_mfa_otp_factors
-      summary: Create factors
+      summary: Add OTP factor
       tags:
         - MFA
       security:
@@ -787,7 +790,7 @@ paths:
   /v1/mfa/otp/factors/{id}:
     delete:
       operationId: delete_v1_mfa_otp_factors_ById
-      summary: Delete factors
+      summary: Delete OTP factor
       tags:
         - MFA
       parameters:
@@ -816,7 +819,7 @@ paths:
   /v1/mfa/otp/factors/{id}/challenge:
     post:
       operationId: post_v1_mfa_otp_factors_ById_challenge
-      summary: Create challenge
+      summary: Challenge OTP factor
       tags:
         - MFA
       parameters:
@@ -858,7 +861,7 @@ paths:
   /v1/mfa/otp/factors/{id}/confirm:
     post:
       operationId: post_v1_mfa_otp_factors_ById_confirm
-      summary: Create confirm
+      summary: Confirm OTP factor
       tags:
         - MFA
       parameters:
@@ -900,7 +903,7 @@ paths:
   /v1/mfa/otp/verify:
     post:
       operationId: post_v1_mfa_otp_verify
-      summary: Create verify
+      summary: Verify OTP
       tags:
         - MFA
       security:
@@ -936,7 +939,7 @@ paths:
   /v1/mfa/recovery-codes:
     get:
       operationId: get_v1_mfa_recovery_codes
-      summary: Get recovery codes
+      summary: Recovery codes status
       tags:
         - MFA
       security:
@@ -964,7 +967,7 @@ paths:
   /v1/mfa/recovery-codes/regenerate:
     post:
       operationId: post_v1_mfa_recovery_codes_regenerate
-      summary: Create regenerate
+      summary: Regenerate recovery codes (step-up)
       tags:
         - MFA
       security:
@@ -1000,7 +1003,7 @@ paths:
   /v1/mfa/step-up/status:
     get:
       operationId: get_v1_mfa_step_up_status
-      summary: Get step-up MFA status
+      summary: Step-up status
       tags:
         - MFA
       security:
@@ -1028,7 +1031,7 @@ paths:
   /v1/mfa/totp:
     delete:
       operationId: delete_v1_mfa_totp
-      summary: Delete totp
+      summary: Disable TOTP
       tags:
         - MFA
       security:
@@ -1051,7 +1054,7 @@ paths:
   /v1/mfa/totp/enroll/confirm:
     post:
       operationId: post_v1_mfa_totp_enroll_confirm
-      summary: Create confirm
+      summary: Confirm TOTP enrollment
       tags:
         - MFA
       security:
@@ -1087,7 +1090,7 @@ paths:
   /v1/mfa/totp/enroll/start:
     post:
       operationId: post_v1_mfa_totp_enroll_start
-      summary: Create start
+      summary: Start TOTP enrollment
       tags:
         - MFA
       security:
@@ -1123,7 +1126,7 @@ paths:
   /v1/mfa/totp/verify:
     post:
       operationId: post_v1_mfa_totp_verify
-      summary: Create verify
+      summary: Verify TOTP
       tags:
         - MFA
       security:
@@ -1159,7 +1162,7 @@ paths:
   /v1/mfa/webauthn/challenge:
     post:
       operationId: post_v1_mfa_webauthn_challenge
-      summary: Begin WebAuthn second-factor assertion
+      summary: WebAuthn 2FA challenge
       tags:
         - MFA
       security:
@@ -1189,7 +1192,7 @@ paths:
   /v1/mfa/webauthn/verify:
     post:
       operationId: post_v1_mfa_webauthn_verify
-      summary: Verify WebAuthn second-factor assertion
+      summary: WebAuthn 2FA verify
       tags:
         - MFA
       security:
@@ -1227,7 +1230,7 @@ paths:
   /v1/passkeys:
     get:
       operationId: get_v1_passkeys
-      summary: Get passkeys
+      summary: List passkeys
       tags:
         - Passkeys
       security:
@@ -1255,7 +1258,7 @@ paths:
   /v1/passkeys/login/begin:
     post:
       operationId: post_v1_passkeys_login_begin
-      summary: Create begin
+      summary: Login begin
       tags:
         - Passkeys
       security: []
@@ -1285,7 +1288,7 @@ paths:
   /v1/passkeys/login/finish:
     post:
       operationId: post_v1_passkeys_login_finish
-      summary: Create finish
+      summary: Login finish
       tags:
         - Passkeys
       security: []
@@ -1315,7 +1318,7 @@ paths:
   /v1/passkeys/register/begin:
     post:
       operationId: post_v1_passkeys_register_begin
-      summary: Create begin
+      summary: Register begin
       tags:
         - Passkeys
       security:
@@ -1351,7 +1354,7 @@ paths:
   /v1/passkeys/register/finish:
     post:
       operationId: post_v1_passkeys_register_finish
-      summary: Create finish
+      summary: Register finish
       tags:
         - Passkeys
       security:
@@ -1387,7 +1390,7 @@ paths:
   /v1/passkeys/{id}:
     delete:
       operationId: delete_v1_passkeys_ById
-      summary: Delete passkeys
+      summary: Delete passkey
       tags:
         - Passkeys
       parameters:
@@ -1416,7 +1419,7 @@ paths:
   /v1/permissions:
     get:
       operationId: get_v1_permissions
-      summary: List all platform permissions
+      summary: List permissions
       tags:
         - RBAC
       security:
@@ -1439,7 +1442,7 @@ paths:
   /v1/roles/{roleID}/permissions/{permID}:
     delete:
       operationId: delete_v1_roles_ByRoleID_permissions_ByPermID
-      summary: Revoke a permission from a role
+      summary: Revoke permission from role
       tags:
         - RBAC
       parameters:
@@ -1469,7 +1472,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     post:
       operationId: post_v1_roles_ByRoleID_permissions_ByPermID
-      summary: Grant a permission to a role
+      summary: Grant permission to role
       tags:
         - RBAC
       parameters:
@@ -1541,7 +1544,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     put:
       operationId: put_v1_tenants_ByTenantID_auth_policy
-      summary: Replace auth policy
+      summary: Update auth policy
       tags:
         - Auth Policy
       parameters:
@@ -1583,7 +1586,7 @@ paths:
   /v1/tenants/{tenantID}/groups/{groupID}/roles:
     get:
       operationId: get_v1_tenants_ByTenantID_groups_ByGroupID_roles
-      summary: List roles granted to a group
+      summary: List group roles
       tags:
         - RBAC
       parameters:
@@ -1621,7 +1624,7 @@ paths:
   /v1/tenants/{tenantID}/groups/{groupID}/roles/{roleID}:
     post:
       operationId: post_v1_tenants_ByTenantID_groups_ByGroupID_roles_ByRoleID
-      summary: Grant a role to a group
+      summary: Grant role to group
       description: Grant a role to a group. Every member of the group inherits the role's permissions (effective permissions = direct user grants UNION group-derived grants). The role and group must belong to the tenant.
       tags:
         - RBAC
@@ -1657,7 +1660,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: delete_v1_tenants_ByTenantID_groups_ByGroupID_roles_ByRoleID
-      summary: Revoke a role from a group
+      summary: Revoke role from group
       tags:
         - RBAC
       parameters:
@@ -1693,7 +1696,7 @@ paths:
   /v1/tenants/{tenantID}/security/bots:
     get:
       operationId: get_v1_tenants_ByTenantID_security_bots
-      summary: Bot-detection telemetry (recent verdicts + 24h stats)
+      summary: Bot telemetry
       tags:
         - Threats
       parameters:
@@ -1717,10 +1720,91 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /v1/tenants/{tenantID}/security/risk-settings:
+    get:
+      operationId: get_v1_tenants_ByTenantID_security_risk_settings
+      summary: Get risk settings
+      description: Returns the medium/high risk-score thresholds and the level at which step-up MFA is forced even for a trusted device.
+      tags:
+        - Threats
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Risk settings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  medium_threshold:
+                    type: number
+                  high_threshold:
+                    type: number
+                  force_mfa_at_level:
+                    type: string
+                    enum:
+                      - medium
+                      - high
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      operationId: put_v1_tenants_ByTenantID_security_risk_settings
+      summary: Update risk settings
+      tags:
+        - Threats
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                medium_threshold:
+                  type: number
+                high_threshold:
+                  type: number
+                force_mfa_at_level:
+                  type: string
+                  enum:
+                    - medium
+                    - high
+      responses:
+        '200':
+          description: Updated settings
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
   /v1/tenants/{tenantID}/security/bots/settings:
     get:
       operationId: get_v1_tenants_ByTenantID_security_bots_settings
-      summary: Get a tenant's bot-detection settings
+      summary: Get bot settings
       tags:
         - Threats
       parameters:
@@ -1746,7 +1830,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     put:
       operationId: put_v1_tenants_ByTenantID_security_bots_settings
-      summary: Update a tenant's bot-detection settings
+      summary: Update bot settings
       tags:
         - Threats
       parameters:
@@ -1782,7 +1866,7 @@ paths:
   /v1/tenants/{tenantID}/security/anomalies:
     get:
       operationId: get_v1_tenants_ByTenantID_security_anomalies
-      summary: List detected security anomalies for a tenant (newest first)
+      summary: List anomalies
       tags:
         - Threats
       parameters:
@@ -1814,7 +1898,7 @@ paths:
   /v1/tenants/{tenantID}/security/anomalies/summary:
     get:
       operationId: get_v1_tenants_ByTenantID_security_anomalies_summary
-      summary: Security-anomaly KPI summary for a tenant
+      summary: Anomaly summary
       tags:
         - Threats
       parameters:
@@ -1841,7 +1925,7 @@ paths:
   /v1/tenants/{tenantID}/security/anomalies/{id}/resolve:
     post:
       operationId: post_v1_tenants_ByTenantID_security_anomalies_ById_resolve
-      summary: Mark a security anomaly resolved
+      summary: Resolve anomaly
       tags:
         - Threats
       parameters:
@@ -1870,7 +1954,7 @@ paths:
   /v1/tenants/{tenantID}/relation-tuples:
     get:
       operationId: get_v1_tenants_ByTenantID_relation_tuples
-      summary: List ReBAC relationship tuples on an object
+      summary: List relation tuples
       tags:
         - ReBAC
       parameters:
@@ -1907,7 +1991,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_relation_tuples
-      summary: Write a ReBAC relationship tuple
+      summary: Write relation tuple
       tags:
         - ReBAC
       parameters:
@@ -1955,7 +2039,7 @@ paths:
   /v1/tenants/{tenantID}/relation-tuples/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_relation_tuples_ById
-      summary: Delete a relationship tuple
+      summary: Delete relation tuple
       tags:
         - ReBAC
       parameters:
@@ -1984,7 +2068,7 @@ paths:
   /v1/tenants/{tenantID}/relation-tuples/check:
     post:
       operationId: post_v1_tenants_ByTenantID_relation_tuples_check
-      summary: Check whether a user has a relation on an object (ReBAC)
+      summary: Check relation
       tags:
         - ReBAC
       parameters:
@@ -2032,7 +2116,7 @@ paths:
   /v1/tenants/{tenantID}/ip-rules:
     get:
       operationId: get_v1_tenants_ByTenantID_ip_rules
-      summary: Get ip rules
+      summary: List rules + enforcement
       tags:
         - IP Rules
       parameters:
@@ -2065,7 +2149,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     post:
       operationId: post_v1_tenants_ByTenantID_ip_rules
-      summary: Create ip rules
+      summary: Add rule
       tags:
         - IP Rules
       parameters:
@@ -2107,7 +2191,7 @@ paths:
   /v1/tenants/{tenantID}/ip-rules/check:
     post:
       operationId: post_v1_tenants_ByTenantID_ip_rules_check
-      summary: Create check
+      summary: Check an address
       tags:
         - IP Rules
       parameters:
@@ -2149,7 +2233,7 @@ paths:
   /v1/tenants/{tenantID}/ip-rules/config:
     put:
       operationId: put_v1_tenants_ByTenantID_ip_rules_config
-      summary: Replace config
+      summary: Set enforcement
       tags:
         - IP Rules
       parameters:
@@ -2191,7 +2275,7 @@ paths:
   /v1/tenants/{tenantID}/ip-rules/{ruleID}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_ip_rules_ByRuleID
-      summary: Delete ip rules
+      summary: Delete rule
       tags:
         - IP Rules
       parameters:
@@ -2258,7 +2342,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     put:
       operationId: put_v1_tenants_ByTenantID_policy
-      summary: Replace policy
+      summary: Update policy
       tags:
         - Policy
       parameters:
@@ -2300,7 +2384,7 @@ paths:
   /v1/tenants/{tenantID}/roles:
     get:
       operationId: get_v1_tenants_ByTenantID_roles
-      summary: List a tenant's roles
+      summary: List roles
       tags:
         - RBAC
       parameters:
@@ -2330,7 +2414,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_roles
-      summary: Create a role in a tenant
+      summary: Create role
       tags:
         - RBAC
       parameters:
@@ -2366,7 +2450,7 @@ paths:
   /v1/users/{userID}/tenants/{tenantID}/permissions:
     get:
       operationId: get_v1_users_ByUserID_tenants_ByTenantID_permissions
-      summary: List a user's effective permissions in a tenant
+      summary: Effective permissions
       tags:
         - RBAC
       parameters:
@@ -2404,7 +2488,7 @@ paths:
   /v1/users/{userID}/tenants/{tenantID}/roles/{roleID}:
     delete:
       operationId: delete_v1_users_ByUserID_tenants_ByTenantID_roles_ByRoleID
-      summary: Unassign a role from a user in a tenant
+      summary: Unassign role from user
       tags:
         - RBAC
       parameters:
@@ -2439,7 +2523,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     post:
       operationId: post_v1_users_ByUserID_tenants_ByTenantID_roles_ByRoleID
-      summary: Assign a role to a user in a tenant
+      summary: Assign role to user
       tags:
         - RBAC
       parameters:
@@ -2483,7 +2567,7 @@ paths:
   /v1/groups:
     post:
       operationId: post_v1_groups
-      summary: Create groups
+      summary: Create group
       tags:
         - Groups
       security:
@@ -2519,7 +2603,7 @@ paths:
   /v1/groups/{id}:
     delete:
       operationId: delete_v1_groups_ById
-      summary: Delete groups
+      summary: Delete group
       tags:
         - Groups
       parameters:
@@ -2548,7 +2632,7 @@ paths:
   /v1/groups/{id}/members:
     get:
       operationId: get_v1_groups_ById_members
-      summary: Get members
+      summary: List members
       tags:
         - Groups
       parameters:
@@ -2582,7 +2666,7 @@ paths:
   /v1/groups/{id}/members/{userID}:
     delete:
       operationId: delete_v1_groups_ById_members_ByUserID
-      summary: Delete members
+      summary: Remove member
       tags:
         - Groups
       parameters:
@@ -2615,7 +2699,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     post:
       operationId: post_v1_groups_ById_members_ByUserID
-      summary: Act on members
+      summary: Add member
       tags:
         - Groups
       parameters:
@@ -2662,7 +2746,7 @@ paths:
   /v1/invites:
     post:
       operationId: post_v1_invites
-      summary: Create invites
+      summary: Create invite
       tags:
         - Invites
       security:
@@ -2698,7 +2782,7 @@ paths:
   /v1/invites/accept:
     post:
       operationId: post_v1_invites_accept
-      summary: Create accept
+      summary: Accept invite (public)
       tags:
         - Invites
       security: []
@@ -2728,7 +2812,7 @@ paths:
   /v1/invites/{id}:
     delete:
       operationId: delete_v1_invites_ById
-      summary: Delete invites
+      summary: Revoke invite
       tags:
         - Invites
       parameters:
@@ -2757,7 +2841,7 @@ paths:
   /v1/tenants:
     get:
       operationId: get_v1_tenants
-      summary: List tenants the caller belongs to
+      summary: List tenants
       tags:
         - Tenants
       parameters:
@@ -2777,7 +2861,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     post:
       operationId: post_v1_tenants
-      summary: Create a tenant (caller becomes owner)
+      summary: Create tenant
       tags:
         - Tenants
       security:
@@ -2807,7 +2891,7 @@ paths:
   /v1/tenants/{id}:
     delete:
       operationId: delete_v1_tenants_ById
-      summary: Delete a tenant
+      summary: Delete tenant
       tags:
         - Tenants
       parameters:
@@ -2830,7 +2914,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     get:
       operationId: get_v1_tenants_ById
-      summary: Get a tenant
+      summary: Get tenant
       tags:
         - Tenants
       parameters:
@@ -2857,7 +2941,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: patch_v1_tenants_ById
-      summary: Update a tenant
+      summary: Update tenant
       tags:
         - Tenants
       parameters:
@@ -2928,7 +3012,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     put:
       operationId: put_v1_tenants_ByTenantID_branding
-      summary: Replace branding
+      summary: Update branding
       tags:
         - Branding
       parameters:
@@ -2970,7 +3054,7 @@ paths:
   /v1/tenants/{tenantID}/groups:
     get:
       operationId: get_v1_tenants_ByTenantID_groups
-      summary: Get groups
+      summary: List groups
       tags:
         - Groups
       parameters:
@@ -3004,7 +3088,7 @@ paths:
   /v1/tenants/{tenantID}/invites:
     get:
       operationId: get_v1_tenants_ByTenantID_invites
-      summary: Get invites
+      summary: List invites
       tags:
         - Invites
       parameters:
@@ -3038,7 +3122,7 @@ paths:
   /v1/users:
     get:
       operationId: get_v1_users
-      summary: List users in the caller's tenant (cursor-paginated)
+      summary: List users
       tags:
         - Users
       parameters:
@@ -3058,7 +3142,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     post:
       operationId: post_v1_users
-      summary: Create a user
+      summary: Create user
       tags:
         - Users
       security:
@@ -3090,7 +3174,7 @@ paths:
   /v1/users/deleted:
     get:
       operationId: get_v1_users_deleted
-      summary: List soft-deleted users (recycle bin)
+      summary: List deleted users
       tags:
         - Users
       parameters:
@@ -3115,7 +3199,7 @@ paths:
   /v1/users/{id}:
     delete:
       operationId: delete_v1_users_ById
-      summary: Soft-delete a user
+      summary: Delete user
       tags:
         - Users
       parameters:
@@ -3140,7 +3224,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     get:
       operationId: get_v1_users_ById
-      summary: Get a user
+      summary: Get user
       tags:
         - Users
       parameters:
@@ -3165,7 +3249,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: patch_v1_users_ById
-      summary: Update a user
+      summary: Update user
       tags:
         - Users
       parameters:
@@ -3203,7 +3287,7 @@ paths:
   /v1/users/{id}/password:
     post:
       operationId: post_v1_users_ById_password
-      summary: Set a user's password
+      summary: Set password
       tags:
         - Users
       parameters:
@@ -3244,7 +3328,7 @@ paths:
   /v1/users/{id}/mfa:
     delete:
       operationId: delete_v1_users_ById_mfa
-      summary: 'Admin: reset a user''s MFA (TOTP, recovery codes, OTP factors)'
+      summary: Admin reset user MFA
       description: Account-recovery for a locked-out user. Requires the `user.write` permission; audited as `mfa.admin_reset`.
       tags:
         - Users
@@ -3278,7 +3362,7 @@ paths:
   /v1/users/{id}/purge:
     delete:
       operationId: delete_v1_users_ById_purge
-      summary: Permanently purge a soft-deleted user
+      summary: Purge user
       tags:
         - Users
       parameters:
@@ -3304,7 +3388,7 @@ paths:
   /v1/users/{id}/restore:
     post:
       operationId: post_v1_users_ById_restore
-      summary: Restore a soft-deleted user
+      summary: Restore user
       tags:
         - Users
       parameters:
@@ -3342,7 +3426,7 @@ paths:
   /v1/users/{id}/verify/email/confirm:
     post:
       operationId: post_v1_users_ById_verify_email_confirm
-      summary: Confirm an email-verification code
+      summary: Confirm email verification
       tags:
         - Verification
       parameters:
@@ -3390,7 +3474,7 @@ paths:
   /v1/users/{id}/verify/email/start:
     post:
       operationId: post_v1_users_ById_verify_email_start
-      summary: Send an email-verification code
+      summary: Start email verification
       description: Sends a 6-digit code to the address on file. Pass `email` only to verify a different address.
       tags:
         - Verification
@@ -3437,7 +3521,7 @@ paths:
   /v1/users/{id}/verify/phone/confirm:
     post:
       operationId: post_v1_users_ById_verify_phone_confirm
-      summary: Confirm a phone-verification code
+      summary: Confirm phone verification
       tags:
         - Verification
       parameters:
@@ -3485,7 +3569,7 @@ paths:
   /v1/users/{id}/verify/phone/start:
     post:
       operationId: post_v1_users_ById_verify_phone_start
-      summary: Send a phone-verification code (SMS)
+      summary: Start phone verification
       description: Sends a 6-digit code to the number on file. Pass `phone` only to verify a different number.
       tags:
         - Verification
@@ -3531,7 +3615,7 @@ paths:
   /v1/tenants/{tenantID}/domains:
     get:
       operationId: get_v1_tenants_ByTenantID_domains
-      summary: List a tenant's claimed/verified email domains
+      summary: List domains
       tags:
         - Domains
       parameters:
@@ -3562,7 +3646,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_domains
-      summary: Claim a domain (returns the DNS TXT record to publish)
+      summary: Claim domain
       tags:
         - Domains
       parameters:
@@ -3604,7 +3688,7 @@ paths:
   /v1/tenants/{tenantID}/domains/{id}/verify:
     post:
       operationId: post_v1_tenants_ByTenantID_domains_ById_verify
-      summary: Check the DNS TXT record and mark the domain verified
+      summary: Verify domain
       tags:
         - Domains
       parameters:
@@ -3642,7 +3726,7 @@ paths:
   /v1/tenants/{tenantID}/domains/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_domains_ById
-      summary: Remove a claimed domain
+      summary: Remove domain
       tags:
         - Domains
       parameters:
@@ -3671,7 +3755,7 @@ paths:
   /.well-known/jwks.json:
     get:
       operationId: get_wellKnown_jwks_json
-      summary: JSON Web Key Set for verifying issued tokens
+      summary: JWKS
       tags:
         - OIDC
       security: []
@@ -3685,7 +3769,7 @@ paths:
   /.well-known/openid-configuration:
     get:
       operationId: get_wellKnown_openid_configuration
-      summary: OIDC discovery document
+      summary: OpenID configuration
       tags:
         - OIDC
       security: []
@@ -3696,10 +3780,46 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/OIDCDiscovery'
+  /.well-known/oauth-protected-resource:
+    get:
+      operationId: get_wellKnown_oauth_protected_resource
+      summary: Protected resource metadata
+      description: Protected-resource metadata for MCP authorization-server compliance. Advertises the resource identifier, its authorization server(s), and the supported bearer methods and token-signing algorithms.
+      tags:
+        - OIDC
+      security: []
+      responses:
+        '200':
+          description: Protected-resource metadata
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  resource:
+                    type: string
+                  authorization_servers:
+                    type: array
+                    items:
+                      type: string
+                  bearer_methods_supported:
+                    type: array
+                    items:
+                      type: string
+                  resource_signing_alg_values_supported:
+                    type: array
+                    items:
+                      type: string
+                  scopes_provided:
+                    type: array
+                    items:
+                      type: string
+                  resource_documentation:
+                    type: string
   /ldap/{id}/authenticate:
     post:
       operationId: post_ldap_ById_authenticate
-      summary: Authenticate an end user against an LDAP/AD connection (bind)
+      summary: Authenticate (public)
       tags:
         - LDAP
       parameters:
@@ -3727,7 +3847,7 @@ paths:
   /oauth/introspect:
     post:
       operationId: post_oauth_introspect
-      summary: RFC 7662 token introspection (client-authenticated)
+      summary: Token introspect (RFC 7662)
       tags:
         - OIDC
       security:
@@ -3759,7 +3879,7 @@ paths:
   /oauth/revoke:
     post:
       operationId: post_oauth_revoke
-      summary: RFC 7009 token revocation (client-authenticated)
+      summary: Token revoke (RFC 7009)
       tags:
         - OIDC
       security:
@@ -3790,7 +3910,7 @@ paths:
   /saml/acs/{id}:
     post:
       operationId: post_saml_acs_ById
-      summary: Assertion Consumer Service (CSRF-exempt; signature-validated)
+      summary: '[acs] Assertion Consumer Service'
       tags:
         - SAML
       parameters:
@@ -3821,7 +3941,7 @@ paths:
   /saml/exchange:
     post:
       operationId: post_saml_exchange
-      summary: Exchange a one-time SAML login code for a token pair
+      summary: Exchange code (public)
       tags:
         - SAML
       security: []
@@ -3850,7 +3970,7 @@ paths:
   /saml/idp/metadata:
     get:
       operationId: get_saml_idp_metadata
-      summary: IdP metadata XML (Qeet as IdP)
+      summary: '[idp] IdP metadata'
       tags:
         - SAML
       security: []
@@ -3864,7 +3984,7 @@ paths:
   /saml/idp/sso:
     get:
       operationId: get_saml_idp_sso
-      summary: IdP SingleSignOnService (HTTP-Redirect binding)
+      summary: '[idp] IdP SSO (redirect binding)'
       tags:
         - SAML
       parameters:
@@ -3890,7 +4010,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
     post:
       operationId: post_saml_idp_sso
-      summary: IdP SingleSignOnService (HTTP-POST binding; CSRF-exempt)
+      summary: '[idp] IdP SSO (POST binding)'
       tags:
         - SAML
       security: []
@@ -3919,7 +4039,7 @@ paths:
   /saml/login/{id}:
     get:
       operationId: get_saml_login_ById
-      summary: SP-initiated login redirect to the external IdP
+      summary: Login redirect (public)
       tags:
         - SAML
       parameters:
@@ -3937,7 +4057,7 @@ paths:
   /saml/metadata/{id}:
     get:
       operationId: get_saml_metadata_ById
-      summary: SP metadata XML for a SAML connection (Qeet as SP)
+      summary: SP metadata (public)
       tags:
         - SAML
       parameters:
@@ -3959,7 +4079,7 @@ paths:
   /scim/v2/Groups:
     get:
       operationId: get_scim_v2_Groups
-      summary: List/filter SCIM groups
+      summary: '[scim] List groups'
       tags:
         - SCIM
       parameters:
@@ -3990,7 +4110,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     post:
       operationId: post_scim_v2_Groups
-      summary: Create a SCIM group
+      summary: '[scim] Create group'
       tags:
         - SCIM
       security:
@@ -4017,7 +4137,7 @@ paths:
   /scim/v2/Groups/{id}:
     delete:
       operationId: delete_scim_v2_Groups_ById
-      summary: Delete a SCIM group
+      summary: '[scim] Delete group'
       tags:
         - SCIM
       parameters:
@@ -4037,7 +4157,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     get:
       operationId: get_scim_v2_Groups_ById
-      summary: Get a SCIM group
+      summary: '[scim] Get group'
       tags:
         - SCIM
       parameters:
@@ -4061,7 +4181,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: patch_scim_v2_Groups_ById
-      summary: Patch a SCIM group (PatchOp; member add/remove)
+      summary: '[scim] Patch group'
       tags:
         - SCIM
       parameters:
@@ -4093,7 +4213,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     put:
       operationId: put_scim_v2_Groups_ById
-      summary: Replace a SCIM group
+      summary: '[scim] Replace group'
       tags:
         - SCIM
       parameters:
@@ -4126,7 +4246,7 @@ paths:
   /scim/v2/ResourceTypes:
     get:
       operationId: get_scim_v2_ResourceTypes
-      summary: SCIM ResourceTypes
+      summary: '[scim] ResourceTypes'
       tags:
         - SCIM
       security:
@@ -4144,7 +4264,7 @@ paths:
   /scim/v2/Schemas:
     get:
       operationId: get_scim_v2_Schemas
-      summary: SCIM Schemas
+      summary: '[scim] Schemas'
       tags:
         - SCIM
       security:
@@ -4162,7 +4282,7 @@ paths:
   /scim/v2/ServiceProviderConfig:
     get:
       operationId: get_scim_v2_ServiceProviderConfig
-      summary: SCIM ServiceProviderConfig
+      summary: '[scim] ServiceProviderConfig'
       tags:
         - SCIM
       security:
@@ -4180,7 +4300,7 @@ paths:
   /scim/v2/Users:
     get:
       operationId: get_scim_v2_Users
-      summary: List/filter SCIM users
+      summary: '[scim] List users'
       tags:
         - SCIM
       parameters:
@@ -4214,7 +4334,7 @@ paths:
           $ref: '#/components/responses/Unauthorized'
     post:
       operationId: post_scim_v2_Users
-      summary: Provision a SCIM user
+      summary: '[scim] Create user'
       tags:
         - SCIM
       security:
@@ -4244,7 +4364,7 @@ paths:
   /scim/v2/Users/{id}:
     delete:
       operationId: delete_scim_v2_Users_ById
-      summary: Delete (deprovision) a SCIM user
+      summary: '[scim] Delete user'
       tags:
         - SCIM
       parameters:
@@ -4264,7 +4384,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     get:
       operationId: get_scim_v2_Users_ById
-      summary: Get a SCIM user
+      summary: '[scim] Get user'
       tags:
         - SCIM
       parameters:
@@ -4288,7 +4408,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: patch_scim_v2_Users_ById
-      summary: Patch a SCIM user (PatchOp; e.g. deprovision via active=false)
+      summary: '[scim] Patch user (deprovision)'
       tags:
         - SCIM
       parameters:
@@ -4320,7 +4440,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     put:
       operationId: put_scim_v2_Users_ById
-      summary: Replace a SCIM user
+      summary: '[scim] Replace user'
       tags:
         - SCIM
       parameters:
@@ -4353,7 +4473,7 @@ paths:
   /v1/oauth/authorize:
     get:
       operationId: get_v1_oauth_authorize
-      summary: OAuth 2.0 authorization endpoint (SSO-cookie gated)
+      summary: Authorize
       tags:
         - OIDC
       parameters:
@@ -4409,7 +4529,7 @@ paths:
   /v1/oauth/authorize/decision:
     post:
       operationId: post_v1_oauth_authorize_decision
-      summary: Record the user's consent decision for an authorization request
+      summary: Authorize decision (consent)
       tags:
         - OIDC
       security:
@@ -4441,7 +4561,7 @@ paths:
   /v1/oauth/device:
     get:
       operationId: get_v1_oauth_device
-      summary: Device verification context (RFC 8628) for the hosted /device page
+      summary: Device verification context
       description: Returns the requesting client's display name and requested scopes for a pending device-authorization, looked up by user_code, so the hosted-login /device page can render the approval screen. SSO-cookie gated.
       tags:
         - OIDC
@@ -4477,7 +4597,7 @@ paths:
   /v1/oauth/device/decision:
     post:
       operationId: post_v1_oauth_device_decision
-      summary: Record the user's approve/deny for a device-authorization (RFC 8628)
+      summary: Device decision (approve)
       description: The SSO-cookie-identified user approves or denies a pending device request identified by user_code. On approval the user (who must belong to the client's tenant) is bound and the device can complete its token poll.
       tags:
         - OIDC
@@ -4523,7 +4643,7 @@ paths:
   /v1/oauth/device_authorization:
     post:
       operationId: post_v1_oauth_device_authorization
-      summary: OAuth 2.0 Device Authorization endpoint (RFC 8628 §3.1)
+      summary: Device authorization
       description: Client-authenticated endpoint for input-constrained (CLI/TV/IoT) clients. Returns a (device_code, user_code) pair plus the verification URIs; the device then polls /v1/oauth/token-code with grant_type=urn:ietf:params:oauth:grant-type:device_code.
       tags:
         - OIDC
@@ -4558,7 +4678,7 @@ paths:
   /v1/oauth/login-context:
     get:
       operationId: get_v1_oauth_login_context
-      summary: Return the hosted-login UI context for an in-flight authorize request
+      summary: Login context
       tags:
         - OIDC
       parameters:
@@ -4584,7 +4704,7 @@ paths:
   /v1/oauth/logout:
     get:
       operationId: get_v1_oauth_logout
-      summary: RP-initiated logout (end session)
+      summary: RP-initiated logout
       tags:
         - OIDC
       parameters:
@@ -4610,7 +4730,7 @@ paths:
           $ref: '#/components/responses/BadRequest'
     post:
       operationId: post_v1_oauth_logout
-      summary: RP-initiated logout (end session)
+      summary: RP-initiated logout
       tags:
         - OIDC
       parameters:
@@ -4645,7 +4765,7 @@ paths:
   /v1/oauth/token:
     post:
       operationId: post_v1_oauth_token
-      summary: OAuth token endpoint for client_credentials (service principals)
+      summary: OAuth token (client_credentials)
       tags:
         - OIDC
       security:
@@ -4683,7 +4803,7 @@ paths:
   /v1/oauth/token-code:
     post:
       operationId: post_v1_oauth_token_code
-      summary: 'OAuth token endpoint: exchange authorization_code or refresh_token'
+      summary: Token (authorization_code)
       tags:
         - OIDC
       security:
@@ -4708,7 +4828,7 @@ paths:
   /v1/oauth/userinfo:
     get:
       operationId: get_v1_oauth_userinfo
-      summary: OIDC UserInfo endpoint
+      summary: UserInfo
       tags:
         - OIDC
       security:
@@ -4733,7 +4853,7 @@ paths:
   /v1/oidc/clients:
     post:
       operationId: post_v1_oidc_clients
-      summary: Register an OIDC/OAuth client
+      summary: Register OIDC client
       tags:
         - OIDC
       security:
@@ -4770,7 +4890,7 @@ paths:
   /v1/oidc/clients/{id}:
     delete:
       operationId: delete_v1_oidc_clients_ById
-      summary: Delete an OIDC client (tenant scoped by caller's token)
+      summary: Delete OIDC client (by scope)
       tags:
         - OIDC
       parameters:
@@ -4795,7 +4915,7 @@ paths:
   /v1/oidc/signing-keys:
     get:
       operationId: get_v1_oidc_signing_keys
-      summary: List issuer signing-key metadata (no key material)
+      summary: Signing keys metadata
       tags:
         - OIDC
       security:
@@ -4817,10 +4937,40 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /v1/oidc/signing-keys/rotate:
+    post:
+      operationId: post_v1_oidc_signing_keys_rotate
+      summary: Rotate signing key
+      description: Generates a fresh EC P-256 signing key, makes it active, and retires the previous key to verify-only. The new private key PEM is returned once in the response — the operator must persist it as JWT_SIGNING_KEY before the next restart. Existing tokens remain verifiable during the grace window.
+      tags:
+        - OIDC
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Rotation complete (new private key shown once)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  kid:
+                    type: string
+                  alg:
+                    type: string
+                  private_key_pem:
+                    type: string
+                  warning:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /v1/service-principals:
     post:
       operationId: post_v1_service_principals
-      summary: Create a machine-to-machine service principal (client credentials)
+      summary: Create service principal
       tags:
         - OIDC
       security:
@@ -4851,7 +5001,7 @@ paths:
   /v1/service-principals/{id}:
     delete:
       operationId: delete_v1_service_principals_ById
-      summary: Disable a service principal
+      summary: Disable service principal
       tags:
         - OIDC
       parameters:
@@ -4880,7 +5030,7 @@ paths:
   /v1/social/exchange:
     post:
       operationId: post_v1_social_exchange
-      summary: Create exchange
+      summary: Exchange social code
       tags:
         - Social
       security: []
@@ -4910,7 +5060,7 @@ paths:
   /v1/social/identities/{id}:
     delete:
       operationId: delete_v1_social_identities_ById
-      summary: Delete identities
+      summary: Unlink identity
       tags:
         - Social
       parameters:
@@ -4939,7 +5089,7 @@ paths:
   /v1/social/providers:
     post:
       operationId: post_v1_social_providers
-      summary: Create providers
+      summary: Upsert provider
       tags:
         - Social
       security:
@@ -4975,7 +5125,7 @@ paths:
   /v1/social/{provider}/callback:
     get:
       operationId: get_v1_social_ByProvIDer_callback
-      summary: Get callback
+      summary: Social login callback
       tags:
         - Social
       parameters:
@@ -5003,7 +5153,7 @@ paths:
   /v1/social/{provider}/start:
     get:
       operationId: get_v1_social_ByProvIDer_start
-      summary: Get start
+      summary: Start social login
       tags:
         - Social
       parameters:
@@ -5031,7 +5181,7 @@ paths:
   /v1/tenants/{tenantID}/ldap:
     get:
       operationId: get_v1_tenants_ByTenantID_ldap
-      summary: List LDAP/AD connections
+      summary: List connections
       tags:
         - LDAP
       parameters:
@@ -5064,7 +5214,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     post:
       operationId: post_v1_tenants_ByTenantID_ldap
-      summary: Create an LDAP/AD connection
+      summary: Create connection
       tags:
         - LDAP
       parameters:
@@ -5106,7 +5256,7 @@ paths:
   /v1/tenants/{tenantID}/ldap/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_ldap_ById
-      summary: Delete an LDAP/AD connection
+      summary: Delete connection
       tags:
         - LDAP
       parameters:
@@ -5139,7 +5289,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     get:
       operationId: get_v1_tenants_ByTenantID_ldap_ById
-      summary: Get an LDAP/AD connection
+      summary: Get connection
       tags:
         - LDAP
       parameters:
@@ -5177,7 +5327,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     patch:
       operationId: patch_v1_tenants_ByTenantID_ldap_ById
-      summary: Update an LDAP/AD connection
+      summary: Update connection
       tags:
         - LDAP
       parameters:
@@ -5224,7 +5374,7 @@ paths:
   /v1/tenants/{tenantID}/ldap/{id}/test:
     post:
       operationId: post_v1_tenants_ByTenantID_ldap_ById_test
-      summary: Test-bind an LDAP/AD connection
+      summary: Test bind
       tags:
         - LDAP
       parameters:
@@ -5271,7 +5421,7 @@ paths:
   /v1/tenants/{tenantID}/oauth/devices:
     get:
       operationId: get_v1_tenants_ByTenantID_oauth_devices
-      summary: List a tenant's device authorizations (RFC 8628)
+      summary: List device authorizations
       tags:
         - OIDC
       parameters:
@@ -5305,7 +5455,7 @@ paths:
   /v1/tenants/{tenantID}/oauth/devices/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_oauth_devices_ById
-      summary: Revoke a device authorization
+      summary: Revoke device authorization
       tags:
         - OIDC
       parameters:
@@ -5336,7 +5486,7 @@ paths:
   /v1/tenants/{tenantID}/oidc/clients:
     get:
       operationId: get_v1_tenants_ByTenantID_oidc_clients
-      summary: List a tenant's OIDC clients
+      summary: List OIDC clients
       tags:
         - OIDC
       parameters:
@@ -5369,7 +5519,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     post:
       operationId: post_v1_tenants_ByTenantID_oidc_clients
-      summary: Register an OIDC client under the tenant
+      summary: Create OIDC client
       tags:
         - OIDC
       parameters:
@@ -5413,7 +5563,7 @@ paths:
   /v1/tenants/{tenantID}/oidc/clients/{id}:
     get:
       operationId: get_v1_tenants_ByTenantID_oidc_clients_ById
-      summary: Get an OIDC client
+      summary: Get OIDC client
       tags:
         - OIDC
       parameters:
@@ -5447,7 +5597,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: patch_v1_tenants_ByTenantID_oidc_clients_ById
-      summary: Update an OIDC client (partial)
+      summary: Update OIDC client
       tags:
         - OIDC
       parameters:
@@ -5491,7 +5641,7 @@ paths:
           $ref: '#/components/responses/Unprocessable'
     delete:
       operationId: delete_v1_tenants_ByTenantID_oidc_clients_ById
-      summary: Delete an OIDC client
+      summary: Delete OIDC client
       tags:
         - OIDC
       parameters:
@@ -5522,7 +5672,7 @@ paths:
   /v1/tenants/{tenantID}/oidc/clients/{id}/rotate-secret:
     post:
       operationId: post_v1_tenants_ByTenantID_oidc_clients_ById_rotate_secret
-      summary: Rotate a confidential OIDC client's secret
+      summary: Rotate client secret
       tags:
         - OIDC
       parameters:
@@ -5564,7 +5714,7 @@ paths:
   /v1/tenants/{tenantID}/oauth/grants:
     get:
       operationId: get_v1_tenants_ByTenantID_oauth_grants
-      summary: List a tenant's OAuth consent grants
+      summary: List active grants
       tags:
         - OIDC
       parameters:
@@ -5598,7 +5748,7 @@ paths:
   /v1/tenants/{tenantID}/oauth/grants/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_oauth_grants_ById
-      summary: Revoke an OAuth consent grant
+      summary: Revoke grant
       tags:
         - OIDC
       parameters:
@@ -5627,7 +5777,7 @@ paths:
   /v1/tenants/{tenantID}/saml:
     get:
       operationId: get_v1_tenants_ByTenantID_saml
-      summary: List external-IdP SAML connections (SP side)
+      summary: List connections
       tags:
         - SAML
       parameters:
@@ -5657,7 +5807,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_saml
-      summary: Create an external-IdP SAML connection (SP side)
+      summary: Create connection
       tags:
         - SAML
       parameters:
@@ -5693,7 +5843,7 @@ paths:
   /v1/tenants/{tenantID}/saml-providers:
     get:
       operationId: get_v1_tenants_ByTenantID_saml_providers
-      summary: List downstream SAML service providers (IdP side)
+      summary: List SAML SPs (IdP side)
       tags:
         - SAML
       parameters:
@@ -5723,7 +5873,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_saml_providers
-      summary: Register a downstream SAML service provider (IdP side)
+      summary: Register SAML SP (IdP side)
       tags:
         - SAML
       parameters:
@@ -5759,7 +5909,7 @@ paths:
   /v1/tenants/{tenantID}/saml-providers/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_saml_providers_ById
-      summary: Delete a SAML service provider
+      summary: Delete SAML SP
       tags:
         - SAML
       parameters:
@@ -5787,7 +5937,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     get:
       operationId: get_v1_tenants_ByTenantID_saml_providers_ById
-      summary: Get a SAML service provider
+      summary: Get SAML SP
       tags:
         - SAML
       parameters:
@@ -5819,7 +5969,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: patch_v1_tenants_ByTenantID_saml_providers_ById
-      summary: Update a SAML service provider
+      summary: Update SAML SP
       tags:
         - SAML
       parameters:
@@ -5860,7 +6010,7 @@ paths:
   /v1/tenants/{tenantID}/saml/{id}/test:
     post:
       operationId: post_v1_tenants_ByTenantID_saml_ById_test
-      summary: Preflight-test a SAML connection's config before rollout
+      summary: Test SAML connection
       description: Runs offline checks (entity ID present, https SSO URL, the signing certificate parses and is in its validity window, email attribute mapped) and returns per-check results. No network I/O.
       tags:
         - SAML
@@ -5895,7 +6045,7 @@ paths:
   /v1/tenants/{tenantID}/saml/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_saml_ById
-      summary: Delete a SAML connection
+      summary: Delete connection
       tags:
         - SAML
       parameters:
@@ -5923,7 +6073,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     get:
       operationId: get_v1_tenants_ByTenantID_saml_ById
-      summary: Get a SAML connection
+      summary: Get connection
       tags:
         - SAML
       parameters:
@@ -5955,7 +6105,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     patch:
       operationId: patch_v1_tenants_ByTenantID_saml_ById
-      summary: Update a SAML connection
+      summary: Update connection
       tags:
         - SAML
       parameters:
@@ -5996,7 +6146,7 @@ paths:
   /v1/tenants/{tenantID}/scim:
     get:
       operationId: get_v1_tenants_ByTenantID_scim
-      summary: Get the tenant's SCIM provisioning config/status
+      summary: Get SCIM config
       tags:
         - SCIM
       parameters:
@@ -6030,7 +6180,7 @@ paths:
   /v1/tenants/{tenantID}/scim/token:
     delete:
       operationId: delete_v1_tenants_ByTenantID_scim_token
-      summary: Revoke the tenant's SCIM bearer token
+      summary: Revoke SCIM token
       tags:
         - SCIM
       parameters:
@@ -6058,7 +6208,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     post:
       operationId: post_v1_tenants_ByTenantID_scim_token
-      summary: Rotate the tenant's SCIM bearer token
+      summary: Rotate SCIM token
       tags:
         - SCIM
       parameters:
@@ -6100,7 +6250,7 @@ paths:
   /v1/tenants/{tenantID}/scim/users:
     get:
       operationId: get_v1_tenants_ByTenantID_scim_users
-      summary: 'Admin: list SCIM-provisioned users for a tenant'
+      summary: List provisioned users
       tags:
         - SCIM
       parameters:
@@ -6134,7 +6284,7 @@ paths:
   /v1/tenants/{tenantID}/service-principals:
     get:
       operationId: get_v1_tenants_ByTenantID_service_principals
-      summary: List a tenant's service principals
+      summary: List service principals
       tags:
         - OIDC
       parameters:
@@ -6168,7 +6318,7 @@ paths:
   /v1/tenants/{tenantID}/social/providers:
     get:
       operationId: get_v1_tenants_ByTenantID_social_providers
-      summary: Get providers
+      summary: List providers
       tags:
         - Social
       parameters:
@@ -6202,7 +6352,7 @@ paths:
   /v1/users/{userID}/social/identities:
     get:
       operationId: get_v1_users_ByUserID_social_identities
-      summary: List a user's linked social identities
+      summary: List linked identities
       tags:
         - Social
       parameters:
@@ -6236,7 +6386,7 @@ paths:
   /v1/api-keys:
     post:
       operationId: post_v1_api_keys
-      summary: Create an API key (secret shown once)
+      summary: Create API key
       tags:
         - API Keys
       security:
@@ -6273,7 +6423,7 @@ paths:
   /v1/api-keys/{id}:
     delete:
       operationId: delete_v1_api_keys_ById
-      summary: Revoke an API key
+      summary: Revoke API key
       tags:
         - API Keys
       parameters:
@@ -6297,7 +6447,7 @@ paths:
   /v1/tenants/{tenantID}/api-keys:
     get:
       operationId: get_v1_tenants_ByTenantID_api_keys
-      summary: List a tenant's API keys
+      summary: List API keys
       tags:
         - API Keys
       parameters:
@@ -6328,7 +6478,7 @@ paths:
   /v1/credentials/verify:
     post:
       operationId: post_v1_credentials_verify
-      summary: 'Verifiable Credentials: verify a presented JWT-VC'
+      summary: Verify credential (public)
       description: Any relying party can present a JWT-serialized W3C Verifiable Credential issued by this server; the response reports validity (signature, issuer, expiry, and revocation status) plus the credential subject + claims. No session required.
       tags:
         - Credentials
@@ -6358,7 +6508,7 @@ paths:
   /v1/tenants/{tenantID}/credentials:
     get:
       operationId: get_v1_tenants_ByTenantID_credentials
-      summary: List issued verifiable credentials
+      summary: List credentials
       tags:
         - Credentials
       parameters:
@@ -6389,7 +6539,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_credentials
-      summary: Issue a verifiable credential (returns a signed JWT-VC)
+      summary: Issue credential
       tags:
         - Credentials
       parameters:
@@ -6437,7 +6587,7 @@ paths:
   /v1/tenants/{tenantID}/credentials/{id}/revoke:
     post:
       operationId: post_v1_tenants_ByTenantID_credentials_ById_revoke
-      summary: Revoke an issued credential
+      summary: Revoke credential
       tags:
         - Credentials
       parameters:
@@ -6466,7 +6616,7 @@ paths:
   /v1/agents/token:
     post:
       operationId: post_v1_agents_token
-      summary: 'AI agent: exchange agent credentials for a short-lived scoped token'
+      summary: Mint agent token
       description: An AI agent authenticates with its agent_id + secret (JSON body or HTTP Basic) and receives an ephemeral access token marked actor_type="agent" (+ agent_id claim), verifiable on the standard JWKS path. No user session.
       tags:
         - Agents
@@ -6498,7 +6648,7 @@ paths:
   /v1/tenants/{tenantID}/agents:
     get:
       operationId: get_v1_tenants_ByTenantID_agents
-      summary: List AI-agent identities
+      summary: List agents
       tags:
         - Agents
       parameters:
@@ -6529,7 +6679,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_agents
-      summary: Create an AI-agent identity (returns its secret once)
+      summary: Create agent
       tags:
         - Agents
       parameters:
@@ -6575,7 +6725,7 @@ paths:
   /v1/tenants/{tenantID}/agents/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_agents_ById
-      summary: Delete an AI-agent identity
+      summary: Delete agent
       tags:
         - Agents
       parameters:
@@ -6601,10 +6751,109 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: patch_v1_tenants_ByTenantID_agents_ById
+      summary: Update agent
+      description: Sets or clears the agent's disabled_at. A disabled agent can no longer mint tokens; existing tokens remain valid until they expire.
+      tags:
+        - Agents
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - disabled
+              properties:
+                disabled:
+                  type: boolean
+      responses:
+        '204':
+          description: Updated
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/tenants/{tenantID}/agents/{id}/suspend:
+    post:
+      operationId: post_v1_tenants_ByTenantID_agents_ById_suspend
+      summary: Suspend agent
+      tags:
+        - Agents
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '204':
+          description: Suspended
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/tenants/{tenantID}/agents/kill-all:
+    post:
+      operationId: post_v1_tenants_ByTenantID_agents_kill_all
+      summary: Suspend all agents
+      description: Security incident-response control. Sets disabled_at on all of the tenant's agents in a single transaction. Returns the number suspended.
+      tags:
+        - Agents
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Agents suspended
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suspended:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /v1/tenants/{tenantID}/auth-hooks:
     get:
       operationId: get_v1_tenants_ByTenantID_auth_hooks
-      summary: List a tenant's login Actions/Hooks
+      summary: List auth hooks
       tags:
         - Auth Hooks
       parameters:
@@ -6635,7 +6884,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_auth_hooks
-      summary: Add a synchronous login hook (post-credential allow/deny gate)
+      summary: Create auth hook
       tags:
         - Auth Hooks
       parameters:
@@ -6680,7 +6929,7 @@ paths:
   /v1/tenants/{tenantID}/auth-hooks/{id}:
     patch:
       operationId: patch_v1_tenants_ByTenantID_auth_hooks_ById
-      summary: Update a hook (enabled / fail_open)
+      summary: Update auth hook
       tags:
         - Auth Hooks
       parameters:
@@ -6719,7 +6968,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: delete_v1_tenants_ByTenantID_auth_hooks_ById
-      summary: Remove a hook
+      summary: Delete auth hook
       tags:
         - Auth Hooks
       parameters:
@@ -6748,7 +6997,7 @@ paths:
   /v1/vault/{name}:
     get:
       operationId: get_v1_vault_ByName
-      summary: 'Token vaulting: fetch a vault secret by name (scoped principal, e.g. an AI agent)'
+      summary: Vault read by name
       description: Returns a secret's value to a caller holding a "vault:<name>" (or "vault:read") scope — e.g. an AI agent fetching a credential at runtime without embedding it. Tenant comes from the caller's token; every access is audited.
       tags:
         - Secrets
@@ -6782,7 +7031,7 @@ paths:
   /v1/tenants/{tenantID}/secrets:
     get:
       operationId: get_v1_tenants_ByTenantID_secrets
-      summary: Get secrets
+      summary: List secrets
       tags:
         - Secrets
       parameters:
@@ -6815,7 +7064,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     post:
       operationId: post_v1_tenants_ByTenantID_secrets
-      summary: Create secrets
+      summary: Create secret
       tags:
         - Secrets
       parameters:
@@ -6857,7 +7106,7 @@ paths:
   /v1/tenants/{tenantID}/secrets/{id}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_secrets_ById
-      summary: Delete secrets
+      summary: Delete secret
       tags:
         - Secrets
       parameters:
@@ -6890,7 +7139,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     patch:
       operationId: patch_v1_tenants_ByTenantID_secrets_ById
-      summary: Update secrets
+      summary: Rotate secret
       tags:
         - Secrets
       parameters:
@@ -6937,7 +7186,7 @@ paths:
   /v1/tenants/{tenantID}/secrets/{id}/reveal:
     post:
       operationId: post_v1_tenants_ByTenantID_secrets_ById_reveal
-      summary: Create reveal
+      summary: Reveal secret
       tags:
         - Secrets
       parameters:
@@ -6984,7 +7233,7 @@ paths:
   /v1/tenants/{tenantID}/webhooks:
     get:
       operationId: get_v1_tenants_ByTenantID_webhooks
-      summary: Get webhooks
+      summary: List webhooks
       tags:
         - Webhooks
       parameters:
@@ -7018,7 +7267,7 @@ paths:
   /v1/webhooks:
     post:
       operationId: post_v1_webhooks
-      summary: Create webhooks
+      summary: Create webhook
       tags:
         - Webhooks
       security:
@@ -7054,7 +7303,7 @@ paths:
   /v1/webhooks/{id}:
     get:
       operationId: get_v1_webhooks_ById
-      summary: Get a single webhook subscription
+      summary: Get webhook
       tags:
         - Webhooks
       parameters:
@@ -7082,7 +7331,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: delete_v1_webhooks_ById
-      summary: Delete webhooks
+      summary: Disable webhook
       tags:
         - Webhooks
       parameters:
@@ -7111,7 +7360,7 @@ paths:
   /v1/webhooks/{id}/deliveries:
     get:
       operationId: get_v1_webhooks_ById_deliveries
-      summary: List recent delivery attempts for a webhook (with payload + response)
+      summary: List deliveries
       tags:
         - Webhooks
       parameters:
@@ -7143,7 +7392,7 @@ paths:
   /v1/webhooks/{id}/deliveries/{deliveryID}/retry:
     post:
       operationId: post_v1_webhooks_ById_deliveries_ByDeliveryID_retry
-      summary: Re-queue a webhook delivery for immediate redelivery
+      summary: Retry delivery
       tags:
         - Webhooks
       parameters:
@@ -7172,7 +7421,7 @@ paths:
   /v1/webhooks/{id}/test:
     post:
       operationId: post_v1_webhooks_ById_test
-      summary: Create test
+      summary: Test webhook
       tags:
         - Webhooks
       parameters:
@@ -7211,10 +7460,91 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+  /v1/tenants/{tenantID}/rate-limits:
+    get:
+      operationId: get_v1_tenants_ByTenantID_rate_limits
+      summary: Get rate limits
+      description: Returns the effective per-bucket limits (tenant, user, api_key) — the platform defaults merged with any tenant-specific overrides.
+      tags:
+        - Rate Limits
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '200':
+          description: Effective limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantRateLimits'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    put:
+      operationId: put_v1_tenants_ByTenantID_rate_limits
+      summary: Set rate limits
+      tags:
+        - Rate Limits
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TenantRateLimits'
+      responses:
+        '200':
+          description: Updated effective limits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TenantRateLimits'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    delete:
+      operationId: delete_v1_tenants_ByTenantID_rate_limits
+      summary: Reset rate limits
+      tags:
+        - Rate Limits
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+        - apiKeyAuth: []
+      responses:
+        '204':
+          description: Overrides cleared
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /healthz:
     get:
       operationId: get_healthz
-      summary: Get healthz
+      summary: Liveness
       tags:
         - Health
       security: []
@@ -7232,7 +7562,7 @@ paths:
   /metrics:
     get:
       operationId: get_metrics
-      summary: Get metrics
+      summary: Metrics (Prometheus)
       tags:
         - Health
       security: []
@@ -7246,7 +7576,7 @@ paths:
   /readyz:
     get:
       operationId: get_readyz
-      summary: Get readyz
+      summary: Readiness
       tags:
         - Health
       security: []
@@ -7265,7 +7595,7 @@ paths:
   /v1/admin/outbox/dlq:
     get:
       operationId: get_v1_admin_outbox_dlq
-      summary: Get dlq
+      summary: List DLQ events
       tags:
         - Admin
       security:
@@ -7293,7 +7623,7 @@ paths:
   /v1/tenants/{tenantID}/billing/checkout:
     post:
       operationId: post_v1_tenants_ByTenantID_billing_checkout
-      summary: Start a paid plan change (hosted Stripe/Razorpay checkout)
+      summary: Start checkout
       description: 'Returns a hosted-payment URL to redirect the admin to, or {status:"active"} when the plan is free or no card provider serves the currency (direct activation). Provider routing: INR → Razorpay, else → Stripe. The provider''s webhook later activates the subscription.'
       tags:
         - Billing
@@ -7347,7 +7677,7 @@ paths:
   /v1/billing/webhooks/{provider}:
     post:
       operationId: post_v1_billing_webhooks_ByProvider
-      summary: Payment provider webhook (Stripe/Razorpay) — signature-verified
+      summary: Payment webhook
       description: Receives provider payment events. Authenticated by the provider's webhook signature (no user session); on a verified successful payment the referenced checkout is completed idempotently.
       tags:
         - Billing
@@ -7378,7 +7708,7 @@ paths:
   /v1/billing/plans:
     get:
       operationId: get_v1_billing_plans
-      summary: Get plans
+      summary: List plans
       tags:
         - Billing
       security:
@@ -7406,7 +7736,7 @@ paths:
   /v1/gdpr/purge:
     post:
       operationId: post_v1_gdpr_purge
-      summary: Create purge
+      summary: Create purge request
       tags:
         - GDPR
       security:
@@ -7442,7 +7772,7 @@ paths:
   /v1/gdpr/purge/{id}:
     delete:
       operationId: delete_v1_gdpr_purge_ById
-      summary: Delete purge
+      summary: Cancel purge request
       tags:
         - GDPR
       parameters:
@@ -7471,7 +7801,7 @@ paths:
   /v1/tenants/{tenantID}/analytics/overview:
     get:
       operationId: get_v1_tenants_ByTenantID_analytics_overview
-      summary: Get overview
+      summary: Tenant analytics overview
       tags:
         - Analytics
       parameters:
@@ -7505,7 +7835,7 @@ paths:
   /v1/tenants/{tenantID}/audit:
     get:
       operationId: get_v1_tenants_ByTenantID_audit
-      summary: Get audit
+      summary: List audit events
       tags:
         - Audit
       parameters:
@@ -7539,7 +7869,7 @@ paths:
   /v1/tenants/{tenantID}/audit/verify:
     get:
       operationId: get_v1_tenants_ByTenantID_audit_verify
-      summary: Get verify
+      summary: Verify audit chain
       tags:
         - Audit
       parameters:
@@ -7573,7 +7903,7 @@ paths:
   /v1/tenants/{tenantID}/billing/invoices:
     get:
       operationId: get_v1_tenants_ByTenantID_billing_invoices
-      summary: Get invoices
+      summary: List invoices
       tags:
         - Billing
       parameters:
@@ -7640,7 +7970,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     put:
       operationId: put_v1_tenants_ByTenantID_billing_subscription
-      summary: Replace subscription
+      summary: Subscribe / change plan
       tags:
         - Billing
       parameters:
@@ -7682,7 +8012,7 @@ paths:
   /v1/tenants/{tenantID}/billing/subscription/cancel:
     post:
       operationId: post_v1_tenants_ByTenantID_billing_subscription_cancel
-      summary: Create cancel
+      summary: Cancel at period end
       tags:
         - Billing
       parameters:
@@ -7724,7 +8054,7 @@ paths:
   /v1/tenants/{tenantID}/email-templates:
     get:
       operationId: get_v1_tenants_ByTenantID_email_templates
-      summary: Get email templates
+      summary: List templates
       tags:
         - Email Templates
       parameters:
@@ -7758,7 +8088,7 @@ paths:
   /v1/tenants/{tenantID}/email-templates/{key}:
     delete:
       operationId: delete_v1_tenants_ByTenantID_email_templates_ByKey
-      summary: Delete email templates
+      summary: Reset to default
       tags:
         - Email Templates
       parameters:
@@ -7791,7 +8121,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     get:
       operationId: get_v1_tenants_ByTenantID_email_templates_ByKey
-      summary: Get email templates
+      summary: Get template
       tags:
         - Email Templates
       parameters:
@@ -7829,7 +8159,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     put:
       operationId: put_v1_tenants_ByTenantID_email_templates_ByKey
-      summary: Replace email templates
+      summary: Override template
       tags:
         - Email Templates
       parameters:
@@ -7876,7 +8206,7 @@ paths:
   /v1/tenants/{tenantID}/email-templates/{key}/preview:
     post:
       operationId: post_v1_tenants_ByTenantID_email_templates_ByKey_preview
-      summary: Create preview
+      summary: Preview template
       tags:
         - Email Templates
       parameters:
@@ -7923,7 +8253,7 @@ paths:
   /v1/tenants/{tenantID}/gdpr/purge:
     get:
       operationId: get_v1_tenants_ByTenantID_gdpr_purge
-      summary: Get purge
+      summary: List purge requests
       tags:
         - GDPR
       parameters:
@@ -7957,7 +8287,7 @@ paths:
   /v1/tenants/{tenantID}/log-sinks:
     get:
       operationId: get_v1_tenants_ByTenantID_log_sinks
-      summary: List a tenant's SIEM / log-streaming sinks
+      summary: List log sinks
       tags:
         - Log Sinks
       parameters:
@@ -7988,7 +8318,7 @@ paths:
           $ref: '#/components/responses/Forbidden'
     post:
       operationId: post_v1_tenants_ByTenantID_log_sinks
-      summary: Add a SIEM / log-streaming sink (Splunk HEC, Datadog, or HTTP)
+      summary: Create log sink
       tags:
         - Log Sinks
       parameters:
@@ -8038,7 +8368,7 @@ paths:
   /v1/tenants/{tenantID}/log-sinks/{id}:
     patch:
       operationId: patch_v1_tenants_ByTenantID_log_sinks_ById
-      summary: Enable or disable a sink
+      summary: Enable/disable sink
       tags:
         - Log Sinks
       parameters:
@@ -8075,7 +8405,7 @@ paths:
           $ref: '#/components/responses/NotFound'
     delete:
       operationId: delete_v1_tenants_ByTenantID_log_sinks_ById
-      summary: Remove a sink
+      summary: Delete sink
       tags:
         - Log Sinks
       parameters:
@@ -8104,7 +8434,7 @@ paths:
   /v1/tenants/{tenantID}/retention:
     get:
       operationId: get_v1_tenants_ByTenantID_retention
-      summary: Get retention
+      summary: Get retention policy
       tags:
         - Data Retention
       parameters:
@@ -8137,7 +8467,7 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
     put:
       operationId: put_v1_tenants_ByTenantID_retention
-      summary: Replace retention
+      summary: Update retention policy
       tags:
         - Data Retention
       parameters:
@@ -8179,7 +8509,7 @@ paths:
   /v1/tenants/{tenantID}/retention/preview:
     post:
       operationId: post_v1_tenants_ByTenantID_retention_preview
-      summary: Create preview
+      summary: Preview ripe users
       tags:
         - Data Retention
       parameters:
@@ -8221,7 +8551,7 @@ paths:
   /v1/tenants/{tenantID}/retention/run:
     post:
       operationId: post_v1_tenants_ByTenantID_retention_run
-      summary: Create run
+      summary: Run purge now
       tags:
         - Data Retention
       parameters:
@@ -8263,7 +8593,7 @@ paths:
   /v1/notifications:
     get:
       operationId: get_v1_notifications
-      summary: List the current user's in-app notifications + unread count
+      summary: List notifications
       tags:
         - Notifications
       security:
@@ -8289,7 +8619,7 @@ paths:
   /v1/notifications/mark-all-read:
     post:
       operationId: post_v1_notifications_mark_all_read
-      summary: Mark all of the current user's notifications read
+      summary: Mark all read
       tags:
         - Notifications
       security:
@@ -9369,6 +9699,26 @@ components:
           type: string
           format: date-time
           nullable: true
+    RateLimitBucket:
+      type: object
+      description: A single token-bucket limit (rate tokens/sec, burst capacity).
+      properties:
+        rate:
+          type: number
+          description: Sustained tokens per second.
+        capacity:
+          type: integer
+          description: Maximum burst capacity.
+    TenantRateLimits:
+      type: object
+      description: Per-bucket rate limits for a tenant. On GET these are the effective values (defaults merged with overrides); on PUT, any bucket supplied is upserted as an override.
+      properties:
+        tenant:
+          $ref: '#/components/schemas/RateLimitBucket'
+        user:
+          $ref: '#/components/schemas/RateLimitBucket'
+        api_key:
+          $ref: '#/components/schemas/RateLimitBucket'
   parameters:
     Limit:
       name: limit

@@ -16,8 +16,8 @@ interface Props {
 const { title, text, primary, secondary } = Astro.props;
 ---
 
-<section class="container">
-  <div class="relative grid justify-items-center gap-[1.4rem] overflow-hidden rounded-xl bg-[#100f0e] px-6 py-12 text-center text-[#fafafa] sm:px-12 dark:border dark:border-rule dark:bg-surface-2">
+<section class="container py-[clamp(3rem,7vw,5.5rem)]">
+  <div class="relative grid justify-items-center gap-[1.4rem] overflow-hidden rounded-xl bg-[#100f0e] px-6 py-12 text-center text-[#fafafa] shadow-(--shadow-lg) sm:px-12 dark:border dark:border-rule-strong dark:bg-surface-2">
     <div
       class="pointer-events-none absolute inset-0"
       style="background:radial-gradient(50% 80% at 50% 0%, color-mix(in oklab, var(--brand) 30%, transparent), transparent 70%)"
