@@ -1,13 +1,19 @@
 ---
 import BaseLayout from "../layouts/BaseLayout.astro";
 import Hero from "../components/Hero.astro";
+import TrustedBy from "../components/TrustedBy.astro";
 import LogoMarquee from "../components/LogoMarquee.astro";
+import WhyQeet from "../components/WhyQeet.astro";
 import ProductSuite from "../components/ProductSuite.astro";
 import MetricBand from "../components/MetricBand.astro";
+import PlatformMetrics from "../components/PlatformMetrics.astro";
 import ApiCatalog from "../components/ApiCatalog.astro";
 import DocsPreview from "../components/DocsPreview.astro";
 import FeatureCard from "../components/FeatureCard.astro";
 import EnterpriseGrid from "../components/EnterpriseGrid.astro";
+import Testimonials from "../components/Testimonials.astro";
+import PricingPreview from "../components/PricingPreview.astro";
+import FAQ from "../components/FAQ.astro";
 import CodeTabs from "../components/CodeTabs.astro";
 import CalloutCTA from "../components/CalloutCTA.astro";
 import Icon from "../components/Icon.astro";
@@ -87,6 +93,36 @@ const features = [
     title: "Built for enterprise",
     body: "Scopes, audit trails, rate limits and multi-tenancy are first-class across the surface.",
   },
+  {
+    icon: "sparkles",
+    title: "OpenAPI-first codegen",
+    body: "Every schema is machine-readable. Generate typed clients, mocks, and validators directly from the spec.",
+  },
+  {
+    icon: "history",
+    title: "Idempotent retries",
+    body: "Idempotency keys on all mutating endpoints mean retries are always safe — no duplicate side effects.",
+  },
+  {
+    icon: "gauge",
+    title: "Rate limit headers",
+    body: "Every response includes X-RateLimit-* headers so you can back off intelligently before hitting a wall.",
+  },
+  {
+    icon: "webhook",
+    title: "Signed webhooks",
+    body: "All webhook deliveries include an HMAC signature — verify authenticity before processing any event.",
+  },
+  {
+    icon: "users",
+    title: "Multi-tenant by design",
+    body: "Organizations, tenant isolation, and permission inheritance are first-class — not afterthoughts.",
+  },
+  {
+    icon: "bolt",
+    title: "AI-agent credentials",
+    body: "Issue scoped machine identities for AI agents with expiry, least-privilege, and full audit trails.",
+  },
 ] as const;
 
 const sectionHead = "mb-11 max-w-[54ch]";
@@ -94,10 +130,14 @@ const h2 = "mt-3 text-[clamp(1.8rem,3.6vw,2.65rem)]";
 const lead = "mt-3.5 text-[1.05rem] text-ink-muted";
 ---
 
-<BaseLayout title="Qeet APIs">
+<BaseLayout title="Qeet APIs — One platform for every API your business needs">
+  <!-- 1. Hero -->
   <Hero />
 
-  <!-- standards marquee -->
+  <!-- 2. Trusted by -->
+  <TrustedBy />
+
+  <!-- 3. Open standards marquee -->
   <section class="border-y border-rule bg-surface py-7">
     <div class="container container-wide">
       <p class="mb-5 text-center font-ui text-[0.8rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">
@@ -107,8 +147,11 @@ const lead = "mt-3.5 text-[1.05rem] text-ink-muted";
     </div>
   </section>
 
-  <!-- product suite -->
-  <section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="products">
+  <!-- 4. Why Qeet APIs -->
+  <WhyQeet />
+
+  <!-- 5. Product suite -->
+  <section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="products">
     <div class="container container-wide">
       <div class={sectionHead} data-reveal>
         <span class="eyebrow inline-flex items-center gap-2.5">
@@ -126,34 +169,16 @@ const lead = "mt-3.5 text-[1.05rem] text-ink-muted";
     </div>
   </section>
 
-  <!-- reliability band (dark, full-bleed) -->
+  <!-- 6. Reliability band (dark, full-bleed) -->
   <MetricBand />
 
-  <!-- API catalog -->
-  <section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="apis">
-    <div class="container container-wide">
-      <div class={sectionHead} data-reveal>
-        <span class="eyebrow inline-flex items-center gap-2.5">
-          <span class="h-px w-7 bg-brand/60"></span>
-          Catalog
-        </span>
-        <h2 class={h2}>Open a reference now.</h2>
-        <p class={lead}>
-          Browse the full surface across products. Each reference is generated
-          from a versioned OpenAPI&nbsp;3.1 spec, with a live request console.
-        </p>
-      </div>
-      <ApiCatalog />
-    </div>
-  </section>
-
-  <!-- quickstart teaser -->
+  <!-- 7. Developer experience / quickstart -->
   <section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="quickstart">
     <div class="container container-wide grid items-start gap-12 lg:grid-cols-2">
       <div data-reveal>
         <span class="eyebrow inline-flex items-center gap-2.5">
           <span class="h-px w-7 bg-brand/60"></span>
-          Quickstart
+          Developer experience
         </span>
         <h2 class={`${h2} mb-6`}>Your first request in under a minute.</h2>
         <ol class="m-0 grid list-none gap-4 p-0">
@@ -183,8 +208,29 @@ const lead = "mt-3.5 text-[1.05rem] text-ink-muted";
     </div>
   </section>
 
-  <!-- documentation preview -->
-  <section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="docs">
+  <!-- 8. Platform metrics (dark, full-bleed) -->
+  <PlatformMetrics />
+
+  <!-- 9. API catalog -->
+  <section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="apis">
+    <div class="container container-wide">
+      <div class={sectionHead} data-reveal>
+        <span class="eyebrow inline-flex items-center gap-2.5">
+          <span class="h-px w-7 bg-brand/60"></span>
+          Catalog
+        </span>
+        <h2 class={h2}>Open a reference now.</h2>
+        <p class={lead}>
+          Browse the full surface across products. Each reference is generated
+          from a versioned OpenAPI&nbsp;3.1 spec, with a live request console.
+        </p>
+      </div>
+      <ApiCatalog />
+    </div>
+  </section>
+
+  <!-- 10. Documentation preview -->
+  <section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="docs">
     <div class="container container-wide">
       <div class={sectionHead} data-reveal>
         <span class="eyebrow inline-flex items-center gap-2.5">
@@ -201,8 +247,8 @@ const lead = "mt-3.5 text-[1.05rem] text-ink-muted";
     </div>
   </section>
 
-  <!-- features -->
-  <section class="py-[clamp(3.5rem,8vw,6.5rem)]">
+  <!-- 11. Features grid (12 cards) -->
+  <section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]">
     <div class="container container-wide">
       <div class={sectionHead} data-reveal>
         <span class="eyebrow inline-flex items-center gap-2.5">
@@ -210,15 +256,19 @@ const lead = "mt-3.5 text-[1.05rem] text-ink-muted";
           Why developers ship faster
         </span>
         <h2 class={h2}>A reference that works like a tool.</h2>
+        <p class={lead}>
+          Every detail you expect from a best-in-class API platform — built in,
+          not bolted on.
+        </p>
       </div>
-      <div class="grid gap-7 sm:grid-cols-2 lg:grid-cols-3">
+      <div class="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {
           features.map((f, i) => (
             <FeatureCard
               icon={f.icon}
               title={f.title}
               data-reveal
-              style={`transition-delay:${i * 55}ms`}
+              style={`transition-delay:${(i % 4) * 55}ms`}
             >
               {f.body}
             </FeatureCard>
@@ -228,8 +278,8 @@ const lead = "mt-3.5 text-[1.05rem] text-ink-muted";
     </div>
   </section>
 
-  <!-- enterprise & security -->
-  <section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="enterprise">
+  <!-- 12. Enterprise & security -->
+  <section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="enterprise">
     <div class="container container-wide">
       <div class={sectionHead} data-reveal>
         <span class="eyebrow inline-flex items-center gap-2.5">
@@ -246,18 +296,26 @@ const lead = "mt-3.5 text-[1.05rem] text-ink-muted";
     </div>
   </section>
 
+  <!-- 13. Testimonials -->
+  <Testimonials />
+
+  <!-- 14. Pricing preview -->
+  <PricingPreview />
+
+  <!-- 15. FAQ -->
+  <FAQ />
+
+  <!-- 16. Final CTA -->
   <CalloutCTA
-    title="Build on Qeet."
-    text="Open the interactive reference, authenticate, and ship your first integration today."
+    title="Build on Qeet APIs."
+    text="One platform for every API your business needs. Open the reference, authenticate, and ship your first integration today."
     primary={{ href: LINKS.reference, label: "Open the API Reference", icon: "book" }}
     secondary={{ href: LINKS.console, label: "Go to Console", icon: "arrow-up-right", external: true }}
   />
 </BaseLayout>
 
 <script>
-  // Dependency-free scroll choreography: reveal-on-view + count-up. Uses the
-  // browser's IntersectionObserver + Web Animations primitives (the same ones
-  // animation libs wrap). Degrades safely — see the head guard + global.css.
+  // Dependency-free scroll choreography: reveal-on-view + count-up.
   (() => {
     const root = document.documentElement;
     const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;

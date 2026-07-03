@@ -17,10 +17,14 @@
   "dependencies": {
     "@astrojs/mdx": "^7.0.0",
     "@astrojs/sitemap": "^3.7.3",
+    "@iconify-json/simple-icons": "^1.2.88",
+    "@lucide/astro": "^1.23.0",
     "@scalar/astro": "^0.4.6",
     "@tailwindcss/typography": "^0.5.20",
     "@tailwindcss/vite": "^4.3.2",
     "astro": "^7.0.3",
+    "astro-icon": "^1.1.5",
+    "simple-icons": "^16.24.1",
     "tailwindcss": "^4.3.2"
   }
 }

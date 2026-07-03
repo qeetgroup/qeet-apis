@@ -386,6 +386,18 @@ html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
   }
 }
 
+/* Pricing card: featured variant gets a brand glow shadow. */
+.pricing-card--featured {
+  box-shadow:
+    0 0 0 1px var(--brand),
+    0 0 32px color-mix(in oklab, var(--brand) 20%, transparent);
+}
+
+/* Nav dropdown z-layering */
+.nav-panel {
+  z-index: 300;
+}
+
 /* Shiki dual-theme for MDX fenced code (generated markup; needs !important to
  * beat the inline default-color styles). Switches on [data-theme="dark"]. */
 .astro-code,

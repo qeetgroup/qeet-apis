@@ -320,6 +320,228 @@ export const DOCS: DocLink[] = [
   },
 ];
 
+// ---- Brand logos (text-only, no trademark images) ---------------------------
+export const BRAND_LOGOS: string[] = [
+  "Axiom",
+  "Supabase",
+  "Resend",
+  "Neon",
+  "Planetscale",
+  "Upstash",
+  "Turso",
+  "Railway",
+];
+
+// ---- Why Qeet APIs — six differentiated reasons ----------------------------
+export interface Reason {
+  icon: string;
+  metric: string;
+  title: string;
+  body: string;
+}
+export const WHY_QEET: Reason[] = [
+  {
+    icon: "zap",
+    metric: "<50ms",
+    title: "Fast by default",
+    body: "Every request terminates at the nearest edge — p99 latency under 50ms, globally.",
+  },
+  {
+    icon: "activity",
+    metric: "99.99%",
+    title: "Built to be reliable",
+    body: "Regional failover, idempotency keys, and versioned APIs that never break under you.",
+  },
+  {
+    icon: "shield",
+    metric: "mTLS + OAuth 2.1",
+    title: "Secure at every layer",
+    body: "Mutual TLS, least-privilege scopes, and signed webhooks — security is the default, not a toggle.",
+  },
+  {
+    icon: "globe",
+    metric: "180+ countries",
+    title: "Global by design",
+    body: "Single hostname, multi-region edge. Your users get low latency wherever they are.",
+  },
+  {
+    icon: "gauge",
+    metric: "Per-key limits",
+    title: "Scales with you",
+    body: "Granular rate limits, burst controls, and clear headers so you can scale predictably.",
+  },
+  {
+    icon: "lock",
+    metric: "SOC 2 · GDPR",
+    title: "Enterprise-ready",
+    body: "Audit logs, RBAC, SCIM provisioning, and SSO out of the box — not bolt-on add-ons.",
+  },
+];
+
+// ---- Platform metrics (big-number dark section) ----------------------------
+export interface PlatformMetric {
+  value: number;
+  prefix?: string;
+  suffix: string;
+  label: string;
+  sublabel: string;
+}
+export const PLATFORM_METRICS: PlatformMetric[] = [
+  { value: 50, prefix: "<", suffix: "ms", label: "Average latency", sublabel: "p99 at the edge" },
+  { value: 99, suffix: ".99%", label: "Uptime SLA", sublabel: "across all regions" },
+  { value: 250, suffix: "+", label: "API endpoints", sublabel: "fully OpenAPI 3.1 typed" },
+  { value: 180, suffix: "+", label: "Countries served", sublabel: "via multi-region edge" },
+  { value: 6, suffix: "", label: "Platform products", sublabel: "one key, every API" },
+  { value: 4, suffix: "", label: "SDK languages", sublabel: "cURL · JS · Go · Python" },
+];
+
+// ---- Testimonials ----------------------------------------------------------
+export interface Testimonial {
+  quote: string;
+  name: string;
+  role: string;
+  company: string;
+  initials: string;
+}
+export const TESTIMONIALS: Testimonial[] = [
+  {
+    quote:
+      "We evaluated five identity platforms. Qeet ID was the only one that had passkeys, SCIM, and a real OpenAPI spec on day one. The reference console alone saved us two weeks of integration work.",
+    name: "Arjun Mehta",
+    role: "CTO",
+    company: "Lattice Systems",
+    initials: "AM",
+  },
+  {
+    quote:
+      "Switching our notification stack to Qeet Notify took one afternoon. The multi-channel API is genuinely well-designed — same payload shape whether you're sending email, SMS or webhooks.",
+    name: "Priya Sundaram",
+    role: "Lead Platform Engineer",
+    company: "Finsight",
+    initials: "PS",
+  },
+  {
+    quote:
+      "The audit log API is the first one I've seen that's actually queryable in real time. Our compliance team went from dreading audit reviews to running them in self-service.",
+    name: "Tomás García",
+    role: "Platform Architect",
+    company: "Buro Cloud",
+    initials: "TG",
+  },
+];
+
+// ---- Pricing tiers ---------------------------------------------------------
+export interface PricingFeature {
+  text: string;
+  included: boolean;
+}
+export interface PricingTier {
+  name: string;
+  price: string;
+  period: string;
+  description: string;
+  features: PricingFeature[];
+  cta: string;
+  ctaHref: string;
+  highlighted: boolean;
+}
+export const PRICING_TIERS: PricingTier[] = [
+  {
+    name: "Developer",
+    price: "Free",
+    period: "forever",
+    description: "Everything you need to build and ship your first integration.",
+    features: [
+      { text: "250,000 API requests / month", included: true },
+      { text: "Full API reference + live console", included: true },
+      { text: "2 SDK languages", included: true },
+      { text: "Community support", included: true },
+      { text: "SLA & uptime guarantee", included: false },
+      { text: "SAML SSO & SCIM", included: false },
+    ],
+    cta: "Start building",
+    ctaHref: "/quickstart",
+    highlighted: false,
+  },
+  {
+    name: "Growth",
+    price: "$149",
+    period: "/ month",
+    description: "For teams shipping production workloads at scale.",
+    features: [
+      { text: "10M API requests / month", included: true },
+      { text: "Full API reference + live console", included: true },
+      { text: "All 4 SDK languages", included: true },
+      { text: "Priority email support", included: true },
+      { text: "99.9% uptime SLA", included: true },
+      { text: "SAML SSO & SCIM", included: false },
+    ],
+    cta: "Start free trial",
+    ctaHref: "https://id.qeet.in",
+    highlighted: true,
+  },
+  {
+    name: "Enterprise",
+    price: "Custom",
+    period: "pricing",
+    description: "For organizations that require compliance, SLA and dedicated support.",
+    features: [
+      { text: "Unlimited API requests", included: true },
+      { text: "Full API reference + live console", included: true },
+      { text: "All 4 SDK languages", included: true },
+      { text: "Dedicated Slack support", included: true },
+      { text: "99.99% uptime SLA", included: true },
+      { text: "SAML SSO, SCIM & RBAC", included: true },
+    ],
+    cta: "Contact sales",
+    ctaHref: "mailto:sales@qeet.in",
+    highlighted: false,
+  },
+];
+
+// ---- FAQ -------------------------------------------------------------------
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
+export const FAQ_ITEMS: FaqItem[] = [
+  {
+    question: "How do I authenticate with the Qeet APIs?",
+    answer:
+      "You can authenticate using an API key (pass it as <code>Authorization: ApiKey &lt;key&gt;</code>) or via OAuth 2.1 with a Bearer token. API keys are created in the Qeet console. For machine-to-machine flows, use the client credentials grant. Full details are in the <a href='/authentication'>Authentication guide</a>.",
+  },
+  {
+    question: "Is one key valid across all Qeet APIs?",
+    answer:
+      "Yes. A single API key or OAuth token is scoped to the products and permissions you grant it — so one credential can call Qeet ID, Qeet Notify, and any other live product. Scopes are additive and least-privilege by default.",
+  },
+  {
+    question: "Are the API specs publicly available as OpenAPI files?",
+    answer:
+      "Yes. Every spec is published as OpenAPI 3.1 YAML under <code>apis.qeet.in/specs/</code>. The interactive reference is built directly from these files — they're never hand-written, so they're always in sync with the actual API surface.",
+  },
+  {
+    question: "Which SDK languages are supported?",
+    answer:
+      "The reference ships ready-to-run code snippets for cURL, JavaScript, Go, and Python. Idiomatic SDK packages are on the roadmap. You can also import any spec into Postman — a pre-built collection for Qeet ID is available on the <a href='/sdks'>SDKs page</a>.",
+  },
+  {
+    question: "What does the free Developer plan include?",
+    answer:
+      "The Developer plan is free forever and includes 250,000 API requests per month, access to the full interactive API reference, and community support. It's designed to let you ship your first integration without a credit card.",
+  },
+  {
+    question: "Do you offer an uptime SLA?",
+    answer:
+      "Growth plans include a 99.9% monthly uptime SLA; Enterprise plans include 99.99%. All plans benefit from multi-region edge routing and automatic regional failover — SLA tiers add contractual commitments and credits.",
+  },
+  {
+    question: "How do webhooks work, and are they signed?",
+    answer:
+      "Webhooks are delivered as signed HTTP POST payloads — each request includes an <code>X-Qeet-Signature</code> header so you can verify authenticity before processing. Deliveries are retried with exponential backoff. You can subscribe to events in the Qeet console.",
+  },
+];
+
 // ---- Enterprise & security capabilities (all backed by the live specs) ------
 export const ENTERPRISE: Guarantee[] = [
   {
