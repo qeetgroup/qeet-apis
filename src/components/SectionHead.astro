@@ -1,0 +1,47 @@
+---
+// Shared section header: eyebrow (with a short brand rule), display H2 and an
+// optional lead paragraph (default slot). `tone="dark"` recolors it for use over
+// the full-bleed dark bands. `title` accepts inline HTML (e.g. a gradient span).
+interface Props {
+  eyebrow: string;
+  title: string;
+  align?: "left" | "center";
+  tone?: "light" | "dark";
+  class?: string;
+}
+const {
+  eyebrow,
+  title,
+  align = "left",
+  tone = "light",
+  class: className,
+} = Astro.props;
+const dark = tone === "dark";
+const center = align === "center";
+---
+
+<div
+  class={`max-w-[58ch] ${center ? "mx-auto text-center" : ""} ${className ?? ""}`}
+  data-reveal
+>
+  <span
+    class={`eyebrow inline-flex items-center gap-2.5 ${dark ? "text-brand-bright" : ""}`}
+  >
+    <span class={`h-px w-7 ${dark ? "bg-brand-bright/70" : "bg-brand/60"}`}></span>
+    {eyebrow}
+  </span>
+  <h2
+    class={`mt-4 text-[clamp(2.15rem,4.8vw,4rem)] leading-[0.98] tracking-[-0.04em] ${dark ? "text-white" : ""}`}
+    set:html={title}
+  />
+  {
+    Astro.slots.has("default") && (
+      <p
+        class={`mt-4 text-[1.08rem] leading-relaxed ${dark ? "" : "text-ink-muted"}`}
+        style={dark ? "color:color-mix(in oklab,#fff 72%,transparent)" : undefined}
+      >
+        <slot />
+      </p>
+    )
+  }
+</div>

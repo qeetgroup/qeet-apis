@@ -46,16 +46,19 @@
   --brand-faint: color-mix(in oklab, var(--brand) 6%, transparent);
 
   /* neutrals — light */
-  --bg: #fcfcfc;
+  --bg: #fbfaf8;
   --surface: #ffffff;
-  --surface-2: #f6f6f5;
-  --surface-3: #efeeec;
+  --surface-2: #f6f5f2;
+  --surface-3: #eceae5;
+  --surface-shell: color-mix(in oklab, var(--ink) 4%, var(--surface));
+  --surface-core: #ffffff;
   --ink: #0a0a0a;
   --ink-muted: #474645;
   --ink-subtle: #6e6c6a;
   --ink-faint: #908d8a;
-  --rule: #e7e5e2;
-  --rule-strong: #d4d1cd;
+  --rule: #e7e3dc;
+  --rule-strong: #d2ccc2;
+  --rule-hairline: color-mix(in oklab, var(--ink) 9%, transparent);
 
   /* semantic */
   --success: #2f6b3e;
@@ -71,16 +74,20 @@
   --m-delete: #b3261e;
 
   /* elevation */
-  --shadow-sm: 0 1px 2px 0 color-mix(in oklab, var(--ink) 7%, transparent);
-  --shadow-md: 0 4px 16px -4px color-mix(in oklab, var(--ink) 12%, transparent), 0 2px 6px -2px color-mix(in oklab, var(--ink) 8%, transparent);
-  --shadow-lg: 0 18px 56px -12px color-mix(in oklab, var(--ink) 20%, transparent), 0 6px 16px -6px color-mix(in oklab, var(--ink) 10%, transparent);
-  --shadow-glow: 0 12px 48px -12px color-mix(in oklab, var(--brand) 42%, transparent);
+  --shadow-sm: 0 1px 2px 0 color-mix(in oklab, var(--ink) 6%, transparent);
+  --shadow-md: 0 12px 30px -18px color-mix(in oklab, var(--ink) 24%, transparent), 0 2px 8px -4px color-mix(in oklab, var(--ink) 10%, transparent);
+  --shadow-lg: 0 32px 90px -42px color-mix(in oklab, var(--ink) 24%, transparent), 0 14px 34px -24px color-mix(in oklab, var(--ink) 18%, transparent);
+  --shadow-ambient: 0 36px 120px -60px color-mix(in oklab, var(--ink) 26%, transparent);
+  --shadow-bezel: inset 0 1px 0 color-mix(in oklab, white 88%, transparent), inset 0 -1px 0 color-mix(in oklab, var(--ink) 5%, transparent);
+  --shadow-glow: 0 18px 58px -28px color-mix(in oklab, var(--brand) 58%, transparent);
 
   /* rhythm (radii are in @theme) */
   --container: 72rem;
   --container-wide: 80rem;
-  --header-h: 4rem;
+  --header-h: 5.5rem;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
+  --ease-heavy: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 [data-theme="dark"] {
@@ -95,12 +102,15 @@
   --surface: #141414;
   --surface-2: #1b1b1a;
   --surface-3: #232322;
+  --surface-shell: color-mix(in oklab, white 5%, var(--surface));
+  --surface-core: #111110;
   --ink: #fafafa;
   --ink-muted: #b8b6b3;
   --ink-subtle: #908d8a;
   --ink-faint: #6b6967;
   --rule: #2a2928;
   --rule-strong: #3a3937;
+  --rule-hairline: color-mix(in oklab, white 14%, transparent);
 
   --success: #5bbd7a;
   --warning: #d6a560;
@@ -114,7 +124,9 @@
   --m-delete: #e7726a;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-  --shadow-md: 0 6px 20px -6px rgba(0, 0, 0, 0.6);
-  --shadow-lg: 0 24px 64px -16px rgba(0, 0, 0, 0.7);
-  --shadow-glow: 0 12px 52px -10px color-mix(in oklab, var(--brand) 36%, transparent);
+  --shadow-md: 0 12px 32px -18px rgba(0, 0, 0, 0.75);
+  --shadow-lg: 0 34px 100px -44px rgba(0, 0, 0, 0.88), 0 16px 42px -28px rgba(0, 0, 0, 0.72);
+  --shadow-ambient: 0 34px 120px -58px rgba(0, 0, 0, 0.9);
+  --shadow-bezel: inset 0 1px 0 color-mix(in oklab, white 12%, transparent), inset 0 -1px 0 color-mix(in oklab, black 48%, transparent);
+  --shadow-glow: 0 18px 58px -28px color-mix(in oklab, var(--brand) 48%, transparent);
 }

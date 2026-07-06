@@ -1,0 +1,116 @@
+---
+// Team Collaboration — a shared workspace with members, roles and SCIM.
+// Split layout, visual on the LEFT. Canvas background.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+import { LINKS } from "../data/catalog";
+
+const bullets = [
+  ["Shared workspaces.", "Organize API keys, environments and specs by team, not by spreadsheet."],
+  ["Roles that map to reality.", "Owner, admin, developer and read-only — plus custom roles when you need them."],
+  ["Provisioned automatically.", "SCIM syncs new members and deprovisions access the instant someone leaves."],
+  ["Audited by default.", "Every key rotation, scope change and environment access is logged and queryable."],
+];
+
+const members = [
+  { initials: "AM", name: "Ada Mehta", email: "ada@acme.com", role: "Owner", access: "All products", tint: "var(--brand)" },
+  { initials: "PS", name: "Priya Sundaram", email: "priya@acme.com", role: "Admin", access: "ID · Notify", tint: "var(--info)" },
+  { initials: "TG", name: "Tomás García", email: "tomas@acme.com", role: "Developer", access: "ID · read/write", tint: "var(--success)" },
+];
+
+const roleTone: Record<string, string> = {
+  Owner: "border-brand/30 bg-brand-faint text-brand-deep",
+  Admin: "border-rule bg-surface-2 text-ink-muted",
+  Developer: "border-rule bg-surface-2 text-ink-muted",
+};
+---
+
+<section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="team">
+  <div class="container container-wide">
+    <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
+      <!-- visual: team workspace -->
+      <div data-reveal>
+        <div class="overflow-hidden rounded-2xl border border-rule bg-surface shadow-(--shadow-lg)">
+          <!-- header -->
+          <div class="flex items-center gap-2.5 border-b border-rule bg-surface-2 px-4 py-3">
+            <span class="grid h-7 w-7 place-items-center rounded-lg bg-brand text-brand-ink font-ui text-[0.72rem] font-bold">A</span>
+            <div class="leading-tight">
+              <p class="font-ui text-[0.82rem] font-semibold text-ink">Acme Corp</p>
+              <p class="text-[0.7rem] text-ink-faint">Workspace · 12 members</p>
+            </div>
+            <span class="pill ml-auto"><Icon name="shield" class="h-3 w-3" /> SCIM on</span>
+          </div>
+
+          <!-- members -->
+          <ul class="m-0 list-none p-0">
+            {
+              members.map((m) => (
+                <li class="flex items-center gap-3 border-b border-rule px-4 py-3">
+                  <span
+                    class="grid h-9 w-9 flex-none place-items-center rounded-full font-ui text-[0.72rem] font-bold text-white"
+                    style={`background:${m.tint}`}
+                  >
+                    {m.initials}
+                  </span>
+                  <div class="min-w-0 leading-tight">
+                    <p class="truncate font-ui text-[0.85rem] font-semibold text-ink">{m.name}</p>
+                    <p class="truncate font-mono text-[0.72rem] text-ink-faint">{m.access}</p>
+                  </div>
+                  <span
+                    class={`ml-auto rounded-full border px-2.5 py-1 font-ui text-[0.7rem] font-semibold ${roleTone[m.role]}`}
+                  >
+                    {m.role}
+                  </span>
+                </li>
+              ))
+            }
+            <!-- pending invite -->
+            <li class="flex items-center gap-3 px-4 py-3">
+              <span class="grid h-9 w-9 flex-none place-items-center rounded-full border border-dashed border-rule-strong text-ink-faint">
+                <Icon name="user-plus" class="h-4 w-4" />
+              </span>
+              <div class="min-w-0 leading-tight">
+                <p class="truncate font-ui text-[0.85rem] font-medium text-ink-muted">dev@acme.com</p>
+                <p class="text-[0.72rem] text-ink-faint">Invitation pending</p>
+              </div>
+              <span class="ml-auto rounded-full border border-rule bg-surface-2 px-2.5 py-1 font-ui text-[0.7rem] font-medium text-ink-subtle">
+                Read-only
+              </span>
+            </li>
+          </ul>
+
+          <!-- footer -->
+          <div class="flex items-center gap-2 border-t border-rule bg-surface-2/50 px-4 py-2.5 font-ui text-[0.7rem] text-ink-faint">
+            <Icon name="activity" class="h-3.5 w-3.5" /> Every change written to the audit log
+          </div>
+        </div>
+      </div>
+
+      <!-- copy -->
+      <div>
+        <SectionHead eyebrow="Team Collaboration" title="Built for whole engineering orgs.">
+          Ship together without stepping on each other. Roles, environments and
+          provisioning that scale from a two-person startup to a global enterprise.
+        </SectionHead>
+        <ul class="mt-7 grid gap-4">
+          {
+            bullets.map(([h, t]) => (
+              <li class="flex gap-3" data-reveal>
+                <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon name="check" class="h-3 w-3" />
+                </span>
+                <span class="text-[0.96rem] text-ink-muted">
+                  <b class="font-semibold text-ink">{h}</b> {t}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="mt-8" data-reveal>
+          <ArrowLink href={LINKS.console} label="Manage your team" external />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

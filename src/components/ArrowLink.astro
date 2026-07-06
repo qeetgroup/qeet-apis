@@ -1,0 +1,29 @@
+---
+// Text CTA with a nested circular trailing icon (the "button-in-button" pattern).
+// The icon circle nudges on hover for a little kinetic feedback. Used for the
+// secondary in-section CTAs across the capability sections.
+import Icon from "./Icon.astro";
+interface Props {
+  href: string;
+  label: string;
+  external?: boolean;
+  tone?: "light" | "dark";
+  class?: string;
+}
+const { href, label, external, tone = "light", class: className } = Astro.props;
+const dark = tone === "dark";
+---
+
+<a
+  href={href}
+  target={external ? "_blank" : undefined}
+  rel={external ? "noopener" : undefined}
+  class={`group inline-flex items-center gap-2 font-ui text-[0.95rem] font-semibold transition-colors ${dark ? "text-brand-bright hover:text-white" : "text-brand-deep hover:text-brand"} ${className ?? ""}`}
+>
+  {label}
+  <span
+    class={`grid h-6 w-6 place-items-center rounded-full transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5 ${dark ? "bg-brand/25" : "bg-brand-soft"}`}
+  >
+    <Icon name={external ? "arrow-up-right" : "arrow-right"} class="h-3.5 w-3.5" />
+  </span>
+</a>

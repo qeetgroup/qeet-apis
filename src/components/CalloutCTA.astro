@@ -16,41 +16,76 @@ interface Props {
 const { title, text, primary, secondary } = Astro.props;
 ---
 
-<section class="container py-[clamp(3rem,7vw,5.5rem)]">
-  <div class="relative grid justify-items-center gap-[1.4rem] overflow-hidden rounded-xl bg-[#100f0e] px-6 py-12 text-center text-[#fafafa] shadow-(--shadow-lg) sm:px-12 dark:border dark:border-rule-strong dark:bg-surface-2">
-    <div
-      class="pointer-events-none absolute inset-0"
-      style="background:radial-gradient(50% 80% at 50% 0%, color-mix(in oklab, var(--brand) 30%, transparent), transparent 70%)"
-    >
-    </div>
-    <h2 class="relative text-white" style="font-size:clamp(1.7rem,3.5vw,2.4rem)">{title}</h2>
-    <p class="relative m-0 max-w-[50ch]" style="color:color-mix(in oklab,#fff 78%,transparent)">
-      {text}
-    </p>
-    <div class="relative mt-2 flex flex-wrap justify-center gap-3.5">
-      <a
-        class="btn btn-primary btn-lg"
-        href={primary.href}
-        rel={primary.external ? "noopener" : undefined}
-        target={primary.external ? "_blank" : undefined}
+<section class="container container-wide section-premium">
+  <div class="bezel" data-reveal>
+    <div class="bezel-core relative overflow-hidden bg-[#100f0e] text-[#fafafa]">
+      <div
+        class="pointer-events-none absolute inset-0 opacity-80"
+        style="background:radial-gradient(60% 90% at 18% 0%, color-mix(in oklab, var(--brand) 28%, transparent), transparent 68%), linear-gradient(135deg, transparent, rgba(255,255,255,0.055))"
       >
-        {primary.icon && <Icon name={primary.icon} />}
-        {primary.label}
-      </a>
-      {
-        secondary && (
-          <a
-            class="btn btn-lg"
-            href={secondary.href}
-            rel={secondary.external ? "noopener" : undefined}
-            target={secondary.external ? "_blank" : undefined}
-            style="background:transparent;border-color:color-mix(in oklab,#fff 28%,transparent);color:#fff"
-          >
-            {secondary.icon && <Icon name={secondary.icon} />}
-            {secondary.label}
-          </a>
-        )
-      }
+      </div>
+
+      <div class="relative grid gap-8 p-6 sm:p-8 lg:grid-cols-[1fr_0.82fr] lg:p-10">
+        <div class="max-w-184">
+          <span class="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/6 px-3 py-1 font-ui text-[0.64rem] font-semibold uppercase tracking-[0.2em] text-brand-bright">
+            <span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span>
+            Ready for first request
+          </span>
+          <h2 class="mt-5 max-w-[11ch] text-[clamp(2.45rem,5.8vw,5rem)] leading-[0.96] tracking-[-0.045em] text-white">{title}</h2>
+          <p class="mt-5 max-w-[54ch] text-[1.08rem] leading-relaxed" style="color:color-mix(in oklab,#fff 74%,transparent)">
+            {text}
+          </p>
+          <div class="mt-7 flex flex-wrap gap-3">
+            <a
+              class="btn btn-primary btn-lg"
+              href={primary.href}
+              rel={primary.external ? "noopener" : undefined}
+              target={primary.external ? "_blank" : undefined}
+            >
+              {primary.label}
+              <span class="btn-island"><Icon name={primary.external ? "arrow-up-right" : "arrow-right"} class="h-3.5 w-3.5 stroke-[1.6]" /></span>
+            </a>
+            {
+              secondary && (
+                <a
+                  class="btn btn-lg pl-5 pr-2"
+                  href={secondary.href}
+                  rel={secondary.external ? "noopener" : undefined}
+                  target={secondary.external ? "_blank" : undefined}
+                  style="background:rgba(255,255,255,0.06);border-color:color-mix(in oklab,#fff 20%,transparent);color:#fff"
+                >
+                  {secondary.label}
+                  <span class="btn-island" style="background:rgba(255,255,255,0.1)"><Icon name={secondary.external ? "arrow-up-right" : "arrow-right"} class="h-3.5 w-3.5 stroke-[1.6]" /></span>
+                </a>
+              )
+            }
+          </div>
+        </div>
+
+        <div class="rounded-[1.55rem] border border-white/10 bg-white/5.5 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]">
+          <div class="rounded-[1.25rem] border border-white/10 bg-black/20 p-4">
+            <div class="flex items-center gap-2 border-b border-white/10 pb-3">
+              <span class="rounded-full bg-white/8 px-2.5 py-1 font-mono text-[0.68rem] text-white/64">api.id.qeet.in</span>
+              <span class="ml-auto rounded-full bg-brand/18 px-2.5 py-1 font-mono text-[0.68rem] text-brand-bright">OpenAPI 3.1</span>
+            </div>
+            <pre class="m-0 overflow-x-auto py-4 font-mono text-[0.76rem] leading-relaxed text-white/68"><span class="text-white/38">$</span> curl /v1/auth/me
+<span class="text-brand-bright">200 OK</span> 42ms
+&#123;
+  <span class="text-brand-bright">"principal"</span>: <span class="text-success">"usr_8f1c2a9e"</span>,
+  <span class="text-brand-bright">"trace"</span>: <span class="text-success">"qtr_4b7d9a"</span>
+&#125;</pre>
+            <div class="grid gap-px overflow-hidden rounded-[1rem] bg-white/10 sm:grid-cols-3">
+              {
+                ["auth", "docs", "sdk"].map((item) => (
+                  <div class="bg-white/4.5 px-3 py-2 font-mono text-[0.68rem] text-white/58">
+                    <span class="text-success">✓</span> {item}
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </section>

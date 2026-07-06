@@ -30,6 +30,8 @@
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
+  --color-surface-shell: var(--surface-shell);
+  --color-surface-core: var(--surface-core);
   --color-ink: var(--ink);
   --color-ink-muted: var(--ink-muted);
   --color-ink-subtle: var(--ink-subtle);
@@ -52,6 +54,7 @@
     scroll-behavior: smooth;
     scroll-padding-top: calc(var(--header-h) + 1rem);
     color-scheme: light;
+    overflow-x: hidden;
   }
   html[data-theme="dark"] {
     color-scheme: dark;
@@ -60,6 +63,7 @@
     @apply bg-bg text-ink font-sans antialiased;
     line-height: 1.65;
     font-feature-settings: "ss01", "cv01";
+    overflow-x: hidden;
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);
@@ -110,14 +114,16 @@
     max-width: var(--container-wide);
   }
   .eyebrow {
-    @apply font-ui font-semibold uppercase text-brand-deep;
-    font-size: 0.78rem;
-    letter-spacing: 0.16em;
+    @apply inline-flex items-center rounded-full border border-rule bg-surface/80 px-3 py-1 font-ui font-semibold uppercase text-brand-deep;
+    font-size: 0.64rem;
+    letter-spacing: 0.2em;
+    box-shadow: var(--shadow-bezel);
   }
   .pill {
     @apply inline-flex items-center gap-1.5 font-mono font-medium rounded-full bg-surface-2 text-ink-subtle border border-rule;
     font-size: 0.72rem;
-    padding: 0.2rem 0.5rem;
+    padding: 0.24rem 0.58rem;
+    box-shadow: inset 0 1px 0 color-mix(in oklab, white 62%, transparent);
   }
   .pill--brand {
     @apply bg-brand-soft text-brand-deep border-transparent;
@@ -125,13 +131,24 @@
 
   /* Button recipe (reused across components). */
   .btn {
-    @apply inline-flex items-center gap-2 font-ui font-semibold rounded border border-rule-strong bg-surface text-ink whitespace-nowrap cursor-pointer transition;
+    @apply inline-flex items-center justify-center gap-2.5 font-ui font-semibold rounded-full border border-rule-strong bg-surface text-ink whitespace-nowrap cursor-pointer;
     font-size: 0.95rem;
     line-height: 1;
-    padding: 0.72rem 1.15rem;
+    padding: 0.76rem 1.05rem;
+    box-shadow: var(--shadow-bezel), var(--shadow-sm);
+    transition:
+      transform 0.6s var(--ease-spring),
+      border-color 0.6s var(--ease-spring),
+      background-color 0.6s var(--ease-spring),
+      color 0.6s var(--ease-spring),
+      box-shadow 0.6s var(--ease-spring);
   }
   .btn:hover {
-    @apply -translate-y-px;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-bezel), var(--shadow-md);
+  }
+  .btn:active {
+    transform: scale(0.98);
   }
   .btn svg {
     width: 1.05em;
@@ -139,7 +156,7 @@
   }
   .btn-primary {
     @apply bg-brand text-brand-ink border-transparent;
-    box-shadow: var(--shadow-glow);
+    box-shadow: var(--shadow-bezel), var(--shadow-glow);
   }
   .btn-primary:hover {
     @apply bg-brand-deep text-brand-ink;
@@ -152,7 +169,40 @@
   }
   .btn-lg {
     font-size: 1.02rem;
-    padding: 0.9rem 1.4rem;
+    padding: 0.82rem 1.05rem 0.82rem 1.32rem;
+  }
+  .btn-island {
+    @apply grid h-8 w-8 shrink-0 place-items-center rounded-full bg-ink/5 text-current;
+    transition:
+      transform 0.6s var(--ease-spring),
+      background-color 0.6s var(--ease-spring);
+  }
+  .btn-primary .btn-island {
+    background: color-mix(in oklab, var(--brand-ink) 18%, transparent);
+  }
+  .btn:hover .btn-island {
+    transform: translate(4px, -1px) scale(1.05);
+  }
+
+  .section-premium {
+    @apply py-24 md:py-32;
+  }
+  .bezel {
+    @apply rounded-4xl border border-rule bg-surface-shell p-1.5;
+    box-shadow: var(--shadow-ambient);
+  }
+  .bezel-core {
+    @apply rounded-[1.625rem] border border-rule bg-surface-core;
+    box-shadow: var(--shadow-bezel);
+  }
+  .soft-band {
+    background:
+      linear-gradient(180deg, color-mix(in oklab, var(--surface-2) 66%, transparent), transparent 42%),
+      var(--bg);
+  }
+  .method-chip {
+    @apply inline-flex items-center rounded-full px-2.5 py-1 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.08em];
+    box-shadow: inset 0 1px 0 color-mix(in oklab, white 52%, transparent);
   }
 
   /* CodeTabs stateful bits (chrome is utilities in the component). */
@@ -255,12 +305,12 @@
 /* Scroll-reveal: hide only while animating is armed and not yet revealed. */
 [data-reveal] {
   transition:
-    opacity 0.7s var(--ease),
-    transform 0.7s var(--ease);
+    opacity 0.9s var(--ease-heavy),
+    transform 0.9s var(--ease-heavy);
 }
 html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
   opacity: 0;
-  transform: translateY(20px);
+  transform: translateY(32px) scale(0.985);
 }
 [data-reveal].is-in {
   opacity: 1;
@@ -280,7 +330,7 @@ html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-8px); }
 }
-.floaty { animation: floaty 6s ease-in-out infinite; }
+.floaty { animation: floaty 7s var(--ease-spring) infinite; }
 
 /* Brand gradient text. */
 .text-gradient {
@@ -302,7 +352,7 @@ html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
 .marquee-track {
   display: flex;
   width: max-content;
-  animation: marquee 36s linear infinite;
+  animation: marquee 48s var(--ease-heavy) infinite;
 }
 .marquee:hover .marquee-track { animation-play-state: paused; }
 
@@ -311,7 +361,7 @@ html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
   0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--success) 50%, transparent); }
   70%, 100% { box-shadow: 0 0 0 7px transparent; }
 }
-.live-dot { animation: ping 2.2s ease-out infinite; }
+.live-dot { animation: ping 2.4s var(--ease-heavy) infinite; }
 
 /* Card sheen: a brand glow + top-edge hairline that fade in on hover. */
 .card-hover {
@@ -340,7 +390,7 @@ html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
 .card-hover:hover {
   transform: translateY(-4px);
   border-color: color-mix(in oklab, var(--brand) 45%, var(--rule));
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-ambient);
 }
 .card-hover:hover::before {
   opacity: 1;
@@ -352,7 +402,7 @@ html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
   to { transform: translateX(-50%) rotate(360deg); }
 }
 .beam {
-  animation: beam 40s linear infinite;
+  animation: beam 52s var(--ease-heavy) infinite;
   will-change: transform;
 }
 
@@ -384,6 +434,18 @@ html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
   .aurora, .floaty, .marquee-track, .live-dot, .beam, .caret {
     animation: none !important;
   }
+}
+
+/* Pricing card: featured variant gets a brand glow shadow. */
+.pricing-card--featured {
+  box-shadow:
+    0 0 0 1px var(--brand),
+    0 0 32px color-mix(in oklab, var(--brand) 20%, transparent);
+}
+
+/* Nav dropdown z-layering */
+.nav-panel {
+  z-index: 300;
 }
 
 /* Shiki dual-theme for MDX fenced code (generated markup; needs !important to

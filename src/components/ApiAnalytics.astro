@@ -1,0 +1,127 @@
+---
+// API Analytics — request volume (SVG area chart), headline stats and the
+// busiest endpoints. Split layout, visual on the right. Surface band.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+import { LINKS } from "../data/catalog";
+
+const bullets = [
+  ["Every call, measured.", "Volume, latency, error rate and status-code mix — per endpoint, in real time."],
+  ["Slice any dimension.", "Break down by product, API key, route, region or version on the fly."],
+  ["Live and historical.", "Sub-second counters for now, plus retained series for trend analysis."],
+  ["Export anywhere.", "Stream metrics to Datadog, Grafana or your own warehouse."],
+];
+
+const tiles = [
+  { label: "Requests · 7d", value: "8.42M", delta: "+18%", up: true },
+  { label: "Success rate", value: "99.98%", delta: "+0.01", up: true },
+  { label: "p95 latency", value: "42ms", delta: "−6ms", up: true },
+];
+
+const top = [
+  { path: "POST /v1/messages", pct: 34 },
+  { path: "GET /v1/users", pct: 26 },
+  { path: "POST /v1/auth/token", pct: 21 },
+  { path: "GET /v1/audit/events", pct: 12 },
+];
+
+const line = "M0,92 L29,80 L58,86 L87,63 L116,70 L145,50 L174,58 L203,41 L232,47 L261,29 L290,33 L320,16";
+const area = `${line} L320,120 L0,120 Z`;
+---
+
+<section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="analytics">
+  <div class="container container-wide">
+    <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
+      <!-- copy -->
+      <div>
+        <SectionHead eyebrow="API Analytics" title="Know exactly how your APIs are used.">
+          Understand traffic, performance and failures across every endpoint —
+          without wiring up your own metrics pipeline first.
+        </SectionHead>
+        <ul class="mt-7 grid gap-4">
+          {
+            bullets.map(([h, t]) => (
+              <li class="flex gap-3" data-reveal>
+                <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon name="check" class="h-3 w-3" />
+                </span>
+                <span class="text-[0.96rem] text-ink-muted">
+                  <b class="font-semibold text-ink">{h}</b> {t}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="mt-8" data-reveal>
+          <ArrowLink href={LINKS.console} label="Open analytics" external />
+        </div>
+      </div>
+
+      <!-- visual: dashboard -->
+      <div data-reveal style="transition-delay:120ms">
+        <div class="overflow-hidden rounded-2xl border border-rule bg-surface shadow-(--shadow-lg)">
+          <!-- chart header -->
+          <div class="flex items-center justify-between gap-3 border-b border-rule px-5 py-3.5">
+            <div>
+              <p class="font-ui text-[0.8rem] font-semibold text-ink">Requests</p>
+              <p class="text-[0.72rem] text-ink-faint">Last 7 days · all products</p>
+            </div>
+            <span class="inline-flex items-center gap-1 rounded-full bg-success/12 px-2 py-1 font-ui text-[0.72rem] font-semibold text-success">
+              <Icon name="trending-up" class="h-3.5 w-3.5" /> +18%
+            </span>
+          </div>
+
+          <!-- area chart -->
+          <div class="relative px-2 pt-3">
+            <svg viewBox="0 0 320 120" class="h-32 w-full" preserveAspectRatio="none" role="img" aria-label="Request volume trending up over seven days">
+              <defs>
+                <linearGradient id="qa-grad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="var(--brand)" stop-opacity="0.28"></stop>
+                  <stop offset="100%" stop-color="var(--brand)" stop-opacity="0"></stop>
+                </linearGradient>
+              </defs>
+              <path d={area} fill="url(#qa-grad)"></path>
+              <path d={line} fill="none" stroke="var(--brand)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" vector-effect="non-scaling-stroke"></path>
+              <circle cx="320" cy="16" r="3.5" fill="var(--brand)" stroke="var(--surface)" stroke-width="2"></circle>
+            </svg>
+            <div class="pointer-events-none absolute right-3 top-1 rounded-md border border-rule bg-surface px-2 py-1 font-mono text-[0.68rem] text-ink shadow-(--shadow-sm)">
+              Thu · 1.28M
+            </div>
+          </div>
+
+          <!-- stat tiles -->
+          <div class="grid grid-cols-3 gap-px border-y border-rule bg-rule">
+            {
+              tiles.map((t) => (
+                <div class="bg-surface px-4 py-3">
+                  <p class="text-[0.68rem] uppercase tracking-wide text-ink-faint">{t.label}</p>
+                  <p class="mt-0.5 font-display text-[1.35rem] font-semibold leading-none text-ink">{t.value}</p>
+                  <p class="mt-1 font-ui text-[0.7rem] font-medium text-success">{t.delta}</p>
+                </div>
+              ))
+            }
+          </div>
+
+          <!-- top endpoints -->
+          <div class="px-5 py-4">
+            <p class="mb-3 font-ui text-[0.72rem] font-semibold uppercase tracking-wide text-ink-faint">Top endpoints</p>
+            <ul class="m-0 grid list-none gap-2.5 p-0">
+              {
+                top.map((e) => (
+                  <li class="flex items-center gap-3">
+                    <code class="w-40 flex-none truncate font-mono text-[0.74rem] text-ink-muted">{e.path}</code>
+                    <span class="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-3">
+                      <span class="block h-full rounded-full bg-brand" style={`width:${e.pct}%`} />
+                    </span>
+                    <span class="w-9 flex-none text-right font-mono text-[0.72rem] text-ink-subtle">{e.pct}%</span>
+                  </li>
+                ))
+              }
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

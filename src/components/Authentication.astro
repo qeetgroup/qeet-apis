@@ -1,0 +1,115 @@
+---
+// Authentication & Authorization — the token exchange and a decoded, scoped JWT.
+// Split layout, visual on the right. Surface band.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+import { LINKS } from "../data/catalog";
+
+const methods = ["API Key", "OAuth 2.1", "OIDC", "SAML SSO", "mTLS"];
+const bullets = [
+  ["Every standard, built in.", "API keys, OAuth 2.1, OIDC, SAML SSO, SCIM and mutual TLS — choose the flow per app."],
+  ["Least-privilege by default.", "Scoped tokens and API keys grant only what each caller needs, and nothing more."],
+  ["Passkeys-first.", "WebAuthn passkeys, TOTP and step-up MFA are native to every authentication flow."],
+  ["Machine & agent identities.", "Service accounts and AI-agent credentials with expiry, rotation and full audit."],
+];
+const scopes = ["identity.read", "identity.write", "notify.send"];
+---
+
+<section class="section-premium border-y border-rule bg-surface" id="auth">
+  <div class="container container-wide">
+    <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
+      <!-- copy -->
+      <div>
+        <SectionHead eyebrow="Authentication & Authorization" title="Security you don't have to bolt on.">
+          One credential, every API. Authenticate with the standard that fits,
+          authorize with fine-grained scopes, and let the gateway enforce it.
+        </SectionHead>
+        <ul class="mt-7 grid gap-4">
+          {
+            bullets.map(([h, t]) => (
+              <li class="flex gap-3" data-reveal>
+                <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon name="check" class="h-3 w-3" />
+                </span>
+                <span class="text-[0.96rem] text-ink-muted">
+                  <b class="font-semibold text-ink">{h}</b> {t}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="mt-8" data-reveal>
+          <ArrowLink href={LINKS.authentication} label="Read the auth guide" />
+        </div>
+      </div>
+
+      <!-- visual: token exchange -->
+      <div data-reveal style="transition-delay:120ms">
+        <div class="bezel">
+        <div class="bezel-core overflow-hidden">
+          <!-- method tabs -->
+          <div class="flex items-center gap-1 overflow-x-auto border-b border-rule bg-surface-2 px-3 py-2 font-ui text-[0.76rem]">
+            {
+              methods.map((m, i) => (
+                <span
+                  class={`whitespace-nowrap rounded-full px-2.5 py-1 font-medium ${i === 1 ? "bg-brand-soft text-brand-deep" : "text-ink-faint"}`}
+                >
+                  {m}
+                </span>
+              ))
+            }
+          </div>
+
+          <!-- token request -->
+          <div class="flex items-center gap-2.5 border-b border-rule px-4 py-3">
+            <span class="rounded px-1.5 py-0.5 font-mono text-[0.66rem] font-semibold" style="color:var(--m-post);background:color-mix(in oklab,var(--m-post) 12%,transparent)">POST</span>
+            <code class="font-mono text-[0.8rem] text-ink-muted">/oauth/token</code>
+            <span class="ml-auto flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 font-mono text-[0.68rem] text-ink-faint">
+              <Icon name="lock" class="h-3 w-3 stroke-[1.55]" /> TLS 1.3
+            </span>
+          </div>
+          <pre class="m-0 border-b border-rule px-4 py-3 font-mono text-[0.78rem] leading-relaxed text-ink-muted"><span class="text-brand-deep">grant_type</span>=client_credentials
+<span class="text-brand-deep">scope</span>=<span class="text-success">identity.write notify.send</span></pre>
+
+          <!-- decoded token -->
+          <div class="bg-surface-2/50 px-4 py-3.5">
+            <div class="mb-2.5 flex items-center gap-2">
+              <span class="grid h-6 w-6 place-items-center rounded-full bg-brand-soft text-brand-deep">
+                <Icon name="key" class="h-3.5 w-3.5 stroke-[1.55]" />
+              </span>
+              <p class="font-ui text-[0.8rem] font-semibold text-ink">Access token · decoded</p>
+              <span class="pill ml-auto"><span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span> valid 3600s</span>
+            </div>
+            <div class="rounded-[1.25rem] border border-rule bg-surface p-3 font-mono text-[0.76rem] leading-relaxed shadow-(--shadow-bezel)">
+              <p class="text-ink-muted"><span class="text-brand-deep">"sub"</span>: <span class="text-success">"svc_billing_worker"</span>,</p>
+              <p class="text-ink-muted"><span class="text-brand-deep">"iss"</span>: <span class="text-success">"https://id.qeet.in"</span>,</p>
+              <p class="text-ink-muted"><span class="text-brand-deep">"exp"</span>: <span class="text-success">1751792400</span>,</p>
+              <p class="text-ink-muted"><span class="text-brand-deep">"scope"</span>:</p>
+              <div class="mt-1.5 flex flex-wrap gap-1.5">
+                {
+                  scopes.map((s) => (
+                    <span class="rounded border border-brand/20 bg-brand-faint px-1.5 py-0.5 text-[0.68rem] text-brand-deep">
+                      {s}
+                    </span>
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-px bg-rule md:grid-cols-3">
+            {
+              ["policy allowed", "scopes enforced", "audit written"].map((item) => (
+                <div class="bg-surface px-4 py-3 font-mono text-[0.72rem] text-success">
+                  <span class="mr-2 text-ink-faint">✓</span>{item}
+                </div>
+              ))
+            }
+          </div>
+        </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

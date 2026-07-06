@@ -1,0 +1,114 @@
+---
+// Rate Limiting — a usage meter, the response headers every call carries, and a
+// graceful 429. Split layout, visual on the right. Canvas background.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+import { LINKS } from "../data/catalog";
+
+const bullets = [
+  ["Predictable quotas.", "Per-key limits with burst allowances you can actually reason about."],
+  ["Headers on every response.", "X-RateLimit-* tells you where you stand so you can back off before you're blocked."],
+  ["Graceful 429s.", "A clear Retry-After plus idempotency keys mean retries are always safe."],
+  ["Scales with your plan.", "Raise limits by upgrading a tier — never by re-architecting your app."],
+];
+
+const headers = [
+  ["X-RateLimit-Limit", "10000"],
+  ["X-RateLimit-Remaining", "3820"],
+  ["X-RateLimit-Reset", "1751792460"],
+  ["X-RateLimit-Policy", "10000;w=60"],
+];
+
+const tiers = [
+  { name: "Free", v: "250k/mo" },
+  { name: "Growth", v: "10M/mo", active: true },
+  { name: "Enterprise", v: "Custom" },
+];
+---
+
+<section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="rate-limits">
+  <div class="container container-wide">
+    <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
+      <!-- copy -->
+      <div>
+        <SectionHead eyebrow="Rate Limiting" title="Protect your platform, gracefully.">
+          Fair, transparent limits keep every tenant fast. You always know your
+          budget, and hitting a limit is a signal — never a surprise outage.
+        </SectionHead>
+        <ul class="mt-7 grid gap-4">
+          {
+            bullets.map(([h, t]) => (
+              <li class="flex gap-3" data-reveal>
+                <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon name="check" class="h-3 w-3" />
+                </span>
+                <span class="text-[0.96rem] text-ink-muted">
+                  <b class="font-semibold text-ink">{h}</b> {t}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="mt-8" data-reveal>
+          <ArrowLink href={LINKS.errors} label="Rate limit reference" />
+        </div>
+      </div>
+
+      <!-- visual: rate limit -->
+      <div data-reveal style="transition-delay:120ms">
+        <div class="overflow-hidden rounded-2xl border border-rule bg-surface shadow-(--shadow-lg)">
+          <!-- meter -->
+          <div class="border-b border-rule px-5 py-4">
+            <div class="mb-2 flex items-baseline justify-between">
+              <span class="flex items-center gap-2 font-ui text-[0.8rem] font-semibold text-ink">
+                <Icon name="gauge" class="h-4 w-4 text-brand-deep" /> Requests this minute
+              </span>
+              <span class="font-mono text-[0.78rem] text-ink-muted"><b class="text-ink">6,180</b> / 10,000</span>
+            </div>
+            <div class="h-2.5 overflow-hidden rounded-full bg-surface-3">
+              <div class="h-full rounded-full bg-gradient-to-r from-brand-deep to-brand" style="width:62%"></div>
+            </div>
+            <p class="mt-1.5 font-ui text-[0.7rem] text-ink-faint">Resets in 41s · burst up to 1,500 rps</p>
+          </div>
+
+          <!-- headers -->
+          <div class="px-5 py-4">
+            <p class="mb-2.5 font-ui text-[0.72rem] font-semibold uppercase tracking-wide text-ink-faint">Response headers</p>
+            <div class="rounded-lg border border-rule bg-surface-2/50 p-3 font-mono text-[0.76rem] leading-relaxed">
+              {
+                headers.map(([k, v]) => (
+                  <p class="flex justify-between gap-4">
+                    <span class="text-brand-deep">{k}:</span>
+                    <span class="text-ink">{v}</span>
+                  </p>
+                ))
+              }
+            </div>
+          </div>
+
+          <!-- 429 -->
+          <div class="flex items-center gap-2.5 border-t border-rule bg-surface-2/50 px-5 py-3 font-mono text-[0.74rem]">
+            <span class="rounded px-1.5 py-0.5 font-semibold text-warning" style="background:color-mix(in oklab,var(--warning) 14%,transparent)">429</span>
+            <span class="text-ink-muted">Too Many Requests</span>
+            <span class="ml-auto flex items-center gap-1.5 text-ink-faint">
+              <Icon name="refresh-cw" class="h-3.5 w-3.5" /> Retry-After: 2s
+            </span>
+          </div>
+
+          <!-- tiers -->
+          <div class="grid grid-cols-3 gap-px border-t border-rule bg-rule">
+            {
+              tiers.map((t) => (
+                <div class={`px-3 py-2.5 text-center ${t.active ? "bg-brand-faint" : "bg-surface"}`}>
+                  <p class={`font-ui text-[0.72rem] font-semibold ${t.active ? "text-brand-deep" : "text-ink"}`}>{t.name}</p>
+                  <p class="font-mono text-[0.7rem] text-ink-subtle">{t.v}</p>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

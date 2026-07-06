@@ -1,0 +1,149 @@
+---
+// Platform overview — the mental model of Qeet APIs in one diagram: any client,
+// through one unified gateway (auth · limits · routing · versioning · webhooks),
+// to every product. Full-width, centered head, layered "stack" architecture.
+import SectionHead from "./SectionHead.astro";
+import Icon from "./Icon.astro";
+
+const verbs = [
+  { icon: "search", label: "Discover" },
+  { icon: "waypoints", label: "Integrate" },
+  { icon: "blocks", label: "Manage" },
+  { icon: "shield", label: "Secure" },
+  { icon: "activity", label: "Monitor" },
+  { icon: "trending-up", label: "Scale" },
+] as const;
+
+const clients = [
+  { icon: "globe", label: "Web app" },
+  { icon: "code", label: "Backend" },
+  { icon: "bolt", label: "AI agent" },
+  { icon: "terminal", label: "CLI" },
+];
+
+const gateway = [
+  "Authentication",
+  "Rate limiting",
+  "Smart routing",
+  "Versioning",
+  "Observability",
+  "Webhooks",
+];
+
+const products = [
+  { icon: "fingerprint", name: "Qeet ID", kind: "Identity", live: true },
+  { icon: "bell", name: "Qeet Notify", kind: "Messaging", live: true },
+  { icon: "activity", name: "Qeet Logs", kind: "Observability", live: false },
+  { icon: "credit-card", name: "Qeet Pay", kind: "Payments", live: false },
+  { icon: "users", name: "Qeet People", kind: "HCM", live: false },
+  { icon: "newspaper", name: "Qeet News", kind: "Media", live: false },
+];
+---
+
+<section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="platform">
+  <div class="container container-wide">
+    <SectionHead
+      align="center"
+      eyebrow="The platform"
+      title="Everything an API needs, in one platform."
+    >
+      Discover, integrate, manage, secure, monitor and scale every API your
+      business runs — from a single control plane, behind a single credential.
+    </SectionHead>
+
+    <!-- Six verbs -->
+    <div class="mx-auto mt-9 flex max-w-3xl flex-wrap justify-center gap-2.5" data-reveal>
+      {
+        verbs.map((v) => (
+          <span class="inline-flex items-center gap-2 rounded-full border border-rule bg-bg px-3.5 py-1.5 font-ui text-[0.85rem] font-medium text-ink-muted">
+            <Icon name={v.icon} class="h-4 w-4 text-brand-deep" />
+            {v.label}
+          </span>
+        ))
+      }
+    </div>
+
+    <!-- Architecture stack -->
+    <div class="mx-auto mt-12 max-w-3xl" data-reveal style="transition-delay:80ms">
+      <!-- Clients layer -->
+      <div class="rounded-2xl border border-rule bg-bg p-4 sm:p-5">
+        <p class="mb-3.5 text-center font-ui text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">
+          Any client
+        </p>
+        <div class="flex flex-wrap justify-center gap-2.5">
+          {
+            clients.map((c) => (
+              <span class="inline-flex items-center gap-2 rounded-lg border border-rule bg-surface px-3 py-2 font-ui text-[0.82rem] font-medium text-ink">
+                <Icon name={c.icon} class="h-4 w-4 text-ink-subtle" />
+                {c.label}
+              </span>
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="mx-auto flex h-9 w-px items-center justify-center bg-gradient-to-b from-rule via-brand/40 to-brand/60"></div>
+
+      <!-- Gateway layer -->
+      <div
+        class="relative overflow-hidden rounded-2xl border border-brand/25 bg-brand-faint p-4 shadow-(--shadow-md) sm:p-5"
+      >
+        <div
+          class="pointer-events-none absolute inset-0 opacity-60"
+          style="background:radial-gradient(60% 120% at 50% -20%, var(--brand-soft), transparent 70%)"
+          aria-hidden="true"
+        >
+        </div>
+        <div class="relative flex flex-wrap items-center justify-between gap-3">
+          <div class="flex items-center gap-2.5">
+            <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand text-brand-ink">
+              <Icon name="waypoints" class="h-4 w-4" />
+            </span>
+            <div class="leading-tight">
+              <p class="font-ui text-[0.9rem] font-semibold text-ink">Unified API Gateway</p>
+              <p class="font-mono text-[0.72rem] text-ink-subtle">api.qeet.in</p>
+            </div>
+          </div>
+          <span class="pill pill--brand">
+            <Icon name="key" class="h-3 w-3" /> one credential
+          </span>
+        </div>
+        <div class="relative mt-4 flex flex-wrap gap-2">
+          {
+            gateway.map((g) => (
+              <span class="rounded-md border border-brand/20 bg-surface/70 px-2.5 py-1 font-mono text-[0.72rem] text-brand-deep">
+                {g}
+              </span>
+            ))
+          }
+        </div>
+      </div>
+
+      <!-- Connector -->
+      <div class="mx-auto flex h-9 w-px items-center justify-center bg-gradient-to-b from-brand/60 via-brand/40 to-rule"></div>
+
+      <!-- Products layer -->
+      <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+        {
+          products.map((p) => (
+            <div class="group flex items-center gap-2.5 rounded-xl border border-rule bg-bg p-3 transition-colors hover:border-rule-strong">
+              <span class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-surface text-brand-deep ring-1 ring-rule">
+                <Icon name={p.icon as any} class="h-4 w-4" />
+              </span>
+              <div class="min-w-0 leading-tight">
+                <p class="truncate font-ui text-[0.85rem] font-semibold text-ink">{p.name}</p>
+                <p class="flex items-center gap-1.5 text-[0.72rem] text-ink-subtle">
+                  <span
+                    class={`h-1.5 w-1.5 rounded-full ${p.live ? "bg-success" : "bg-ink-faint/60"}`}
+                  />
+                  {p.live ? "Live API" : p.kind}
+                </p>
+              </div>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+  </div>
+</section>

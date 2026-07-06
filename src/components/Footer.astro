@@ -1,62 +1,141 @@
 ---
+import Icon from "./Icon.astro";
 import { LINKS } from "../data/catalog";
 const year = new Date().getFullYear();
 const logo = "h-[1.75rem] w-[1.75rem] rounded-[7px]";
-const head = "mb-3.5 font-ui text-[0.78rem] font-semibold uppercase tracking-wider text-ink-faint";
-const link = "text-[0.95rem] text-ink-muted transition hover:text-brand";
+const head = "mb-4 font-ui text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-ink-faint";
+const link = "text-[0.9rem] text-ink-muted transition-colors duration-500 ease-(--ease-spring) hover:text-brand-deep";
 ---
 
-<footer class="mt-16 border-t border-rule bg-surface pb-10 pt-14">
+<footer class="relative border-t border-rule bg-bg pb-8 pt-4">
   <div class="container container-wide">
-    <div class="grid gap-8 sm:grid-cols-2 md:grid-cols-[1.4fr_repeat(3,1fr)] md:gap-10">
-      <div>
-        <a href="/" class="flex items-center gap-2.5 font-display font-semibold leading-none text-ink" aria-label="Qeet APIs — home">
-          <img src="/brand/logo-light.svg" alt="" width="28" height="28" class={`${logo} block dark:hidden`} />
-          <img src="/brand/logo-dark.svg" alt="" width="28" height="28" class={`${logo} hidden dark:block`} />
-          <span class="text-[1.1rem] leading-none tracking-tight">qeet</span>
-          <span class="inline-flex items-center rounded-[5px] bg-brand-soft px-1.5 py-1 font-mono text-[0.7rem] font-medium leading-none text-brand-deep">apis</span>
-        </a>
-        <p class="mt-3.5 max-w-[30ch] text-[0.95rem] text-ink-subtle">
-          One interactive reference for every Qeet product API — built for
-          developers shipping on the Qeet platform.
-        </p>
-      </div>
+    <div class="bezel">
+      <div class="bezel-core overflow-hidden">
+        <div class="grid gap-px bg-rule lg:grid-cols-[1.05fr_1.65fr]">
+          <!-- Brand col -->
+          <div class="bg-surface p-6 sm:p-8">
+            <a href="/" class="flex items-center gap-2.5 font-display font-semibold leading-none text-ink" aria-label="Qeet APIs — home">
+              <img src="/brand/logo-light.svg" alt="" width="28" height="28" class={`${logo} block dark:hidden`} />
+              <img src="/brand/logo-dark.svg" alt="" width="28" height="28" class={`${logo} hidden dark:block`} />
+              <span class="text-[1.18rem] leading-none tracking-tight">Q.E.E.T</span>
+              <span class="inline-flex items-center rounded-full bg-brand-soft px-2 py-1 font-mono text-[0.68rem] font-medium leading-none text-brand-deep">APIs</span>
+            </a>
+            <h2 class="mt-8 max-w-[11ch] text-[clamp(2rem,4vw,3.4rem)] leading-[0.98] tracking-[-0.04em]">
+              Infrastructure developers love.
+            </h2>
+            <p class="mt-4 max-w-[34ch] text-[0.98rem] leading-relaxed text-ink-muted">
+              One branded home for Qeet APIs, generated from OpenAPI and ready for production integrations.
+            </p>
 
-      <div>
-        <h4 class={head}>Develop</h4>
-        <ul class="m-0 grid list-none gap-2 p-0">
-          <li><a class={link} href={LINKS.reference}>API Reference</a></li>
-          <li><a class={link} href={LINKS.quickstart}>Quickstart</a></li>
-          <li><a class={link} href={LINKS.authentication}>Authentication</a></li>
-          <li><a class={link} href={LINKS.errors}>Errors &amp; rate limits</a></li>
-          <li><a class={link} href={LINKS.sdks}>SDKs</a></li>
-        </ul>
-      </div>
+            <div class="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
+              <a
+                href="https://status.qeet.in"
+                target="_blank"
+                rel="noopener"
+                class="rounded-[1.25rem] border border-rule bg-surface-2 p-4 transition duration-700 ease-(--ease-spring) hover:-translate-y-1 hover:border-rule-strong"
+              >
+                <span class="inline-flex items-center gap-2 font-ui text-[0.82rem] font-semibold text-success">
+                  <span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span>
+                  Status operational
+                </span>
+                <p class="m-0 mt-2 font-mono text-[0.72rem] text-ink-faint">status.qeet.in</p>
+              </a>
+              <a
+                href={LINKS.github}
+                target="_blank"
+                rel="noopener"
+                class="rounded-[1.25rem] border border-rule bg-surface-2 p-4 transition duration-700 ease-(--ease-spring) hover:-translate-y-1 hover:border-rule-strong"
+              >
+                <span class="inline-flex items-center gap-2 font-ui text-[0.82rem] font-semibold text-ink">
+                  <Icon name="github" class="h-4 w-4" />
+                  Source and SDKs
+                </span>
+                <p class="m-0 mt-2 font-mono text-[0.72rem] text-ink-faint">github.com/qeetgroup</p>
+              </a>
+            </div>
+          </div>
 
-      <div>
-        <h4 class={head}>Products</h4>
-        <ul class="m-0 grid list-none gap-2 p-0">
-          <li><a class={link} href={LINKS.reference}>Qeet ID</a></li>
-          <li><a class={link} href={LINKS.reference}>Qeet Notify</a></li>
-          <li><a class={link} href={LINKS.docs} rel="noopener">Product docs ↗</a></li>
-        </ul>
-      </div>
+          <div class="bg-surface p-6 sm:p-8">
+            <div class="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
+              <!-- Developers col -->
+              <div>
+                <h4 class={head}>Developers</h4>
+                <ul class="m-0 grid list-none gap-2.5 p-0">
+                  <li><a class={link} href={LINKS.reference}>API Reference</a></li>
+                  <li><a class={link} href={LINKS.quickstart}>Quickstart</a></li>
+                  <li><a class={link} href={LINKS.authentication}>Authentication</a></li>
+                  <li><a class={link} href={LINKS.sdks}>SDKs</a></li>
+                  <li><a class={link} href={LINKS.errors}>Errors &amp; rate limits</a></li>
+                  <li><a class={link} href={LINKS.changelog}>Changelog</a></li>
+                  <li><a class={link} href={LINKS.postman} download>Postman collection</a></li>
+                </ul>
+              </div>
 
-      <div>
-        <h4 class={head}>Resources</h4>
-        <ul class="m-0 grid list-none gap-2 p-0">
-          <li><a class={link} href={LINKS.changelog}>Changelog</a></li>
-          <li><a class={link} href={LINKS.postman} download>Postman collection ↓</a></li>
-          <li><a class={link} href={LINKS.console} rel="noopener">Console ↗</a></li>
-          <li><a class={link} href={LINKS.status} rel="noopener">Status ↗</a></li>
-          <li><a class={link} href={LINKS.docs} rel="noopener">Docs ↗</a></li>
-        </ul>
-      </div>
-    </div>
+              <!-- Products col -->
+              <div>
+                <h4 class={head}>Products</h4>
+                <ul class="m-0 grid list-none gap-2.5 p-0">
+                  <li><a class={link} href="/reference#qeet-id">Qeet ID</a></li>
+                  <li><a class={link} href="/reference#qeet-notify">Qeet Notify</a></li>
+                  <li><a class={link} href={LINKS.docs + "/logs"} target="_blank" rel="noopener">Qeet Logs</a></li>
+                  <li><a class={link} href={LINKS.docs + "/pay"} target="_blank" rel="noopener">Qeet Pay</a></li>
+                  <li><a class={link} href={LINKS.docs} target="_blank" rel="noopener">All products ↗</a></li>
+                </ul>
+              </div>
 
-    <div class="mt-12 flex flex-wrap justify-between gap-4 border-t border-rule pt-6 text-[0.88rem] text-ink-faint">
-      <span>© {year} Qeet Group. All rights reserved.</span>
-      <span>apis.qeet.in</span>
+              <!-- Company col -->
+              <div>
+                <h4 class={head}>Company</h4>
+                <ul class="m-0 grid list-none gap-2.5 p-0">
+                  <li><a class={link} href={LINKS.docs} target="_blank" rel="noopener">About</a></li>
+                  <li><a class={link} href={LINKS.docs} target="_blank" rel="noopener">Blog</a></li>
+                  <li><a class={link} href="https://status.qeet.in" target="_blank" rel="noopener">Status</a></li>
+                  <li><a class={link} href={LINKS.github} target="_blank" rel="noopener">GitHub</a></li>
+                  <li><a class={link} href="mailto:security@qeet.in">Security</a></li>
+                  <li><a class={link} href={LINKS.console} target="_blank" rel="noopener">Console ↗</a></li>
+                </ul>
+              </div>
+
+              <!-- Legal col -->
+              <div>
+                <h4 class={head}>Legal</h4>
+                <ul class="m-0 grid list-none gap-2.5 p-0">
+                  <li><a class={link} href="/privacy">Privacy</a></li>
+                  <li><a class={link} href="/terms">Terms</a></li>
+                  <li><a class={link} href="/security">Security</a></li>
+                  <li><a class={link} href="/gdpr">GDPR</a></li>
+                  <li><a class={link} href="/soc2">SOC 2</a></li>
+                </ul>
+              </div>
+            </div>
+
+            <div class="mt-10 grid gap-3 rounded-[1.4rem] border border-rule bg-surface-2 p-3 sm:grid-cols-3">
+              <div class="rounded-[1rem] bg-surface px-4 py-3">
+                <p class="m-0 font-mono text-[0.68rem] text-ink-faint">schema</p>
+                <p class="m-0 font-ui text-[0.9rem] font-semibold text-ink">OpenAPI 3.1</p>
+              </div>
+              <div class="rounded-[1rem] bg-surface px-4 py-3">
+                <p class="m-0 font-mono text-[0.68rem] text-ink-faint">runtime</p>
+                <p class="m-0 font-ui text-[0.9rem] font-semibold text-ink">Scalar console</p>
+              </div>
+              <div class="rounded-[1rem] bg-surface px-4 py-3">
+                <p class="m-0 font-mono text-[0.68rem] text-ink-faint">portal</p>
+                <p class="m-0 font-ui text-[0.9rem] font-semibold text-ink">apis.qeet.in</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Bottom bar -->
+        <div class="flex flex-wrap items-center justify-between gap-4 border-t border-rule bg-surface-2 px-6 py-4 text-[0.82rem] text-ink-faint sm:px-8">
+          <span>© {year} Qeet Group. All rights reserved.</span>
+          <div class="flex items-center gap-4">
+            <a href="https://status.qeet.in" class="transition-colors hover:text-ink-muted" target="_blank" rel="noopener">Status</a>
+            <a href={LINKS.github} class="transition-colors hover:text-ink-muted" target="_blank" rel="noopener">GitHub</a>
+            <a href="mailto:support@qeet.in" class="transition-colors hover:text-ink-muted">Support</a>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </footer>

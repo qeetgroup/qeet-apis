@@ -1,0 +1,79 @@
+---
+// Integrations — a monochrome logo grid of the stack Qeet plugs into. Centered
+// head, single bordered panel. Canvas background. Marks render as inline
+// simple-icons (currentColor → brand on hover), so no raster assets ship.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import { LINKS } from "../data/catalog";
+import {
+  siNodedotjs, siPython, siGo, siTypescript, siReact, siNextdotjs,
+  siGithub, siGitlab, siDocker, siKubernetes, siTerraform, siCloudflare,
+  siDatadog, siGrafana, siSentry, siPagerduty, siPostman, siZapier,
+} from "simple-icons";
+
+const logos = [
+  siNodedotjs, siPython, siGo, siTypescript, siReact, siNextdotjs,
+  siGithub, siGitlab, siDocker, siKubernetes, siTerraform, siCloudflare,
+  siDatadog, siGrafana, siSentry, siPagerduty, siPostman, siZapier,
+];
+
+const cats = ["Languages & frameworks", "CI/CD & infrastructure", "Observability & tooling"];
+---
+
+<section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="integrations">
+  <div class="container container-wide">
+    <SectionHead
+      align="center"
+      eyebrow="Integrations"
+      title="Plug into everything you already run."
+    >
+      Qeet meets your stack where it is — native SDKs, first-class observability
+      exports, and open webhooks that connect to anything else.
+    </SectionHead>
+
+    <div class="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-2.5" data-reveal>
+      {
+        cats.map((c) => (
+          <span class="rounded-full border border-rule bg-surface px-3 py-1 font-ui text-[0.76rem] font-medium text-ink-subtle">
+            {c}
+          </span>
+        ))
+      }
+    </div>
+
+    <div
+      class="mx-auto mt-9 overflow-hidden rounded-2xl border border-rule bg-surface shadow-(--shadow-sm)"
+      data-reveal
+      style="transition-delay:80ms"
+    >
+      <div class="grid grid-cols-3 gap-px bg-rule sm:grid-cols-6">
+        {
+          logos.map((logo) => (
+            <div
+              class="group grid aspect-[1.6] place-items-center bg-surface text-ink-subtle transition-colors duration-300 hover:text-brand"
+              title={logo.title}
+            >
+              <svg
+                viewBox="0 0 24 24"
+                class="h-7 w-7 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
+                fill="currentColor"
+                role="img"
+                aria-label={logo.title}
+              >
+                <path d={logo.path} />
+              </svg>
+            </div>
+          ))
+        }
+      </div>
+    </div>
+
+    <div class="mt-8 flex flex-col items-center gap-4 text-center" data-reveal>
+      <p class="max-w-[52ch] text-[0.95rem] text-ink-subtle">
+        Don't see yours? Every event and metric can stream out over signed
+        webhooks and the REST API — so you can wire Qeet into anything.
+      </p>
+      <ArrowLink href={LINKS.reference} label="Explore the API" />
+    </div>
+  </div>
+</section>

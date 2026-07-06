@@ -1,0 +1,110 @@
+---
+// API Monitoring — a live status board: per-region uptime bars, health summary
+// and latency percentiles. Split layout, visual on the LEFT. Canvas background.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+
+const bullets = [
+  ["Global health at a glance.", "Uptime and latency tracked per region and per endpoint, continuously."],
+  ["Percentiles that matter.", "p50, p95 and p99 — not misleading averages that hide the tail."],
+  ["Synthetic + real-user.", "Probes from every region combined with signals from live traffic."],
+  ["Alerts where you already are.", "Fire to PagerDuty, Slack or a webhook when a threshold is crossed."],
+];
+
+const BARS = 46;
+const regions = [
+  { name: "us-east-1", uptime: "100%", bad: {} as Record<number, string> },
+  { name: "eu-west-1", uptime: "99.98%", bad: { 41: "warn" } },
+  { name: "ap-south-1", uptime: "99.95%", bad: { 17: "warn", 18: "down" } },
+];
+const barColor = (s?: string) =>
+  s === "down" ? "var(--danger)" : s === "warn" ? "var(--warning)" : "var(--success)";
+
+const pcts = [
+  { k: "p50", v: "12ms" },
+  { k: "p95", v: "42ms" },
+  { k: "p99", v: "88ms" },
+];
+---
+
+<section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="monitoring">
+  <div class="container container-wide">
+    <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
+      <!-- visual: status board -->
+      <div data-reveal>
+        <div class="overflow-hidden rounded-2xl border border-rule bg-surface shadow-(--shadow-lg)">
+          <!-- header -->
+          <div class="flex items-center gap-2.5 border-b border-rule px-5 py-3.5">
+            <span class="live-dot h-2.5 w-2.5 rounded-full bg-success"></span>
+            <p class="font-ui text-[0.85rem] font-semibold text-ink">All systems operational</p>
+            <span class="ml-auto font-mono text-[0.72rem] text-ink-faint">status.qeet.in</span>
+          </div>
+
+          <!-- region rows -->
+          <div class="grid gap-4 px-5 py-4">
+            {
+              regions.map((r) => (
+                <div>
+                  <div class="mb-1.5 flex items-center justify-between">
+                    <span class="flex items-center gap-2 font-mono text-[0.78rem] text-ink">
+                      <Icon name="globe" class="h-3.5 w-3.5 text-ink-faint" /> {r.name}
+                    </span>
+                    <span class="font-ui text-[0.74rem] font-medium text-ink-subtle">{r.uptime}</span>
+                  </div>
+                  <div class="flex h-8 items-end gap-[2px]">
+                    {
+                      Array.from({ length: BARS }).map((_, i) => (
+                        <span
+                          class="flex-1 rounded-[1px]"
+                          style={`height:${68 + ((i * 7) % 32)}%;background:${barColor(r.bad[i])};opacity:${r.bad[i] ? 1 : 0.85}`}
+                        />
+                      ))
+                    }
+                  </div>
+                </div>
+              ))
+            }
+          </div>
+
+          <!-- latency percentiles -->
+          <div class="grid grid-cols-3 gap-px border-t border-rule bg-rule">
+            {
+              pcts.map((p) => (
+                <div class="flex items-baseline justify-center gap-1.5 bg-surface px-4 py-3">
+                  <span class="font-mono text-[0.72rem] uppercase text-ink-faint">{p.k}</span>
+                  <span class="font-display text-[1.15rem] font-semibold text-ink">{p.v}</span>
+                </div>
+              ))
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- copy -->
+      <div>
+        <SectionHead eyebrow="API Monitoring" title="Uptime you can watch, latency you can trust.">
+          Every region, every endpoint, probed around the clock. See the health of
+          your integration the way your users experience it.
+        </SectionHead>
+        <ul class="mt-7 grid gap-4">
+          {
+            bullets.map(([h, t]) => (
+              <li class="flex gap-3" data-reveal>
+                <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon name="check" class="h-3 w-3" />
+                </span>
+                <span class="text-[0.96rem] text-ink-muted">
+                  <b class="font-semibold text-ink">{h}</b> {t}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="mt-8" data-reveal>
+          <ArrowLink href="https://status.qeet.in" label="View the status page" external />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
