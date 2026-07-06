@@ -89,7 +89,7 @@ const steps = [
   <TrustedBy />
 
   <!-- 2b · Open standards marquee -->
-  <section class="border-y border-rule py-8">
+  <section class="border-y border-rule bg-surface/50 py-8">
     <div class="container container-wide">
       <p class="mb-5 text-center font-ui text-[0.8rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">
         Speaks the open standards you already trust
@@ -102,7 +102,7 @@ const steps = [
   <PlatformOverview />
 
   <!-- 3b · Product suite -->
-  <section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="products">
+  <section class="section-premium" id="products">
     <div class="container container-wide">
       <SectionHead
         class="mb-11"
@@ -124,7 +124,7 @@ const steps = [
   <ApiDiscovery />
 
   <!-- 5 · API Documentation -->
-  <section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="docs">
+  <section class="section-premium border-y border-rule bg-surface" id="docs">
     <div class="container container-wide">
       <SectionHead
         class="mb-11"
@@ -166,7 +166,7 @@ const steps = [
   <Webhooks />
 
   <!-- 14 · Enterprise Security -->
-  <section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="enterprise">
+  <section class="section-premium border-y border-rule bg-surface" id="enterprise">
     <div class="container container-wide">
       <SectionHead
         class="mb-11"
@@ -190,7 +190,7 @@ const steps = [
   <Integrations />
 
   <!-- 18 · Developer Experience -->
-  <section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="quickstart">
+  <section class="section-premium" id="quickstart">
     <div class="container container-wide grid items-start gap-12 lg:grid-cols-2">
       <div>
         <SectionHead eyebrow="Developer Experience" title="Your first request in under a minute.">
@@ -210,11 +210,13 @@ const steps = [
           }
         </ol>
         <div class="mt-7 flex flex-wrap gap-3.5" data-reveal>
-          <a class="btn btn-primary" href={LINKS.quickstart}>
-            <Icon name="zap" /> Full quickstart
+          <a class="btn btn-primary pl-5 pr-2" href={LINKS.quickstart}>
+            Full quickstart
+            <span class="btn-island"><Icon name="arrow-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
           </a>
-          <a class="btn" href={LINKS.authentication}>
-            <Icon name="key" /> Authentication
+          <a class="btn pl-5 pr-2" href={LINKS.authentication}>
+            Authentication
+            <span class="btn-island"><Icon name="arrow-up-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
           </a>
         </div>
       </div>

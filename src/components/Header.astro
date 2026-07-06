@@ -22,10 +22,9 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
 ---
 
 <header
-  class="sticky top-0 z-200 h-(--header-h) border-b border-rule backdrop-blur-md backdrop-saturate-150"
-  style="background:color-mix(in oklab, var(--bg) 78%, transparent)"
+  class="site-header sticky top-0 z-200 px-3 pb-3 pt-4"
 >
-  <div class="container container-wide flex h-full items-center gap-4 xl:gap-6">
+  <div class="nav-shell mx-auto flex items-center gap-3 rounded-full border border-rule bg-surface/88 px-3 py-2 shadow-(--shadow-md) backdrop-blur-xl backdrop-saturate-150">
     <!-- Logo -->
     <a
       href="/"
@@ -42,12 +41,12 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
     </a>
 
     <!-- Primary nav — desktop -->
-    <nav class="ml-6 hidden items-center gap-0.5 font-ui lg:flex" id="site-nav" aria-label="Primary">
+      <nav class="ml-4 hidden items-center gap-1 font-ui lg:flex" id="site-nav" aria-label="Primary">
       <!-- Products -->
       <a
         href="/#products"
         aria-current={path === "/" ? undefined : undefined}
-        class="nav-link px-2.5 py-2 text-[0.9rem] font-medium text-ink-muted transition-colors hover:text-ink"
+          class="nav-link px-3 py-2 text-[0.88rem] font-medium text-ink-muted hover:text-ink"
       >
         Products
       </a>
@@ -56,26 +55,27 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
       <div class="nav-dropdown group relative">
         <button
           type="button"
-          class="nav-link flex items-center gap-1 px-2.5 py-2 text-[0.9rem] font-medium text-ink-muted transition-colors hover:text-ink"
+          class="nav-link flex items-center gap-1 px-3 py-2 text-[0.88rem] font-medium text-ink-muted hover:text-ink"
           aria-haspopup="true"
           aria-expanded="false"
           aria-controls="nav-developers"
         >
           Developers
-          <Icon name="chevron-down" class="h-3.5 w-3.5 transition-transform duration-200 group-focus-within:rotate-180" />
+          <Icon name="chevron-down" class="h-3.5 w-3.5 stroke-[1.55] transition-transform duration-500 ease-(--ease-spring) group-focus-within:rotate-180" />
         </button>
         <div
           id="nav-developers"
-          class="nav-panel invisible absolute left-0 top-full min-w-88 opacity-0 transition-all duration-200"
+          class="nav-panel invisible absolute left-0 min-w-92 opacity-0"
           role="menu"
         >
-          <div class="mt-2 overflow-hidden rounded-xl border border-rule bg-surface shadow-(--shadow-lg)">
+          <div class="bezel nav-panel-frame shadow-none">
+            <div class="bezel-core overflow-hidden">
             {
               developerLinks.map((item) => (
                 <a
                   href={item.href}
                   role="menuitem"
-                  class="flex flex-col gap-0.5 px-4 py-3 transition-colors hover:bg-surface-2 focus:bg-surface-2 focus:outline-none"
+                  class="nav-panel-item flex flex-col gap-0.5 px-4 py-3.5 transition-colors focus:outline-none"
                   aria-current={isActive(item.href) ? "page" : undefined}
                 >
                   <span class="text-[0.9rem] font-medium text-ink aria-[current=page]:text-brand-deep">{item.label}</span>
@@ -83,6 +83,7 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
                 </a>
               ))
             }
+            </div>
           </div>
         </div>
       </div>
@@ -91,20 +92,21 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
       <div class="nav-dropdown group relative">
         <button
           type="button"
-          class="nav-link flex items-center gap-1 px-2.5 py-2 text-[0.9rem] font-medium text-ink-muted transition-colors hover:text-ink"
+          class="nav-link flex items-center gap-1 px-3 py-2 text-[0.88rem] font-medium text-ink-muted hover:text-ink"
           aria-haspopup="true"
           aria-expanded="false"
           aria-controls="nav-docs"
         >
           Documentation
-          <Icon name="chevron-down" class="h-3.5 w-3.5 transition-transform duration-200 group-focus-within:rotate-180" />
+          <Icon name="chevron-down" class="h-3.5 w-3.5 stroke-[1.55] transition-transform duration-500 ease-(--ease-spring) group-focus-within:rotate-180" />
         </button>
         <div
           id="nav-docs"
-          class="nav-panel invisible absolute left-0 top-full min-w-[20rem] opacity-0 transition-all duration-200"
+          class="nav-panel invisible absolute left-0 min-w-84 opacity-0"
           role="menu"
         >
-          <div class="mt-2 overflow-hidden rounded-xl border border-rule bg-surface shadow-(--shadow-lg)">
+          <div class="bezel nav-panel-frame shadow-none">
+            <div class="bezel-core overflow-hidden">
             {
               docsLinks.map((item) => (
                 <a
@@ -112,24 +114,25 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
                   role="menuitem"
                   target={item.external ? "_blank" : undefined}
                   rel={item.external ? "noopener" : undefined}
-                  class="flex flex-col gap-0.5 px-4 py-3 transition-colors hover:bg-surface-2 focus:bg-surface-2 focus:outline-none"
+                  class="nav-panel-item flex flex-col gap-0.5 px-4 py-3.5 transition-colors focus:outline-none"
                 >
                   <span class="flex items-center gap-1.5 text-[0.9rem] font-medium text-ink">
                     {item.label}
-                    {item.external && <Icon name="external-link" class="h-3 w-3 text-ink-faint" />}
+                    {item.external && <Icon name="external-link" class="h-3 w-3 stroke-[1.55] text-ink-faint" />}
                   </span>
                   <span class="text-[0.8rem] text-ink-subtle">{item.desc}</span>
                 </a>
               ))
             }
+            </div>
           </div>
         </div>
       </div>
 
-      <a href="/#pricing" class="nav-link px-2.5 py-2 text-[0.9rem] font-medium text-ink-muted transition-colors hover:text-ink">
+      <a href="/#pricing" class="nav-link px-3 py-2 text-[0.88rem] font-medium text-ink-muted hover:text-ink">
         Pricing
       </a>
-      <a href="/#enterprise" class="nav-link px-2.5 py-2 text-[0.9rem] font-medium text-ink-muted transition-colors hover:text-ink">
+      <a href="/#enterprise" class="nav-link px-3 py-2 text-[0.88rem] font-medium text-ink-muted hover:text-ink">
         Enterprise
       </a>
     </nav>
@@ -137,18 +140,19 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
     <!-- Right side actions -->
     <div class="ml-auto flex items-center gap-2">
       <a
-        class="hidden px-3 py-1.5 font-ui text-[0.9rem] font-medium text-ink-muted transition-colors hover:text-ink sm:block"
+        class="hidden px-3 py-1.5 font-ui text-[0.88rem] font-medium text-ink-muted transition-colors duration-500 ease-(--ease-spring) hover:text-ink sm:block"
         href={LINKS.console}
         target="_blank"
         rel="noopener"
       >
         Sign In
       </a>
-      <a class="btn btn-primary hidden sm:flex" href={LINKS.quickstart}>
+      <a class="btn btn-primary hidden py-2 pl-4 pr-2 text-[0.88rem] sm:flex" href={LINKS.quickstart}>
         Get Started
+        <span class="btn-island h-7 w-7"><Icon name="arrow-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
       </a>
       <a
-        class="hidden h-[2.2rem] w-[2.2rem] place-items-center rounded border border-rule bg-surface text-ink-muted transition hover:border-rule-strong hover:text-ink md:grid"
+        class="hidden h-[2.2rem] w-[2.2rem] place-items-center rounded-full border border-rule bg-surface text-ink-muted transition duration-500 ease-(--ease-spring) hover:border-rule-strong hover:text-ink md:grid"
         href={LINKS.github}
         target="_blank"
         rel="noopener"
@@ -160,40 +164,43 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
       <!-- Mobile hamburger -->
       <button
         type="button"
-        class="grid h-[2.2rem] w-[2.2rem] place-items-center rounded border border-rule bg-surface text-ink lg:hidden"
+        class="hamburger relative grid h-[2.2rem] w-[2.2rem] place-items-center rounded-full border border-rule bg-surface text-ink lg:hidden"
         id="nav-toggle"
         aria-label="Toggle navigation"
         aria-expanded="false"
         aria-controls="mobile-nav"
       >
-        <Icon name="menu" class="block" id="icon-menu" />
-        <Icon name="x" class="hidden" id="icon-x" />
+        <span class="hamburger-line"></span>
+        <span class="hamburger-line"></span>
       </button>
     </div>
   </div>
 
-  <!-- Mobile nav panel -->
+  <!-- Mobile nav overlay -->
   <div
     id="mobile-nav"
-    class="hidden border-b border-rule bg-bg shadow-(--shadow-md) lg:hidden"
+    class="mobile-overlay lg:hidden"
     aria-label="Mobile navigation"
   >
-    <div class="container container-wide grid gap-1 py-4">
-      <a href="/#products" class="mobile-nav-link">Products</a>
-      <p class="mt-2 px-3 font-ui text-[0.72rem] font-semibold uppercase tracking-wider text-ink-faint">Developers</p>
+    <div class="container container-wide grid gap-5 pt-28">
+      <div class="bezel mx-auto w-full max-w-2xl">
+        <div class="bezel-core grid gap-1 p-3">
+      <a href="/#products" class="mobile-nav-link mobile-overlay__item" style="--i:0">Products</a>
+      <p class="mobile-overlay__item mt-3 px-3 font-ui text-[0.64rem] font-semibold uppercase tracking-[0.2em] text-ink-faint" style="--i:1">Developers</p>
       {
-        developerLinks.map((item) => (
-          <a href={item.href} class="mobile-nav-link pl-5 text-[0.9rem]">
+        developerLinks.map((item, i) => (
+          <a href={item.href} class="mobile-nav-link mobile-overlay__item pl-5 text-[0.9rem]" style={`--i:${i + 2}`}>
             {item.label}
           </a>
         ))
       }
-      <p class="mt-2 px-3 font-ui text-[0.72rem] font-semibold uppercase tracking-wider text-ink-faint">Documentation</p>
+      <p class="mobile-overlay__item mt-3 px-3 font-ui text-[0.64rem] font-semibold uppercase tracking-[0.2em] text-ink-faint" style="--i:7">Documentation</p>
       {
-        docsLinks.map((item) => (
+        docsLinks.map((item, i) => (
           <a
             href={item.href}
-            class="mobile-nav-link pl-5 text-[0.9rem]"
+            class="mobile-nav-link mobile-overlay__item pl-5 text-[0.9rem]"
+            style={`--i:${i + 8}`}
             target={item.external ? "_blank" : undefined}
             rel={item.external ? "noopener" : undefined}
           >
@@ -202,34 +209,49 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
           </a>
         ))
       }
-      <a href="/#pricing" class="mobile-nav-link">Pricing</a>
-      <a href="/#enterprise" class="mobile-nav-link">Enterprise</a>
-      <div class="mt-3 flex gap-2 border-t border-rule pt-3">
-        <a class="btn flex-1 justify-center" href={LINKS.console} target="_blank" rel="noopener">Sign In</a>
-        <a class="btn btn-primary flex-1 justify-center" href={LINKS.quickstart}>Get Started</a>
+      <a href="/#pricing" class="mobile-nav-link mobile-overlay__item" style="--i:11">Pricing</a>
+      <a href="/#enterprise" class="mobile-nav-link mobile-overlay__item" style="--i:12">Enterprise</a>
+      <div class="mobile-overlay__item mt-3 grid gap-2 border-t border-rule pt-3 sm:grid-cols-2" style="--i:13">
+        <a class="btn justify-center" href={LINKS.console} target="_blank" rel="noopener">Sign In</a>
+        <a class="btn btn-primary justify-center pl-5 pr-2" href={LINKS.quickstart}>
+          Get Started
+          <span class="btn-island"><Icon name="arrow-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
+        </a>
+      </div>
+        </div>
       </div>
     </div>
   </div>
 </header>
 
 <style>
+  .site-header {
+    --nav-w: min(80rem, calc(100vw - 1.5rem));
+  }
+  .nav-shell {
+    position: relative;
+    z-index: 190;
+    width: var(--nav-w);
+    box-shadow: var(--shadow-bezel), 0 18px 54px -38px color-mix(in oklab, var(--ink) 38%, transparent);
+  }
   /* Desktop nav: brand underline wipe on hover/active */
   @media (min-width: 1024px) {
     .nav-link {
       position: relative;
+      transition: color 0.55s var(--ease-spring);
     }
     a.nav-link::after {
       content: "";
       position: absolute;
-      left: 0.625rem;
-      right: 0.625rem;
-      bottom: 0.2rem;
-      height: 2px;
+      left: 0.75rem;
+      right: 0.75rem;
+      bottom: 0.32rem;
+      height: 1px;
       border-radius: 2px;
       background: var(--brand);
       transform: scaleX(0);
       transform-origin: left center;
-      transition: transform 0.22s var(--ease);
+      transition: transform 0.55s var(--ease-spring);
     }
     a.nav-link:hover::after,
     a.nav-link[aria-current="page"]::after {
@@ -243,73 +265,194 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
 
     /* Dropdown open on hover AND focus-within */
     .nav-dropdown:hover .nav-panel,
-    .nav-dropdown:focus-within .nav-panel {
+    .nav-dropdown:focus-within .nav-panel,
+    .nav-dropdown[data-open="true"] .nav-panel {
       visibility: visible;
       opacity: 1;
+      transform: translateY(0) scale(1);
     }
     .nav-dropdown:hover .nav-panel {
       transition-delay: 0ms;
     }
   }
 
+  .nav-panel {
+    top: calc(100% + 0.7rem);
+    transform: translateY(10px) scale(0.985);
+    transform-origin: top left;
+    transition:
+      opacity 0.55s var(--ease-spring),
+      transform 0.55s var(--ease-spring),
+      visibility 0.55s var(--ease-spring);
+  }
+  .nav-panel-frame {
+    box-shadow: var(--shadow-lg);
+  }
+  .nav-panel-item + .nav-panel-item {
+    border-top: 1px solid var(--rule);
+  }
+  .nav-panel-item:hover,
+  .nav-panel-item:focus {
+    background: var(--surface-2);
+  }
+
+  .hamburger {
+    box-shadow: var(--shadow-bezel);
+    transition:
+      transform 0.55s var(--ease-spring),
+      border-color 0.55s var(--ease-spring);
+  }
+  .hamburger:active {
+    transform: scale(0.96);
+  }
+  .hamburger-line {
+    position: absolute;
+    width: 0.92rem;
+    height: 1px;
+    border-radius: 999px;
+    background: currentColor;
+    transition:
+      transform 0.6s var(--ease-spring),
+      opacity 0.6s var(--ease-spring);
+  }
+  .hamburger-line:first-child {
+    transform: translateY(-4px);
+  }
+  .hamburger-line:last-child {
+    transform: translateY(4px);
+  }
+  .hamburger[aria-expanded="true"] .hamburger-line:first-child {
+    transform: rotate(45deg);
+  }
+  .hamburger[aria-expanded="true"] .hamburger-line:last-child {
+    transform: rotate(-45deg);
+  }
+
+  .mobile-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 180;
+    pointer-events: none;
+    opacity: 0;
+    background: color-mix(in oklab, var(--bg) 84%, transparent);
+    backdrop-filter: blur(28px) saturate(1.2);
+    transition: opacity 0.7s var(--ease-spring);
+  }
+  .mobile-overlay.is-open {
+    pointer-events: auto;
+    opacity: 1;
+  }
+  html.nav-lock {
+    overflow: hidden;
+  }
+  .mobile-overlay__item {
+    opacity: 0;
+    transform: translateY(28px);
+    transition:
+      opacity 0.7s var(--ease-spring),
+      transform 0.7s var(--ease-spring);
+    transition-delay: calc(var(--i, 0) * 35ms);
+  }
+  .mobile-overlay.is-open .mobile-overlay__item {
+    opacity: 1;
+    transform: translateY(0);
+  }
+
   /* Mobile nav link */
   .mobile-nav-link {
     display: block;
-    padding: 0.6rem 0.75rem;
-    border-radius: 0.5rem;
+    padding: 0.72rem 0.85rem;
+    border-radius: 999px;
     font-family: var(--font-ui);
-    font-size: 0.95rem;
+    font-size: 1rem;
     font-weight: 500;
     color: var(--ink-muted);
-    transition: background-color 0.15s, color 0.15s;
+    transition:
+      background-color 0.55s var(--ease-spring),
+      color 0.55s var(--ease-spring),
+      transform 0.55s var(--ease-spring);
   }
   .mobile-nav-link:hover {
     background: var(--surface-2);
     color: var(--ink);
+    transform: translateX(3px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .nav-panel,
+    .hamburger,
+    .hamburger-line,
+    .mobile-overlay,
+    .mobile-overlay__item,
+    .mobile-nav-link {
+      transition: none !important;
+    }
   }
 </style>
 
 <script>
-  // Mobile hamburger toggle
   const toggle = document.getElementById("nav-toggle");
   const mobileNav = document.getElementById("mobile-nav");
-  const iconMenu = document.getElementById("icon-menu");
-  const iconX = document.getElementById("icon-x");
+
+  const setMobileOpen = (open: boolean) => {
+    toggle?.setAttribute("aria-expanded", String(open));
+    mobileNav?.classList.toggle("is-open", open);
+    document.documentElement.classList.toggle("nav-lock", open);
+  };
 
   toggle?.addEventListener("click", () => {
-    const open = mobileNav?.classList.toggle("hidden") === false;
-    toggle.setAttribute("aria-expanded", String(open));
-    iconMenu?.classList.toggle("hidden", open);
-    iconX?.classList.toggle("hidden", !open);
+    const open = toggle.getAttribute("aria-expanded") !== "true";
+    setMobileOpen(open);
   });
 
   // Desktop dropdowns: keyboard accessible
   document.querySelectorAll<HTMLButtonElement>(".nav-dropdown > button").forEach((btn) => {
-    const panel = btn.nextElementSibling as HTMLElement;
     btn.addEventListener("click", () => {
+      const dropdown = btn.closest<HTMLElement>(".nav-dropdown");
       const expanded = btn.getAttribute("aria-expanded") === "true";
+      document.querySelectorAll<HTMLElement>(".nav-dropdown[data-open='true']").forEach((openDropdown) => {
+        if (openDropdown !== dropdown) {
+          openDropdown.removeAttribute("data-open");
+          openDropdown.querySelector("button")?.setAttribute("aria-expanded", "false");
+        }
+      });
       btn.setAttribute("aria-expanded", String(!expanded));
+      dropdown?.toggleAttribute("data-open", !expanded);
     });
     // Close on Escape
     btn.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         btn.setAttribute("aria-expanded", "false");
+        btn.closest<HTMLElement>(".nav-dropdown")?.removeAttribute("data-open");
         btn.focus();
       }
     });
     // Sync aria-expanded with hover state for screen readers
     const dropdown = btn.closest(".nav-dropdown")!;
     dropdown.addEventListener("mouseenter", () => btn.setAttribute("aria-expanded", "true"));
-    dropdown.addEventListener("mouseleave", () => btn.setAttribute("aria-expanded", "false"));
+    dropdown.addEventListener("mouseleave", () => {
+      btn.setAttribute("aria-expanded", "false");
+      dropdown.removeAttribute("data-open");
+    });
+  });
+
+  document.addEventListener("click", (e) => {
+    const target = e.target as Element;
+    if (target.closest(".nav-dropdown")) return;
+    document.querySelectorAll<HTMLElement>(".nav-dropdown[data-open='true']").forEach((dropdown) => {
+      dropdown.removeAttribute("data-open");
+      dropdown.querySelector("button")?.setAttribute("aria-expanded", "false");
+    });
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") setMobileOpen(false);
   });
 
   // Close mobile nav on anchor link click
   mobileNav?.querySelectorAll("a").forEach((a) => {
     a.addEventListener("click", () => {
-      mobileNav.classList.add("hidden");
-      toggle?.setAttribute("aria-expanded", "false");
-      iconMenu?.classList.remove("hidden");
-      iconX?.classList.add("hidden");
+      setMobileOpen(false);
     });
   });
 </script>

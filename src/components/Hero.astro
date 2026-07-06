@@ -3,91 +3,273 @@ import Icon from "./Icon.astro";
 import StatRow from "./StatRow.astro";
 import { LINKS } from "../data/catalog";
 
-// Decorative request/response shown in the preview card (mirrors the real
-// GET /v1/auth/me operation + Principal schema used across the portal).
-const reqHtml = `<span class="text-ink-faint">$</span> curl https://api.id.qeet.in/v1/auth/me \\
-  -H <span class="text-brand-deep">"Authorization: ApiKey qk_live_…"</span> <span class="caret"></span>`;
+const reqHtml = `<span class="text-ink-faint">$</span> curl https://api.id.qeet.in/v1/auth/me \
+  -H <span class="text-brand-deep">"Authorization: ApiKey qk_live_..."</span> \
+  -H <span class="text-brand-deep">"X-Qeet-Env: production"</span> <span class="caret"></span>`;
 
 const resHtml = `{
-  <span class="text-brand-deep">"user_id"</span>:    <span class="text-success">"8f1c2a9e-4b7d-…"</span>,
-  <span class="text-brand-deep">"tenant_id"</span>:  <span class="text-success">"ace1-9f2c-…"</span>,
-  <span class="text-brand-deep">"session_id"</span>: <span class="text-success">"se_3rd0…"</span>,
-  <span class="text-brand-deep">"scopes"</span>:     [<span class="text-success">"identity.read"</span>, <span class="text-success">"openid"</span>]
+  <span class="text-brand-deep">"principal"</span>: <span class="text-success">"usr_8f1c2a9e"</span>,
+  <span class="text-brand-deep">"tenant"</span>:    <span class="text-success">"org_ace19f2c"</span>,
+  <span class="text-brand-deep">"scopes"</span>:    [<span class="text-success">"identity.read"</span>, <span class="text-success">"openid"</span>],
+  <span class="text-brand-deep">"trace"</span>:     <span class="text-success">"qtr_4b7d9a"</span>
 }`;
+
+const environments = ["production", "staging", "local"];
+const scopes = ["identity.read", "notify.send", "webhooks.write"];
+const lifecycle = ["Discover", "Authenticate", "Run", "Observe"];
 ---
 
-<section class="relative overflow-hidden">
-  <!-- animated aurora / mesh background -->
+<section class="soft-band relative overflow-hidden">
+  <!-- Structural grid, intentionally faint. -->
   <div
-    class="aurora pointer-events-none absolute inset-0 -z-10"
-    style="background:radial-gradient(58% 55% at 82% 4%, var(--brand-soft), transparent 70%), radial-gradient(42% 46% at 6% 2%, color-mix(in oklab, var(--brand) 6%, transparent), transparent 72%), radial-gradient(38% 40% at 50% 120%, color-mix(in oklab, var(--brand) 5%, transparent), transparent 70%)"
+    class="pointer-events-none absolute inset-0 opacity-[0.28] dark:opacity-[0.16]"
+    style="background-image:linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size:56px 56px; -webkit-mask-image:radial-gradient(72% 56% at 50% 0%, #000, transparent 76%); mask-image:radial-gradient(72% 56% at 50% 0%, #000, transparent 76%)"
     aria-hidden="true"
   >
   </div>
-  <!-- faint grid overlay -->
   <div
-    class="pointer-events-none absolute inset-0 -z-10 opacity-[0.35] dark:opacity-[0.25]"
-    style="background-image:linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size:44px 44px; -webkit-mask-image:radial-gradient(70% 60% at 50% 0%, #000, transparent 75%); mask-image:radial-gradient(70% 60% at 50% 0%, #000, transparent 75%)"
-    aria-hidden="true"
-  >
-  </div>
-
-  <!-- brand beam sweep -->
-  <div
-    class="beam pointer-events-none absolute left-1/2 top-[-38%] -z-10 aspect-square w-208 max-w-none -translate-x-1/2 opacity-40 blur-3xl dark:opacity-30"
-    style="background:conic-gradient(from 150deg at 50% 50%, transparent 0deg, var(--brand-soft) 42deg, transparent 128deg, transparent 232deg, color-mix(in oklab, var(--brand) 8%, transparent) 302deg, transparent 360deg)"
+    class="pointer-events-none absolute left-1/2 top-20 h-80 w-176 -translate-x-1/2 rounded-full opacity-70 blur-3xl dark:opacity-30"
+    style="background:radial-gradient(closest-side, var(--brand-faint), transparent 72%)"
     aria-hidden="true"
   >
   </div>
 
-  <div class="container container-wide relative grid items-center gap-12 py-[clamp(3.5rem,9vw,6.5rem)] lg:grid-cols-[1.05fr_0.95fr]">
+  <div class="container container-wide relative grid min-h-[calc(100dvh-var(--header-h))] items-center gap-12 pb-16 pt-10 md:pb-20 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16">
     <!-- copy -->
     <div>
       <span
-        class="eyebrow inline-flex items-center gap-2 rounded-full border border-rule bg-surface/60 px-3 py-1"
+        class="eyebrow gap-2"
         data-reveal
       >
         <span class="h-1.5 w-1.5 rounded-full bg-brand"></span>
-        Qeet Group · Developer Platform
+        Qeet Group · API Platform
       </span>
-      <h1 class="mt-5 text-[clamp(2.6rem,6.4vw,4.6rem)]" data-reveal style="transition-delay:60ms">
-        Build on the entire<br /><span class="text-gradient">Qeet platform.</span>
+      <h1 class="mt-6 max-w-[11ch] text-[clamp(3.2rem,7.6vw,6.4rem)] leading-[0.94] tracking-[-0.045em]" data-reveal style="transition-delay:60ms">
+        Every Qeet API, composed for shipping.
       </h1>
       <p
-        class="mt-5 max-w-[46ch] text-[clamp(1.05rem,2.1vw,1.3rem)] text-ink-muted"
+        class="mt-6 max-w-[48ch] text-[clamp(1.05rem,2.1vw,1.32rem)] leading-relaxed text-ink-muted"
         data-reveal
         style="transition-delay:120ms"
       >
-        One interactive reference for every Qeet product — identity, notifications
-        and a growing suite. Authenticate, explore endpoints, and run live
-        requests with code in your language.
+        Discover, test, secure, and operate Qeet ID and Qeet Notify from one
+        OpenAPI-first workspace, with live references, generated code, and
+        production-ready auth flows.
       </p>
-      <div class="mt-7 flex flex-wrap gap-3.5" data-reveal style="transition-delay:180ms">
+      <div class="mt-8 flex flex-wrap gap-3" data-reveal style="transition-delay:180ms">
         <a class="btn btn-primary btn-lg" href={LINKS.reference}>
-          <Icon name="book" /> Explore the API
+          Open reference
+          <span class="btn-island"><Icon name="arrow-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
         </a>
         <a class="btn btn-lg" href={LINKS.quickstart}>
-          <Icon name="zap" /> Quickstart
+          View quickstart
+          <span class="btn-island"><Icon name="arrow-up-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
         </a>
       </div>
-      <StatRow class="mt-10 max-w-[34rem]" data-reveal style="transition-delay:240ms" />
+      <div class="mt-10" data-reveal style="transition-delay:240ms">
+        <StatRow class="max-w-140" />
+      </div>
     </div>
 
-    <!-- preview card -->
-    <div class="relative" aria-hidden="true" data-reveal style="transition-delay:140ms">
-      <div
-        class="pointer-events-none absolute -inset-6 opacity-70 blur-2xl"
-        style="background:radial-gradient(55% 55% at 55% 25%, var(--brand-soft), transparent 70%)"
-      >
+    <!-- API system visual -->
+    <div class="relative mx-auto w-full max-w-176" data-reveal style="transition-delay:150ms">
+      <div class="hero-depth-card hero-depth-card--left hidden lg:block" aria-hidden="true"></div>
+      <div class="hero-depth-card hero-depth-card--right hidden lg:block" aria-hidden="true"></div>
+
+      <div class="bezel relative">
+        <div class="bezel-core overflow-hidden">
+          <div class="flex flex-wrap items-center gap-2 border-b border-rule bg-surface-2/80 px-4 py-3 sm:px-5">
+            <span class="font-mono text-[0.72rem] text-ink-faint">apis.qeet.in</span>
+            <span class="mx-1 hidden h-1 w-1 rounded-full bg-rule-strong sm:block"></span>
+            <div class="flex flex-wrap gap-1.5">
+              {
+                environments.map((env, i) => (
+                  <span
+                    class:list={[
+                      "rounded-full px-2.5 py-1 font-ui text-[0.7rem] font-semibold",
+                      i === 0 ? "bg-brand-soft text-brand-deep" : "bg-surface text-ink-subtle",
+                    ]}
+                  >
+                    {env}
+                  </span>
+                ))
+              }
+            </div>
+            <span class="ml-auto inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 font-mono text-[0.68rem] text-ink-subtle">
+              <span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span>
+              live console
+            </span>
+          </div>
+
+          <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1.05fr_0.95fr]">
+            <div class="grid gap-4">
+              <div class="rounded-[1.45rem] border border-rule bg-surface p-3 shadow-(--shadow-bezel)">
+                <div class="flex items-center gap-2.5">
+                  <span class="method-chip text-[#1c6b4a] dark:text-[#5bbd7a]" style="background:color-mix(in oklab, var(--m-get) 14%, transparent)">GET</span>
+                  <code class="font-mono text-[0.82rem] text-ink">/v1/auth/me</code>
+                  <span class="ml-auto rounded-full bg-ink px-3 py-1 font-ui text-[0.72rem] font-semibold text-bg">Send</span>
+                </div>
+                <pre class="m-0 mt-3 overflow-x-auto rounded-[1.1rem] bg-surface-2 px-3.5 py-3 font-mono text-[0.74rem] leading-relaxed text-ink" set:html={reqHtml}></pre>
+              </div>
+
+              <div class="rounded-[1.45rem] border border-rule bg-surface p-3 shadow-(--shadow-bezel)">
+                <div class="mb-3 flex items-center gap-2 font-mono text-[0.72rem]">
+                  <span class="rounded-full px-2.5 py-1 font-semibold text-[#1c6b4a] dark:text-[#5bbd7a]" style="background:color-mix(in oklab, var(--m-get) 14%, transparent)">200 OK</span>
+                  <span class="text-ink-faint">application/json</span>
+                  <span class="ml-auto text-ink-faint">42ms</span>
+                </div>
+                <pre class="m-0 overflow-x-auto rounded-[1.1rem] bg-surface-2 px-3.5 py-3 font-mono text-[0.74rem] leading-relaxed text-ink-muted" set:html={resHtml}></pre>
+              </div>
+            </div>
+
+            <div class="grid gap-4">
+              <div class="rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
+                <div class="mb-3 flex items-center justify-between gap-3">
+                  <span class="font-ui text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">Auth scope</span>
+                  <span class="rounded-full bg-brand-soft px-2.5 py-1 font-mono text-[0.68rem] font-semibold text-brand-deep">ApiKey</span>
+                </div>
+                <div class="grid gap-2">
+                  {
+                    scopes.map((scope, i) => (
+                      <div class="flex items-center gap-2 rounded-full bg-surface-2 px-3 py-2">
+                        <span class:list={["h-1.5 w-1.5 rounded-full", i === 0 ? "bg-brand" : "bg-ink-faint"]}></span>
+                        <span class="font-mono text-[0.72rem] text-ink-muted">{scope}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+
+              <div class="rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
+                <div class="mb-4 flex items-center justify-between">
+                  <span class="font-ui text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">Request path</span>
+                  <span class="font-mono text-[0.68rem] text-success">healthy</span>
+                </div>
+                <div class="hero-lifecycle">
+                  {
+                    lifecycle.map((item, i) => (
+                      <div class="hero-lifecycle__step">
+                        <span class:list={["hero-lifecycle__dot", i === 2 ? "is-active" : ""]}></span>
+                        <span>{item}</span>
+                      </div>
+                    ))
+                  }
+                </div>
+              </div>
+
+              <div class="rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
+                <div class="flex items-center gap-3">
+                  <span class="grid h-9 w-9 place-items-center rounded-full bg-brand-soft font-mono text-[0.7rem] font-semibold text-brand-deep">sig</span>
+                  <div>
+                    <p class="m-0 font-ui text-[0.86rem] font-semibold text-ink">webhook.delivered</p>
+                    <p class="m-0 font-mono text-[0.68rem] text-ink-faint">hmac verified · retry 0</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid gap-px bg-rule px-4 pb-4 sm:px-5 sm:pb-5 md:grid-cols-3">
+            <div class="bg-surface px-4 py-3">
+              <p class="m-0 font-mono text-[0.7rem] text-ink-faint">schema</p>
+              <p class="m-0 font-ui text-[0.88rem] font-semibold text-ink">OpenAPI 3.1</p>
+            </div>
+            <div class="bg-surface px-4 py-3">
+              <p class="m-0 font-mono text-[0.7rem] text-ink-faint">audit</p>
+              <p class="m-0 font-ui text-[0.88rem] font-semibold text-ink">trace persisted</p>
+            </div>
+            <div class="bg-surface px-4 py-3">
+              <p class="m-0 font-mono text-[0.7rem] text-ink-faint">codegen</p>
+              <p class="m-0 font-ui text-[0.88rem] font-semibold text-ink">JS · Go · Python</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="floaty relative overflow-hidden rounded-2xl border border-rule bg-surface shadow-[var(--shadow-lg)]">
-        <!-- window chrome -->
-        <div class="flex items-center gap-2 border-b border-rule bg-surface-2 px-4 py-2.5">
-          <span class="flex gap-1.5">
-            <span class="h-2.5 w-2.5 rounded-full" style="background:#ff5f57"></span>
-            <span class="h-2.5 w-2.5 rounded-full" style="background:#febc2e"></span>
-            <span class="h-2.5 w-2.5 rounded-full" style="background:#28c840"></span>
+      <div class="hero-float hero-float--top hidden sm:block" aria-hidden="true">
+        <span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span>
+        <span class="font-ui text-[0.72rem] font-medium text-ink-muted">Qeet Notify event signed</span>
+      </div>
+      <div class="hero-float hero-float--bottom hidden md:block" aria-hidden="true">
+        <span class="font-mono text-[0.68rem] text-ink-faint">api.id.qeet.in</span>
+        <span class="h-1 w-1 rounded-full bg-rule-strong"></span>
+        <span class="font-mono text-[0.68rem] text-success">p95 42ms</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .hero-depth-card {
+    position: absolute;
+    border: 1px solid var(--rule);
+    background: var(--surface);
+    border-radius: 2rem;
+    box-shadow: var(--shadow-lg);
+    opacity: 0.62;
+  }
+  .hero-depth-card--left {
+    inset: 10% auto auto -4%;
+    width: 36%;
+    height: 42%;
+    transform: rotate(-3deg);
+  }
+  .hero-depth-card--right {
+    inset: auto -5% 7% auto;
+    width: 34%;
+    height: 38%;
+    transform: rotate(2.5deg);
+  }
+  .hero-float {
+    position: absolute;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: color-mix(in oklab, var(--surface) 88%, transparent);
+    padding: 0.52rem 0.78rem;
+    box-shadow: var(--shadow-bezel), var(--shadow-md);
+  }
+  .hero-float--top {
+    right: -0.75rem;
+    top: 1rem;
+  }
+  .hero-float--bottom {
+    bottom: -0.7rem;
+    left: 2rem;
+  }
+  .hero-lifecycle {
+    display: grid;
+    gap: 0.55rem;
+  }
+  .hero-lifecycle__step {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    font-family: var(--font-ui);
+    font-size: 0.82rem;
+    color: var(--ink-muted);
+  }
+  .hero-lifecycle__dot {
+    width: 0.52rem;
+    height: 0.52rem;
+    border-radius: 999px;
+    background: var(--rule-strong);
+    box-shadow: 0 0 0 4px var(--surface-2);
+  }
+  .hero-lifecycle__dot.is-active {
+    background: var(--brand);
+    box-shadow: 0 0 0 4px var(--brand-soft);
+  }
+
+  @media (max-width: 767px) {
+    .hero-float {
+      display: none;
+    }
+  }
+</style>
           </span>
           <span class="mx-auto font-mono text-[0.72rem] text-ink-faint">api.id.qeet.in</span>
         </div>

@@ -13,13 +13,14 @@ interface Props {
 const { tabs } = Astro.props;
 ---
 
-<div class="codetabs not-prose overflow-hidden rounded-lg border border-rule bg-surface shadow-[var(--shadow-sm)]">
-  <div class="codetabs__bar flex items-center gap-1 overflow-x-auto border-b border-rule bg-surface-2 px-2 py-1.5" role="tablist">
+<div class="codetabs bezel not-prose">
+  <div class="bezel-core overflow-hidden">
+  <div class="codetabs__bar flex items-center gap-1 overflow-x-auto border-b border-rule bg-surface-2 px-2 py-2" role="tablist">
     {
       tabs.map((t, i) => (
         <button
           type="button"
-          class="codetabs__tab whitespace-nowrap rounded-sm px-3 py-1.5 font-ui text-[0.85rem] font-semibold text-ink-subtle transition hover:text-ink"
+          class="codetabs__tab whitespace-nowrap rounded-full px-3 py-1.5 font-ui text-[0.85rem] font-semibold text-ink-subtle transition duration-500 ease-(--ease-spring) hover:text-ink"
           role="tab"
           aria-selected={i === 0 ? "true" : "false"}
           data-tab={i}
@@ -30,7 +31,7 @@ const { tabs } = Astro.props;
     }
     <button
       type="button"
-      class="codetabs__copy ml-auto grid h-8 w-8 place-items-center rounded-sm text-ink-faint transition hover:bg-surface-3 hover:text-ink"
+      class="codetabs__copy ml-auto grid h-8 w-8 shrink-0 place-items-center rounded-full text-ink-faint transition duration-500 ease-(--ease-spring) hover:bg-surface-3 hover:text-ink"
       aria-label="Copy code"
     >
       <Icon name="copy" class="copy h-4 w-4" />
@@ -55,6 +56,7 @@ const { tabs } = Astro.props;
       </div>
     ))
   }
+  </div>
 </div>
 
 <script>
