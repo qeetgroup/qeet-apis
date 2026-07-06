@@ -36,7 +36,7 @@ const lifecycle = ["Discover", "Authenticate", "Run", "Observe"];
 
   <div class="container container-wide relative grid min-h-[calc(100dvh-var(--header-h))] items-center gap-12 pb-16 pt-10 md:pb-20 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16">
     <!-- copy -->
-    <div>
+    <div class="min-w-0">
       <span
         class="eyebrow gap-2"
         data-reveal
@@ -72,7 +72,7 @@ const lifecycle = ["Discover", "Authenticate", "Run", "Observe"];
     </div>
 
     <!-- API system visual -->
-    <div class="relative mx-auto w-full max-w-176" data-reveal style="transition-delay:150ms">
+    <div class="relative mx-auto min-w-0 max-w-full lg:max-w-176" data-reveal style="transition-delay:150ms">
       <div class="hero-depth-card hero-depth-card--left hidden lg:block" aria-hidden="true"></div>
       <div class="hero-depth-card hero-depth-card--right hidden lg:block" aria-hidden="true"></div>
 
@@ -101,19 +101,19 @@ const lifecycle = ["Discover", "Authenticate", "Run", "Observe"];
             </span>
           </div>
 
-          <div class="grid gap-4 p-4 sm:p-5 lg:grid-cols-[1.05fr_0.95fr]">
-            <div class="grid gap-4">
-              <div class="rounded-[1.45rem] border border-rule bg-surface p-3 shadow-(--shadow-bezel)">
-                <div class="flex items-center gap-2.5">
+          <div class="grid min-w-0 gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+            <div class="grid min-w-0 gap-4">
+              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-3 shadow-(--shadow-bezel)">
+                <div class="flex min-w-0 items-center gap-2.5">
                   <span class="method-chip text-[#1c6b4a] dark:text-[#5bbd7a]" style="background:color-mix(in oklab, var(--m-get) 14%, transparent)">GET</span>
-                  <code class="font-mono text-[0.82rem] text-ink">/v1/auth/me</code>
+                  <code class="min-w-0 truncate font-mono text-[0.82rem] text-ink">/v1/auth/me</code>
                   <span class="ml-auto rounded-full bg-ink px-3 py-1 font-ui text-[0.72rem] font-semibold text-bg">Send</span>
                 </div>
                 <pre class="m-0 mt-3 overflow-x-auto rounded-[1.1rem] bg-surface-2 px-3.5 py-3 font-mono text-[0.74rem] leading-relaxed text-ink" set:html={reqHtml}></pre>
               </div>
 
-              <div class="rounded-[1.45rem] border border-rule bg-surface p-3 shadow-(--shadow-bezel)">
-                <div class="mb-3 flex items-center gap-2 font-mono text-[0.72rem]">
+              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-3 shadow-(--shadow-bezel)">
+                <div class="mb-3 flex min-w-0 items-center gap-2 font-mono text-[0.72rem]">
                   <span class="rounded-full px-2.5 py-1 font-semibold text-[#1c6b4a] dark:text-[#5bbd7a]" style="background:color-mix(in oklab, var(--m-get) 14%, transparent)">200 OK</span>
                   <span class="text-ink-faint">application/json</span>
                   <span class="ml-auto text-ink-faint">42ms</span>
@@ -122,9 +122,9 @@ const lifecycle = ["Discover", "Authenticate", "Run", "Observe"];
               </div>
             </div>
 
-            <div class="grid gap-4">
-              <div class="rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
-                <div class="mb-3 flex items-center justify-between gap-3">
+            <div class="grid min-w-0 gap-4">
+              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
+                <div class="mb-3 flex min-w-0 items-center justify-between gap-3">
                   <span class="font-ui text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">Auth scope</span>
                   <span class="rounded-full bg-brand-soft px-2.5 py-1 font-mono text-[0.68rem] font-semibold text-brand-deep">ApiKey</span>
                 </div>
@@ -140,7 +140,7 @@ const lifecycle = ["Discover", "Authenticate", "Run", "Observe"];
                 </div>
               </div>
 
-              <div class="rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
+              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
                 <div class="mb-4 flex items-center justify-between">
                   <span class="font-ui text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">Request path</span>
                   <span class="font-mono text-[0.68rem] text-success">healthy</span>
@@ -157,7 +157,7 @@ const lifecycle = ["Discover", "Authenticate", "Run", "Observe"];
                 </div>
               </div>
 
-              <div class="rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
+              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
                 <div class="flex items-center gap-3">
                   <span class="grid h-9 w-9 place-items-center rounded-full bg-brand-soft font-mono text-[0.7rem] font-semibold text-brand-deep">sig</span>
                   <div>

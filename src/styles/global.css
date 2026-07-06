@@ -54,6 +54,7 @@
     scroll-behavior: smooth;
     scroll-padding-top: calc(var(--header-h) + 1rem);
     color-scheme: light;
+    overflow-x: hidden;
   }
   html[data-theme="dark"] {
     color-scheme: dark;
@@ -62,6 +63,7 @@
     @apply bg-bg text-ink font-sans antialiased;
     line-height: 1.65;
     font-feature-settings: "ss01", "cv01";
+    overflow-x: hidden;
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);

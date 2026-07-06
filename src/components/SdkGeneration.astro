@@ -54,21 +54,22 @@ user = qeet.identity.users.create(
 ];
 ---
 
-<section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="sdks">
+<section class="section-premium" id="sdks">
   <div class="container container-wide">
     <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
       <!-- visual: codegen -->
       <div data-reveal>
-        <div class="sdk overflow-hidden rounded-2xl border border-rule bg-surface shadow-(--shadow-lg)">
+        <div class="bezel">
+        <div class="sdk bezel-core overflow-hidden">
           <!-- spec source row -->
           <div class="flex items-center gap-2.5 border-b border-rule bg-surface-2 px-4 py-3">
-            <span class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand-deep">
-              <Icon name="braces" class="h-3.5 w-3.5" />
+            <span class="grid h-6 w-6 place-items-center rounded-full bg-brand-soft text-brand-deep">
+              <Icon name="braces" class="h-3.5 w-3.5 stroke-[1.55]" />
             </span>
             <code class="font-mono text-[0.8rem] text-ink">openapi.yaml</code>
             <span class="pill">OpenAPI 3.1</span>
-            <span class="ml-auto flex items-center gap-1.5 font-mono text-[0.72rem] text-brand-deep">
-              <Icon name="rocket" class="h-3.5 w-3.5" /> qeet sdk generate
+            <span class="ml-auto flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 font-mono text-[0.7rem] text-brand-deep">
+              <Icon name="rocket" class="h-3.5 w-3.5 stroke-[1.55]" /> qeet sdk generate
             </span>
           </div>
 
@@ -89,7 +90,7 @@ user = qeet.identity.users.create(
               langs.map((l, i) => (
                 <button
                   type="button"
-                  class="sdk-tab rounded-md px-2.5 py-1 font-semibold text-ink-subtle transition hover:text-ink"
+                  class="sdk-tab rounded-full px-2.5 py-1 font-semibold text-ink-subtle transition duration-700 ease-(--ease-spring) hover:text-ink"
                   data-tab={l.id}
                   aria-selected={i === 0 ? "true" : "false"}
                 >
@@ -103,7 +104,7 @@ user = qeet.identity.users.create(
           </div>
 
           <!-- generated code -->
-          <div class="relative">
+          <div class="relative bg-surface-2/45">
             {
               langs.map((l, i) => (
                 <pre
@@ -115,6 +116,16 @@ user = qeet.identity.users.create(
               ))
             }
           </div>
+          <div class="grid gap-px bg-rule sm:grid-cols-3">
+            {
+              ["models typed", "validators emitted", "mocks generated"].map((item) => (
+                <div class="bg-surface px-4 py-3 font-mono text-[0.72rem] text-ink-muted">
+                  <span class="mr-2 text-success">✓</span>{item}
+                </div>
+              ))
+            }
+          </div>
+        </div>
         </div>
       </div>
 

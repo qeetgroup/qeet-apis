@@ -58,14 +58,13 @@ const mColor = (m: string) =>
   ({ GET: "--m-get", POST: "--m-post", PUT: "--m-put", DELETE: "--m-delete" })[m] ?? "--m-get";
 ---
 
-<section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="playground">
+<section class="section-premium" id="playground">
   <div class="container container-wide">
     <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
       <!-- visual: playground -->
       <div data-reveal>
-        <div
-          class="pg overflow-hidden rounded-2xl border border-rule bg-surface shadow-(--shadow-lg)"
-        >
+        <div class="bezel">
+        <div class="pg bezel-core overflow-hidden">
           <!-- window chrome -->
           <div class="flex items-center gap-2 border-b border-rule bg-surface-2 px-4 py-2.5">
             <span class="flex gap-1.5">
@@ -74,6 +73,7 @@ const mColor = (m: string) =>
               <span class="h-2.5 w-2.5 rounded-full" style="background:#28c840"></span>
             </span>
             <span class="mx-auto font-mono text-[0.72rem] text-ink-faint">playground · api.id.qeet.in</span>
+            <span class="hidden rounded-full bg-brand-soft px-2.5 py-1 font-mono text-[0.66rem] font-semibold text-brand-deep sm:inline-flex">typed inputs</span>
           </div>
 
           <div class="grid sm:grid-cols-[9.5rem_1fr]">
@@ -84,7 +84,7 @@ const mColor = (m: string) =>
                   <li>
                     <button
                       type="button"
-                      class="pg-ep flex w-full items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left font-ui text-[0.8rem] font-medium text-ink-subtle transition hover:text-ink"
+                      class="pg-ep flex w-full items-center gap-2 whitespace-nowrap rounded-full px-2.5 py-2 text-left font-ui text-[0.8rem] font-medium text-ink-subtle transition duration-700 ease-(--ease-spring) hover:text-ink"
                       data-ep={i}
                       aria-selected={i === 0 ? "true" : "false"}
                     >
@@ -124,9 +124,12 @@ const mColor = (m: string) =>
                 }
                 <button
                   type="button"
-                  class="pg-send inline-flex flex-none items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 font-ui text-[0.75rem] font-semibold text-brand-ink transition hover:bg-brand-deep active:scale-[0.97]"
+                  class="pg-send inline-flex flex-none items-center gap-1.5 rounded-full bg-brand py-1.5 pl-3 pr-1.5 font-ui text-[0.75rem] font-semibold text-brand-ink transition duration-700 ease-(--ease-spring) hover:bg-brand-deep active:scale-[0.97]"
                 >
-                  <Icon name="play" class="h-3 w-3" /> Send
+                  Send
+                  <span class="grid h-6 w-6 place-items-center rounded-full bg-brand-ink/18">
+                    <Icon name="play" class="h-3 w-3 stroke-[1.55]" />
+                  </span>
                 </button>
               </div>
 
@@ -160,6 +163,7 @@ const mColor = (m: string) =>
               </div>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
