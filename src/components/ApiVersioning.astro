@@ -1,0 +1,116 @@
+---
+// API Versioning — date-based versions and an additive-only diff. Split layout,
+// visual on the LEFT. Surface band.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+import { LINKS } from "../data/catalog";
+
+const bullets = [
+  ["Date-based versions.", "Pin a version with a single header, and upgrade entirely on your own schedule."],
+  ["Additive by default.", "New fields and endpoints roll out without ever breaking calls you already ship."],
+  ["Long support windows.", "Every published version is supported for at least 18 months."],
+  ["Deprecations you can see.", "Sunset and Deprecation headers warn your code well before anything changes."],
+];
+
+const versions = [
+  { v: "2024-07-01", note: "GA" },
+  { v: "2025-01-15", note: "SCIM" },
+  { v: "2026-06-01", note: "current", active: true },
+];
+
+const diff = [
+  { s: "+", t: `"phone_number": string`, add: true },
+  { s: "+", t: `"mfa_enrolled": boolean`, add: true },
+  { s: " ", t: `"email": string`, add: false },
+  { s: " ", t: `"created_at": string`, add: false },
+];
+---
+
+<section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="versioning">
+  <div class="container container-wide">
+    <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
+      <!-- visual: versioning -->
+      <div data-reveal>
+        <div class="overflow-hidden rounded-2xl border border-rule bg-surface shadow-[var(--shadow-lg)]">
+          <!-- version rail -->
+          <div class="flex items-center gap-2 border-b border-rule bg-surface-2 px-4 py-2.5">
+            <Icon name="git-branch" class="h-4 w-4 text-brand-deep" />
+            <span class="font-ui text-[0.8rem] font-semibold text-ink">API versions</span>
+            <span class="ml-auto font-mono text-[0.7rem] text-ink-faint">date-based</span>
+          </div>
+
+          <div class="flex items-center gap-2 overflow-x-auto px-4 py-3">
+            {
+              versions.map((v, i) => (
+                <>
+                  {i > 0 && <span class="h-px w-5 flex-none bg-rule-strong" />}
+                  <span
+                    class={`inline-flex flex-none items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-[0.72rem] ${v.active ? "border-brand/30 bg-brand-faint text-brand-deep" : "border-rule text-ink-subtle"}`}
+                  >
+                    <span class={`h-1.5 w-1.5 rounded-full ${v.active ? "bg-brand" : "bg-ink-faint/60"}`} />
+                    {v.v}
+                  </span>
+                </>
+              ))
+            }
+          </div>
+
+          <!-- diff -->
+          <div class="border-t border-rule">
+            <div class="flex items-center gap-2 border-b border-rule px-4 py-2">
+              <span class="inline-flex items-center gap-1 rounded bg-success/12 px-1.5 py-0.5 font-ui text-[0.68rem] font-semibold text-success">
+                <Icon name="plus" class="h-3 w-3" /> additive
+              </span>
+              <code class="font-mono text-[0.74rem] text-ink-muted">User · v2026-06-01</code>
+              <span class="ml-auto font-ui text-[0.7rem] text-ink-faint">no breaking changes</span>
+            </div>
+            <div class="font-mono text-[0.78rem] leading-relaxed">
+              {
+                diff.map((d) => (
+                  <div
+                    class={`flex gap-3 px-4 py-1 ${d.add ? "bg-success/8" : ""}`}
+                  >
+                    <span class={`w-3 flex-none ${d.add ? "text-success" : "text-ink-faint"}`}>{d.s}</span>
+                    <span class={d.add ? "text-ink" : "text-ink-subtle"}>{d.t}</span>
+                  </div>
+                ))
+              }
+            </div>
+          </div>
+
+          <!-- footer -->
+          <div class="flex flex-wrap items-center gap-x-4 gap-y-1 border-t border-rule bg-surface-2/50 px-4 py-2.5 font-mono text-[0.72rem] text-ink-faint">
+            <span><span class="text-brand-deep">Qeet-Version:</span> 2026-06-01</span>
+            <span class="ml-auto">18-month support</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- copy -->
+      <div>
+        <SectionHead eyebrow="API Versioning" title="Move fast without breaking callers.">
+          Versioning is a contract, not a chore. Ship improvements continuously
+          while every integration keeps working exactly as it did the day it went live.
+        </SectionHead>
+        <ul class="mt-7 grid gap-4">
+          {
+            bullets.map(([h, t]) => (
+              <li class="flex gap-3" data-reveal>
+                <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon name="check" class="h-3 w-3" />
+                </span>
+                <span class="text-[0.96rem] text-ink-muted">
+                  <b class="font-semibold text-ink">{h}</b> {t}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="mt-8" data-reveal>
+          <ArrowLink href={LINKS.changelog} label="See the changelog" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>

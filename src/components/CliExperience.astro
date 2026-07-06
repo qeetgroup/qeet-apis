@@ -1,0 +1,99 @@
+---
+// CLI Experience — a full-bleed dark band with a showpiece terminal. Splits copy
+// (left) from a large terminal (right), matching the dark-band language used by
+// MetricBand / PlatformMetrics.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+import { LINKS } from "../data/catalog";
+
+const bullets = [
+  ["One binary, the whole platform.", "Auth, keys, live calls, codegen and logs — all from your shell."],
+  ["Scriptable by design.", "Clean JSON output and honest exit codes, made for CI and pipelines."],
+  ["Instant context switching.", "Flip between environments and workspaces with a single flag."],
+  ["Live tails.", "Stream logs and webhook deliveries in real time as they happen."],
+];
+
+const p = (t: string) => `<span style="color:var(--brand-bright)">$</span> <span style="color:#fafafa">${t}</span>`;
+const ok = (t: string) => `<span style="color:#5bbd7a">✓</span> <span style="color:color-mix(in oklab,#fff 62%,transparent)">${t}</span>`;
+const out = (t: string) => `<span style="color:color-mix(in oklab,#fff 52%,transparent)">${t}</span>`;
+
+const term = [
+  p("qeet login"),
+  ok("Authenticated as ada@acme.com"),
+  "",
+  p("qeet keys create --name ci --scope identity.read"),
+  ok("qk_live_9f2c… · copied to clipboard"),
+  "",
+  p("qeet api GET /v1/users/usr_8f1c"),
+  out(`{ <span style="color:var(--brand-bright)">"id"</span>: <span style="color:#7fd6a0">"usr_8f1c"</span>, <span style="color:var(--brand-bright)">"status"</span>: <span style="color:#7fd6a0">"active"</span> }`),
+  "",
+  p("qeet sdk generate --lang go"),
+  ok("Generated qeet-go in 1.2s"),
+  "",
+  p('qeet logs tail --product id'),
+  out(`2026-07-06T09:14Z  <span style="color:#5bbd7a">200</span>  POST /v1/messages  41ms<span class="caret"></span>`),
+].join("\n");
+---
+
+<section class="relative overflow-hidden bg-[#0c0b0a] py-[clamp(3.5rem,8vw,6rem)] text-[#fafafa] dark:border-y dark:border-rule dark:bg-surface" id="cli">
+  <!-- ambient glow -->
+  <div
+    class="pointer-events-none absolute inset-0"
+    style="background:radial-gradient(55% 80% at 15% -10%, color-mix(in oklab, var(--brand) 20%, transparent), transparent 60%)"
+    aria-hidden="true"
+  >
+  </div>
+  <!-- dot grid -->
+  <div
+    class="pointer-events-none absolute inset-0 opacity-[0.45]"
+    style="background-image:radial-gradient(color-mix(in oklab,#fff 7%,transparent) 1px, transparent 1px); background-size:28px 28px; -webkit-mask-image:radial-gradient(80% 70% at 30% 0%, #000, transparent 78%); mask-image:radial-gradient(80% 70% at 30% 0%, #000, transparent 78%)"
+    aria-hidden="true"
+  >
+  </div>
+
+  <div class="container container-wide relative grid items-center gap-x-14 gap-y-10 lg:grid-cols-[0.9fr_1.1fr]">
+    <!-- copy -->
+    <div>
+      <SectionHead tone="dark" eyebrow="CLI Experience" title="The whole platform, from your terminal.">
+        The Qeet CLI turns every capability into a command. Authenticate, call any
+        endpoint, generate SDKs and tail logs — without leaving your shell.
+      </SectionHead>
+      <ul class="mt-7 grid gap-4">
+        {
+          bullets.map(([h, t]) => (
+            <li class="flex gap-3" data-reveal>
+              <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full text-brand-bright" style="background:color-mix(in oklab,var(--brand) 20%,transparent)">
+                <Icon name="check" class="h-3 w-3" />
+              </span>
+              <span class="text-[0.96rem]" style="color:color-mix(in oklab,#fff 72%,transparent)">
+                <b class="font-semibold text-white">{h}</b> {t}
+              </span>
+            </li>
+          ))
+        }
+      </ul>
+      <div class="mt-8 flex flex-wrap items-center gap-4" data-reveal>
+        <code class="rounded-lg border border-white/12 bg-white/5 px-3 py-2 font-mono text-[0.82rem] text-white">
+          <span class="text-brand-bright">$</span> brew install qeet
+        </code>
+        <ArrowLink tone="dark" href={LINKS.quickstart} label="Install the CLI" />
+      </div>
+    </div>
+
+    <!-- terminal -->
+    <div data-reveal style="transition-delay:120ms">
+      <div class="overflow-hidden rounded-2xl border border-white/10 bg-[#0a0908] shadow-[0_30px_80px_-20px_rgba(0,0,0,0.8)]">
+        <div class="flex items-center gap-2 border-b border-white/8 bg-white/[0.03] px-4 py-2.5">
+          <span class="flex gap-1.5">
+            <span class="h-2.5 w-2.5 rounded-full" style="background:#ff5f57"></span>
+            <span class="h-2.5 w-2.5 rounded-full" style="background:#febc2e"></span>
+            <span class="h-2.5 w-2.5 rounded-full" style="background:#28c840"></span>
+          </span>
+          <span class="mx-auto font-mono text-[0.72rem]" style="color:color-mix(in oklab,#fff 45%,transparent)">zsh · qeet-cli</span>
+        </div>
+        <pre class="m-0 overflow-x-auto px-5 py-4 font-mono text-[0.82rem] leading-[1.75]" style="color:color-mix(in oklab,#fff 82%,transparent)" set:html={term}></pre>
+      </div>
+    </div>
+  </div>
+</section>

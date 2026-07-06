@@ -1,0 +1,176 @@
+---
+// SDK Generation — one OpenAPI spec becomes typed clients in every language.
+// Split layout, visual on the LEFT. Canvas background.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+import { LINKS } from "../data/catalog";
+
+const bullets = [
+  ["Typed from the spec.", "Idiomatic SDKs generated directly from OpenAPI 3.1 — not hand-maintained wrappers."],
+  ["Four languages, one shape.", "TypeScript, Go, Python and cURL today, with the same ergonomics across each."],
+  ["Zero drift.", "Regenerated on every spec change, so your client is never out of date with the API."],
+  ["Mocks & validators too.", "The same document powers local mock servers and request/response validators."],
+];
+
+const langs = [
+  {
+    id: "ts",
+    label: "TypeScript",
+    install: "npm i @qeet/sdk",
+    code: `import { Qeet } from <span class="text-success">"@qeet/sdk"</span>;
+
+const qeet = new Qeet({ apiKey: process.env.QEET_KEY });
+
+const user = await qeet.identity.users.create({
+  email: <span class="text-success">"ada@qeet.in"</span>,
+});
+<span class="text-ink-faint">//    ^? User — fully typed</span>`,
+  },
+  {
+    id: "go",
+    label: "Go",
+    install: "go get qeet.in/sdk-go",
+    code: `client := qeet.New(os.Getenv(<span class="text-success">"QEET_KEY"</span>))
+
+user, err := client.Identity.Users.Create(ctx,
+  &qeet.NewUser{Email: <span class="text-success">"ada@qeet.in"</span>},
+)
+<span class="text-ink-faint">// user *qeet.User, err error</span>`,
+  },
+  {
+    id: "py",
+    label: "Python",
+    install: "pip install qeet",
+    code: `from qeet import Qeet
+
+qeet = Qeet(api_key=os.environ[<span class="text-success">"QEET_KEY"</span>])
+
+user = qeet.identity.users.create(
+    email=<span class="text-success">"ada@qeet.in"</span>,
+)
+<span class="text-ink-faint"># user: User</span>`,
+  },
+];
+---
+
+<section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="sdks">
+  <div class="container container-wide">
+    <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
+      <!-- visual: codegen -->
+      <div data-reveal>
+        <div class="sdk overflow-hidden rounded-2xl border border-rule bg-surface shadow-[var(--shadow-lg)]">
+          <!-- spec source row -->
+          <div class="flex items-center gap-2.5 border-b border-rule bg-surface-2 px-4 py-3">
+            <span class="grid h-6 w-6 place-items-center rounded-md bg-brand-soft text-brand-deep">
+              <Icon name="braces" class="h-3.5 w-3.5" />
+            </span>
+            <code class="font-mono text-[0.8rem] text-ink">openapi.yaml</code>
+            <span class="pill">OpenAPI 3.1</span>
+            <span class="ml-auto flex items-center gap-1.5 font-mono text-[0.72rem] text-brand-deep">
+              <Icon name="rocket" class="h-3.5 w-3.5" /> qeet sdk generate
+            </span>
+          </div>
+
+          <!-- generated file chips -->
+          <div class="flex flex-wrap gap-1.5 border-b border-rule px-4 py-2.5">
+            {
+              ["client.ts", "resources/users.ts", "models.ts", "index.ts"].map((f) => (
+                <span class="inline-flex items-center gap-1 rounded border border-rule bg-surface-2/60 px-1.5 py-0.5 font-mono text-[0.68rem] text-ink-subtle">
+                  <Icon name="check" class="h-2.5 w-2.5 text-success" /> {f}
+                </span>
+              ))
+            }
+          </div>
+
+          <!-- language tabs -->
+          <div class="flex items-center gap-1 border-b border-rule bg-surface px-3 py-2 font-ui text-[0.8rem]">
+            {
+              langs.map((l, i) => (
+                <button
+                  type="button"
+                  class="sdk-tab rounded-md px-2.5 py-1 font-semibold text-ink-subtle transition hover:text-ink"
+                  data-tab={l.id}
+                  aria-selected={i === 0 ? "true" : "false"}
+                >
+                  {l.label}
+                </button>
+              ))
+            }
+            <span class="sdk-install ml-auto font-mono text-[0.72rem] text-ink-faint" data-install="ts"
+              >npm i @qeet/sdk</span
+            >
+          </div>
+
+          <!-- generated code -->
+          <div class="relative">
+            {
+              langs.map((l, i) => (
+                <pre
+                  class="sdk-code m-0 overflow-x-auto px-4 py-4 font-mono text-[0.78rem] leading-relaxed text-ink-muted"
+                  data-tab={l.id}
+                  hidden={i !== 0}
+                  set:html={l.code}
+                />
+              ))
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- copy -->
+      <div>
+        <SectionHead eyebrow="SDK Generation" title="From spec to typed client, instantly.">
+          Ship in the language your team already writes. Every SDK is generated
+          from the same OpenAPI document that powers the reference — so it always
+          matches the live API.
+        </SectionHead>
+        <ul class="mt-7 grid gap-4">
+          {
+            bullets.map(([h, t]) => (
+              <li class="flex gap-3" data-reveal>
+                <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon name="check" class="h-3 w-3" />
+                </span>
+                <span class="text-[0.96rem] text-ink-muted">
+                  <b class="font-semibold text-ink">{h}</b> {t}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="mt-8" data-reveal>
+          <ArrowLink href={LINKS.sdks} label="Get the SDKs" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  const installs: Record<string, string> = {
+    ts: "npm i @qeet/sdk",
+    go: "go get qeet.in/sdk-go",
+    py: "pip install qeet",
+  };
+  document.querySelectorAll<HTMLElement>(".sdk").forEach((root) => {
+    const tabs = root.querySelectorAll<HTMLButtonElement>(".sdk-tab");
+    const codes = root.querySelectorAll<HTMLElement>(".sdk-code");
+    const install = root.querySelector<HTMLElement>(".sdk-install");
+    tabs.forEach((t) =>
+      t.addEventListener("click", () => {
+        const id = t.dataset.tab!;
+        tabs.forEach((x) => x.setAttribute("aria-selected", x === t ? "true" : "false"));
+        codes.forEach((c) => (c.hidden = c.dataset.tab !== id));
+        if (install) install.textContent = installs[id];
+      }),
+    );
+  });
+</script>
+
+<style>
+  .sdk-tab[aria-selected="true"] {
+    background: var(--brand-soft);
+    color: var(--brand-deep);
+  }
+</style>

@@ -1,0 +1,229 @@
+---
+// API Playground — an interactive request/response console. The endpoint rail
+// swaps the request line + JSON response; "Send" replays the round-trip.
+// Split layout, visual on the LEFT. Canvas background.
+import SectionHead from "./SectionHead.astro";
+import ArrowLink from "./ArrowLink.astro";
+import Icon from "./Icon.astro";
+import { LINKS } from "../data/catalog";
+
+const bullets = [
+  ["Real requests, real responses.", "Authenticate and run any endpoint straight from the browser — no Postman round-trip."],
+  ["Schema-aware inputs.", "Path, query, body and headers are typed from the spec, with inline validation."],
+  ["Copy as code.", "Turn any request into cURL, JavaScript, Go or Python in one click."],
+  ["Safe to explore.", "Scoped test keys and idempotency keys mean you can experiment without consequences."],
+];
+
+const endpoints = [
+  {
+    m: "GET",
+    label: "Get principal",
+    path: "/v1/auth/me",
+    status: "200 OK",
+    time: "38 ms",
+    body: `{
+  <span class="text-brand-deep">"user_id"</span>: <span class="text-success">"usr_8f1c2a9e"</span>,
+  <span class="text-brand-deep">"tenant_id"</span>: <span class="text-success">"org_ace19f2c"</span>,
+  <span class="text-brand-deep">"scopes"</span>: [<span class="text-success">"identity.read"</span>, <span class="text-success">"openid"</span>]
+}`,
+  },
+  {
+    m: "POST",
+    label: "Create user",
+    path: "/v1/users",
+    status: "201 Created",
+    time: "54 ms",
+    body: `{
+  <span class="text-brand-deep">"id"</span>: <span class="text-success">"usr_a1b2c3d4"</span>,
+  <span class="text-brand-deep">"email"</span>: <span class="text-success">"ada@qeet.in"</span>,
+  <span class="text-brand-deep">"status"</span>: <span class="text-success">"invited"</span>,
+  <span class="text-brand-deep">"created_at"</span>: <span class="text-success">"2026-07-06T09:00Z"</span>
+}`,
+  },
+  {
+    m: "POST",
+    label: "Send message",
+    path: "/v1/messages",
+    status: "202 Accepted",
+    time: "41 ms",
+    body: `{
+  <span class="text-brand-deep">"id"</span>: <span class="text-success">"msg_7k2p9x"</span>,
+  <span class="text-brand-deep">"channel"</span>: <span class="text-success">"email"</span>,
+  <span class="text-brand-deep">"state"</span>: <span class="text-success">"queued"</span>
+}`,
+  },
+] as const;
+
+const mColor = (m: string) =>
+  ({ GET: "--m-get", POST: "--m-post", PUT: "--m-put", DELETE: "--m-delete" })[m] ?? "--m-get";
+---
+
+<section class="py-[clamp(3.5rem,8vw,6.5rem)]" id="playground">
+  <div class="container container-wide">
+    <div class="grid items-center gap-x-14 gap-y-10 lg:grid-cols-2">
+      <!-- visual: playground -->
+      <div data-reveal>
+        <div
+          class="pg overflow-hidden rounded-2xl border border-rule bg-surface shadow-[var(--shadow-lg)]"
+        >
+          <!-- window chrome -->
+          <div class="flex items-center gap-2 border-b border-rule bg-surface-2 px-4 py-2.5">
+            <span class="flex gap-1.5">
+              <span class="h-2.5 w-2.5 rounded-full" style="background:#ff5f57"></span>
+              <span class="h-2.5 w-2.5 rounded-full" style="background:#febc2e"></span>
+              <span class="h-2.5 w-2.5 rounded-full" style="background:#28c840"></span>
+            </span>
+            <span class="mx-auto font-mono text-[0.72rem] text-ink-faint">playground · api.id.qeet.in</span>
+          </div>
+
+          <div class="grid sm:grid-cols-[9.5rem_1fr]">
+            <!-- endpoint rail -->
+            <ul class="m-0 flex list-none gap-1 overflow-x-auto border-b border-rule bg-surface-2/50 p-2 sm:flex-col sm:border-b-0 sm:border-r">
+              {
+                endpoints.map((e, i) => (
+                  <li>
+                    <button
+                      type="button"
+                      class="pg-ep flex w-full items-center gap-2 whitespace-nowrap rounded-lg px-2.5 py-2 text-left font-ui text-[0.8rem] font-medium text-ink-subtle transition hover:text-ink"
+                      data-ep={i}
+                      aria-selected={i === 0 ? "true" : "false"}
+                    >
+                      <span
+                        class="w-9 flex-none rounded px-1 py-0.5 text-center font-mono text-[0.6rem] font-semibold"
+                        style={`color:var(${mColor(e.m)});background:color-mix(in oklab,var(${mColor(e.m)}) 12%,transparent)`}
+                      >
+                        {e.m}
+                      </span>
+                      {e.label}
+                    </button>
+                  </li>
+                ))
+              }
+            </ul>
+
+            <!-- main -->
+            <div class="min-w-0">
+              <!-- request line -->
+              <div class="flex items-center gap-2.5 border-b border-rule px-4 py-3">
+                {
+                  endpoints.map((e, i) => (
+                    <code
+                      class="pg-req flex-1 truncate font-mono text-[0.82rem] text-ink-muted"
+                      data-ep={i}
+                      hidden={i !== 0}
+                    >
+                      <span
+                        class="mr-2 font-semibold"
+                        style={`color:var(${mColor(e.m)})`}
+                      >
+                        {e.m}
+                      </span>
+                      {e.path}
+                    </code>
+                  ))
+                }
+                <button
+                  type="button"
+                  class="pg-send inline-flex flex-none items-center gap-1.5 rounded-md bg-brand px-3 py-1.5 font-ui text-[0.75rem] font-semibold text-brand-ink transition hover:bg-brand-deep active:scale-[0.97]"
+                >
+                  <Icon name="play" class="h-3 w-3" /> Send
+                </button>
+              </div>
+
+              <!-- response meta -->
+              <div class="flex items-center gap-2 border-b border-rule bg-surface-2/60 px-4 py-2 font-mono text-[0.72rem]">
+                {
+                  endpoints.map((e, i) => (
+                    <span class="pg-meta flex items-center gap-2" data-ep={i} hidden={i !== 0}>
+                      <span class="rounded px-1.5 py-0.5 font-semibold text-success" style="background:color-mix(in oklab,var(--success) 14%,transparent)">
+                        {e.status}
+                      </span>
+                      <span class="text-ink-faint">{e.time}</span>
+                      <span class="text-ink-faint">application/json</span>
+                    </span>
+                  ))
+                }
+              </div>
+
+              <!-- response body -->
+              <div class="pg-body relative">
+                {
+                  endpoints.map((e, i) => (
+                    <pre
+                      class="pg-json m-0 overflow-x-auto px-4 py-3.5 font-mono text-[0.8rem] leading-relaxed text-ink-muted"
+                      data-ep={i}
+                      hidden={i !== 0}
+                      set:html={e.body}
+                    />
+                  ))
+                }
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- copy -->
+      <div>
+        <SectionHead eyebrow="API Playground" title="Run it before you write a line.">
+          A first-class console lives next to every endpoint. Send authenticated
+          requests, inspect real responses, and copy the exact code you need.
+        </SectionHead>
+        <ul class="mt-7 grid gap-4">
+          {
+            bullets.map(([h, t]) => (
+              <li class="flex gap-3" data-reveal>
+                <span class="mt-px grid h-5 w-5 flex-none place-items-center rounded-full bg-brand-soft text-brand-deep">
+                  <Icon name="check" class="h-3 w-3" />
+                </span>
+                <span class="text-[0.96rem] text-ink-muted">
+                  <b class="font-semibold text-ink">{h}</b> {t}
+                </span>
+              </li>
+            ))
+          }
+        </ul>
+        <div class="mt-8" data-reveal>
+          <ArrowLink href={LINKS.reference} label="Open the live console" />
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.querySelectorAll<HTMLElement>(".pg").forEach((root) => {
+    const eps = root.querySelectorAll<HTMLButtonElement>(".pg-ep");
+    const groups = ["pg-req", "pg-meta", "pg-json"];
+    const show = (i: string | null) => {
+      eps.forEach((b) => b.setAttribute("aria-selected", b.dataset.ep === i ? "true" : "false"));
+      groups.forEach((g) => {
+        root.querySelectorAll<HTMLElement>("." + g).forEach((el) => {
+          el.hidden = el.dataset.ep !== i;
+        });
+      });
+    };
+    eps.forEach((b) => b.addEventListener("click", () => show(b.dataset.ep ?? "0")));
+
+    // "Send" replays a brief round-trip: dim the body, then fade it back in.
+    const send = root.querySelector<HTMLButtonElement>(".pg-send");
+    const body = root.querySelector<HTMLElement>(".pg-body");
+    send?.addEventListener("click", () => {
+      if (!body) return;
+      body.animate(
+        [
+          { opacity: 0.25, transform: "translateY(4px)" },
+          { opacity: 1, transform: "none" },
+        ],
+        { duration: 420, easing: "cubic-bezier(0.22,1,0.36,1)" },
+      );
+    });
+  });
+</script>
+
+<style>
+  .pg-ep[aria-selected="true"] {
+    background: var(--brand-faint);
+    color: var(--ink);
+  }
+</style>
