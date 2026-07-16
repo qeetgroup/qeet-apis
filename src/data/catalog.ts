@@ -6,7 +6,7 @@ export interface ApiSpec {
   /** Scalar source slug (also the catalog card anchor). */
   slug: string;
   /** Product family the spec belongs to. */
-  product: "Qeet ID" | "Qeet Notify";
+  product: "Qeet ID" | "Qeet Notify" | "Qeet Pay";
   /** Short spec title (without the product prefix). */
   title: string;
   /** Vendored spec path under public/specs/, served at runtime. */
@@ -63,6 +63,14 @@ export const SPECS: ApiSpec[] = [
     blurb:
       "Multi-channel transactional messaging — email, SMS, WhatsApp, in-app and webhooks.",
   },
+  {
+    slug: "qeet-pay-v1",
+    product: "Qeet Pay",
+    title: "Payments v1",
+    url: "/specs/qeet-pay/v1.yaml",
+    blurb:
+      "Payments, payouts, subscription billing and GST invoicing — UPI, cards, NACH; e-invoicing, lending and marketplace splits.",
+  },
 ];
 
 /** Scalar `sources` — one entry per PRODUCT (the document switcher). Qeet ID is
@@ -71,11 +79,12 @@ export const SPECS: ApiSpec[] = [
 export const SCALAR_SOURCES = [
   { slug: "qeet-id", title: "Qeet ID", url: "/specs/qeet-id.yaml" },
   { slug: "qeet-notify", title: "Qeet Notify", url: "/specs/qeet-notify/v1.yaml" },
+  { slug: "qeet-pay", title: "Qeet Pay", url: "/specs/qeet-pay/v1.yaml" },
 ];
 
 /** The Scalar document slug a catalog card points at (one per product). */
 export const sourceSlug = (product: ApiSpec["product"]) =>
-  product === "Qeet Notify" ? "qeet-notify" : "qeet-id";
+  product === "Qeet Notify" ? "qeet-notify" : product === "Qeet Pay" ? "qeet-pay" : "qeet-id";
 
 export interface Environment {
   product: string;
@@ -97,6 +106,12 @@ export const ENVIRONMENTS: Environment[] = [
     production: "https://api.notify.qeet.in",
     staging: "https://api.notify.staging.qeet.in",
     local: "http://localhost:8080",
+  },
+  {
+    product: "Qeet Pay",
+    production: "https://api.pay.qeet.in",
+    staging: "https://api.pay.staging.qeet.in",
+    local: "http://localhost:4201",
   },
 ];
 
@@ -167,10 +182,9 @@ export const PRODUCTS: Product[] = [
     kind: "Payments & Billing",
     blurb:
       "Payments, subscriptions and billing — India-first, with UPI and GST built in.",
-    status: "soon",
+    status: "live",
     icon: "credit-card",
-    href: "https://docs.qeet.in/pay",
-    external: true,
+    href: `${"/reference"}#qeet-pay`,
   },
   {
     name: "Qeet People",

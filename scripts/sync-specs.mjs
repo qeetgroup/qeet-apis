@@ -43,6 +43,16 @@ const PRODUCTS = [
       { url: "http://localhost:8080", description: "Local" },
     ],
   },
+  {
+    slug: "qeet-pay",
+    srcDir: "../qeet-pay/api/openapi",
+    specs: ["v1"],
+    servers: [
+      { url: "https://api.pay.qeet.in", description: "Production" },
+      { url: "https://api.pay.staging.qeet.in", description: "Staging" },
+      { url: "http://localhost:4201", description: "Local (docker compose)" },
+    ],
+  },
 ];
 
 // Qeet ID bundle: each source spec becomes one sidebar folder (an x-tagGroup),
@@ -177,17 +187,28 @@ if (QEET_ID_GROUPS.every((g) => idDocs[g.spec])) {
 }
 
 // ---- Postman collection ----------------------------------------------------
-const postmanSrc = join(root, "../qeet-id/api/postman");
 const postmanOut = join(root, "public/postman");
-const postmanFiles = ["qeet-id.postman_collection.json", "qeet-id.postman_environment.json"];
 mkdirSync(postmanOut, { recursive: true });
-for (const f of postmanFiles) {
-  const src = join(postmanSrc, f);
-  if (existsSync(src)) {
-    copyFileSync(src, join(postmanOut, f));
-    console.log(`[postman] ${f}`);
-  } else {
-    console.warn(`[postman] MISSING ${f} — skipped (sibling repo not present?)`);
+// One entry per product that ships a hand-maintained Postman collection + environment.
+const POSTMAN = [
+  {
+    srcDir: "../qeet-id/api/postman",
+    files: ["qeet-id.postman_collection.json", "qeet-id.postman_environment.json"],
+  },
+  {
+    srcDir: "../qeet-pay/api/postman",
+    files: ["qeet-pay.postman_collection.json", "qeet-pay.postman_environment.json"],
+  },
+];
+for (const { srcDir, files } of POSTMAN) {
+  for (const f of files) {
+    const src = join(root, srcDir, f);
+    if (existsSync(src)) {
+      copyFileSync(src, join(postmanOut, f));
+      console.log(`[postman] ${f}`);
+    } else {
+      console.warn(`[postman] MISSING ${f} — skipped (sibling repo not present?)`);
+    }
   }
 }
 
