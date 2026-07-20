@@ -32,7 +32,7 @@ const PRODUCTS = [
   },
   {
     slug: "qeet-notify",
-    srcDir: "../qeet-notify/api/openapi",
+    srcDir: "../qeet-servers/qeet-notify-server/api/openapi",
     specs: ["v1"],
     // NOTE: the source spec/Caddyfile use the non-standard `notify.api.qeet.in`.
     // We use the DOMAIN-ARCHITECTURE standard `api.notify.qeet.in` here; the
