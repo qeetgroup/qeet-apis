@@ -22,7 +22,7 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const PRODUCTS = [
   {
     slug: "qeet-id",
-    srcDir: "../qeet-id/api/openapi",
+    srcDir: "../qeet-servers/qeet-id-server/api/openapi",
     specs: ["auth", "management", "federation", "developer", "operations"],
     servers: [
       { url: "https://api.id.qeet.in", description: "Production" },
@@ -192,7 +192,7 @@ mkdirSync(postmanOut, { recursive: true });
 // One entry per product that ships a hand-maintained Postman collection + environment.
 const POSTMAN = [
   {
-    srcDir: "../qeet-id/api/postman",
+    srcDir: "../qeet-servers/qeet-id-server/api/postman",
     files: ["qeet-id.postman_collection.json", "qeet-id.postman_environment.json"],
   },
   {

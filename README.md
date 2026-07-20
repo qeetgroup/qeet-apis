@@ -14,7 +14,7 @@ selector; each spec carries **Production / Staging / Local** servers.
 
 | Product | Specs | Source repo |
 | --- | --- | --- |
-| Qeet ID | auth, management, federation, developer, operations | `../qeet-id/api/openapi/` |
+| Qeet ID | auth, management, federation, developer, operations | `../qeet-servers/qeet-id-server/api/openapi/` |
 | Qeet Notify | v1 | `../qeet-notify/api/openapi/` |
 
 ## Commands
