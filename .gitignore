@@ -17,3 +17,8 @@
 .env
 .env.local
 .vercel
+
+# `.env*` is deliberately NOT used here: it would also ignore the committed
+# .env.example template (`vercel link` appends that pattern — remove it again
+# if it comes back).
+!.env.example

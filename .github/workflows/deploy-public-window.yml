@@ -28,9 +28,23 @@ name: deploy (public window)
 # ── Required configuration ─────────────────────────────────────────────────
 # Settings → Secrets and variables → Actions
 #
-#   Secret    REPO_ADMIN_TOKEN     fine-grained PAT on this repo with
-#                                  "Administration: read and write".
-#                                  GITHUB_TOKEN cannot change visibility.
+#   GITHUB_TOKEN cannot change repository visibility, so this needs a token
+#   with "Administration: read and write". Either option works:
+#
+#   Preferred — an org-owned GitHub App (not tied to one person, short-lived
+#   tokens, survives someone leaving):
+#     Variable  REPO_ADMIN_APP_ID           the App's ID
+#     Secret    REPO_ADMIN_APP_PRIVATE_KEY  the App's .pem contents
+#     Create at: org → Settings → Developer settings → GitHub Apps → New.
+#     Permissions → Repository → Administration: Read and write. Then install
+#     it on this repository only.
+#
+#   Simpler — a fine-grained PAT:
+#     Secret    REPO_ADMIN_TOKEN
+#     Create at https://github.com/settings/personal-access-tokens/new — note
+#     this lives in your PERSONAL settings; pick `qeetgroup` in the
+#     "Resource owner" dropdown, scope it to this repo, and grant
+#     Administration: Read and write.
 #   Secret    VERCEL_DEPLOY_HOOK   Vercel → Project → Settings → Git →
 #                                  Deploy Hooks → create one for `main`
 #   Secret    VERCEL_TOKEN         Account Settings → Tokens (to poll state)
@@ -119,17 +133,27 @@ jobs:
         env:
           VERCEL: "1"
 
+      # Mint a short-lived installation token if the App is configured. Skipped
+      # silently when it is not, so the PAT path keeps working.
+      - name: Mint GitHub App token
+        id: app_token
+        if: ${{ vars.REPO_ADMIN_APP_ID != '' }}
+        uses: actions/create-github-app-token@v1
+        with:
+          app-id: ${{ vars.REPO_ADMIN_APP_ID }}
+          private-key: ${{ secrets.REPO_ADMIN_APP_PRIVATE_KEY }}
+
       # ── The window opens here ───────────────────────────────────────────
       - name: Make repository public
         id: open
         env:
-          GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token || secrets.REPO_ADMIN_TOKEN }}
         run: |
           set -euo pipefail
 
           # Fail with a readable message rather than a raw 401 from gh.
           if [ -z "${GH_TOKEN:-}" ]; then
-            echo "::error::REPO_ADMIN_TOKEN is not set. Add a fine-grained PAT with 'Administration: read and write' (GITHUB_TOKEN cannot change visibility). The repository was NOT made public and nothing was deployed."
+            echo "::error::No admin token available. Configure either the GitHub App (REPO_ADMIN_APP_ID + REPO_ADMIN_APP_PRIVATE_KEY) or a fine-grained PAT (REPO_ADMIN_TOKEN) with 'Administration: read and write'. GITHUB_TOKEN cannot change visibility. The repository was NOT made public and nothing was deployed."
             exit 1
           fi
 
@@ -191,7 +215,7 @@ jobs:
       - name: Make repository private again
         if: always() && steps.open.conclusion == 'success'
         env:
-          GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token || secrets.REPO_ADMIN_TOKEN }}
           OPENED_AT: ${{ steps.open.outputs.opened_at }}
         run: |
           set -euo pipefail
@@ -207,7 +231,7 @@ jobs:
       - name: Report forks taken during the window
         if: always() && steps.open.conclusion == 'success'
         env:
-          GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
+          GH_TOKEN: ${{ steps.app_token.outputs.token || secrets.REPO_ADMIN_TOKEN }}
         run: |
           set -euo pipefail
           # Forks created while public survive as public repositories. Surfacing
