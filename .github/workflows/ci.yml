@@ -1,8 +1,10 @@
 name: ci
 
 on:
-  push:
-    branches: [main, develop]
+  # Pull requests only, deliberately. This is a private repository, so Actions
+  # minutes are billed, and a `push` trigger on main/develop would double every
+  # run: a PR from develop already triggers `pull_request`, and a merge to main
+  # is covered by deploy.yml, which runs this exact check list before deploying.
   pull_request:
   workflow_dispatch:
 
