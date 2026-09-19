@@ -150,6 +150,14 @@ worth knowing:
 `main` on its own and double up with this workflow. Pick one path; today the
 project's Git link is inert (`sourceless`), so the workflow is the only deployer.
 
+**`--prod` is not optional on Hobby.** A CLI deploy *without* `--prod` creates a
+preview deployment, and on the Hobby plan those come back `BLOCKED` with
+`alwaysRefuseToBuild: true` and `buildSkipped: true` (the deployment object
+links to *troubleshoot-project-collaboration#team-configuration*). There is no
+build log and no error message, so it just looks broken. `vercel deploy
+--prebuilt --prod` is fine — that is what this workflow and
+`qeet-id-console` both do. Don't "test" the route by dropping `--prod`.
+
 **On plans:** Hobby is licensed for non-commercial use. Pro is the
 straightforward answer for a company portal, and restores Git-integration
 preview deployments.
