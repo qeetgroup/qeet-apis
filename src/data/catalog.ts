@@ -56,30 +56,93 @@ export const SPECS: ApiSpec[] = [
     blurb: "Audit logs, billing, usage analytics and tenant operations.",
   },
   {
-    slug: "qeet-notify-v1",
+    slug: "qeet-notify-messaging",
     product: "Qeet Notify",
-    title: "Notifications v1",
-    url: "/specs/qeet-notify/v1.yaml",
-    blurb:
-      "Multi-channel transactional messaging — email, SMS, WhatsApp, in-app and webhooks.",
+    title: "Messaging",
+    url: "/specs/qeet-notify/messaging.yaml",
+    blurb: "Events, notifications, templates, workflows and delivery experiments.",
   },
   {
-    slug: "qeet-pay-v1",
-    product: "Qeet Pay",
-    title: "Payments v1",
-    url: "/specs/qeet-pay/v1.yaml",
+    slug: "qeet-notify-subscribers",
+    product: "Qeet Notify",
+    title: "Subscribers",
+    url: "/specs/qeet-notify/subscribers.yaml",
+    blurb: "Subscriber records, consent, and registered devices.",
+  },
+  {
+    slug: "qeet-notify-deliverability",
+    product: "Qeet Notify",
+    title: "Deliverability",
+    url: "/specs/qeet-notify/deliverability.yaml",
     blurb:
-      "Payments, payouts, subscription billing and GST invoicing — UPI, cards, NACH; e-invoicing, lending and marketplace splits.",
+      "Providers, suppressions, dead letters, inbound mail, IP warmup and DLT/NDNC compliance.",
+  },
+  {
+    slug: "qeet-notify-operations",
+    product: "Qeet Notify",
+    title: "Operations",
+    url: "/specs/qeet-notify/operations.yaml",
+    blurb: "Health, analytics, API keys, audit, billing, environments and broadcasts.",
+  },
+  {
+    slug: "qeet-pay-payments",
+    product: "Qeet Pay",
+    title: "Payments",
+    url: "/specs/qeet-pay/payments.yaml",
+    blurb: "Payments, payment links, checkout, mandates, virtual accounts and orchestration.",
+  },
+  {
+    slug: "qeet-pay-payouts",
+    product: "Qeet Pay",
+    title: "Payouts & Money",
+    url: "/specs/qeet-pay/payouts.yaml",
+    blurb: "Payouts, ledger, treasury and reconciliation.",
+  },
+  {
+    slug: "qeet-pay-billing",
+    product: "Qeet Pay",
+    title: "Billing",
+    url: "/specs/qeet-pay/billing.yaml",
+    blurb: "Subscription billing, dunning and revenue recognition.",
+  },
+  {
+    slug: "qeet-pay-tax",
+    product: "Qeet Pay",
+    title: "GST & Tax",
+    url: "/specs/qeet-pay/tax.yaml",
+    blurb: "GST invoicing, e-invoicing (IRN), GST returns, input tax credit and TDS/TCS.",
+  },
+  {
+    slug: "qeet-pay-commerce",
+    product: "Qeet Pay",
+    title: "Commerce & Embedded Finance",
+    url: "/specs/qeet-pay/commerce.yaml",
+    blurb: "Marketplace, ONDC, cross-border, lending, BNPL, cards, insurance and escrow.",
+  },
+  {
+    slug: "qeet-pay-risk",
+    product: "Qeet Pay",
+    title: "Risk & Compliance",
+    url: "/specs/qeet-pay/risk.yaml",
+    blurb: "KYB, customer KYC, AML and fraud decisioning.",
+  },
+  {
+    slug: "qeet-pay-platform",
+    product: "Qeet Pay",
+    title: "Platform",
+    url: "/specs/qeet-pay/platform.yaml",
+    blurb: "Merchants, webhooks, analytics, accounting, messaging and agentic mandates.",
   },
 ];
 
-/** Scalar `sources` — one entry per PRODUCT (the document switcher). Qeet ID is
- * the bundle that `pnpm sync` builds from the 5 specs (with x-tagGroups → a
- * folder sidebar). `SPECS` above still backs the catalog cards + spec downloads. */
+/** Scalar `sources` — one entry per PRODUCT (the document switcher). Each URL is
+ * the per-product bundle that `bun run sync` merges from that product's source
+ * specs, carrying `x-tagGroups` so the reference renders a folder sidebar.
+ * `SPECS` above still backs the catalog cards + individual spec downloads. */
 export const SCALAR_SOURCES = [
   { slug: "qeet-id", title: "Qeet ID", url: "/specs/qeet-id.yaml" },
-  { slug: "qeet-notify", title: "Qeet Notify", url: "/specs/qeet-notify/v1.yaml" },
-  { slug: "qeet-pay", title: "Qeet Pay", url: "/specs/qeet-pay/v1.yaml" },
+  { slug: "qeet-notify", title: "Qeet Notify", url: "/specs/qeet-notify.yaml" },
+  { slug: "qeet-pay", title: "Qeet Pay", url: "/specs/qeet-pay.yaml" },
 ];
 
 /** The Scalar document slug a catalog card points at (one per product). */
@@ -93,7 +156,7 @@ export interface Environment {
   local: string;
 }
 
-// Mirrors scripts/sync-specs.mjs (qeet-files/DOMAIN-ARCHITECTURE.md).
+// Mirrors scripts/sync-specs.mjs (qeet-context/DOMAIN.md).
 export const ENVIRONMENTS: Environment[] = [
   {
     product: "Qeet ID",
@@ -131,8 +194,8 @@ export const LINKS = {
 
 // ---- The Qeet platform (landing-page product suite) -----------------------
 // Qeet is a modular, best-of-breed suite that shares one platform (identity,
-// notifications, audit, design system). Only ID + Notify expose APIs on this
-// portal today; the rest are shown as "coming to the API" — honest, not hype.
+// notifications, audit, design system). Qeet ID, Notify and Pay expose APIs on
+// this portal today; the rest are shown as "coming to the API" — honest, not hype.
 export interface Product {
   name: string;
   /** Category label under the name. */
@@ -156,7 +219,7 @@ export const PRODUCTS: Product[] = [
       "Passkeys-first authentication, MFA, OAuth 2.1 / OIDC, SAML SSO, SCIM, sessions and RBAC.",
     status: "live",
     icon: "fingerprint",
-    href: `${"/reference"}#qeet-id`,
+    href: "/reference",
   },
   {
     name: "Qeet Notify",
@@ -165,7 +228,7 @@ export const PRODUCTS: Product[] = [
       "Multi-channel transactional messaging — email, SMS, WhatsApp, in-app and webhooks.",
     status: "live",
     icon: "bell",
-    href: `${"/reference"}#qeet-notify`,
+    href: "/reference/qeet-notify",
   },
   {
     name: "Qeet Logs",
@@ -184,7 +247,7 @@ export const PRODUCTS: Product[] = [
       "Payments, subscriptions and billing — India-first, with UPI and GST built in.",
     status: "live",
     icon: "credit-card",
-    href: `${"/reference"}#qeet-pay`,
+    href: "/reference/qeet-pay",
   },
   {
     name: "Qeet People",
@@ -208,8 +271,10 @@ export const PRODUCTS: Product[] = [
   },
 ];
 
-// Headline metrics for the hero counter row. Kept deliberately truthful:
-// the merged Qeet ID spec alone carries 250+ operations across 6 areas.
+// Headline metrics for the hero counter row. Kept deliberately truthful and
+// derived from the vendored specs: 780 operations across 3 products (Qeet ID
+// 395 in 5 areas, Qeet Notify 112 in 4, Qeet Pay 273 in 7). Re-check with
+// `bun run validate:specs` after `bun run sync`.
 export interface Stat {
   value: number;
   suffix?: string;
@@ -217,9 +282,9 @@ export interface Stat {
   label: string;
 }
 export const STATS: Stat[] = [
-  { value: 250, suffix: "+", label: "API endpoints" },
-  { value: 6, label: "product areas" },
-  { value: 4, label: "code languages" },
+  { value: 780, label: "API operations" },
+  { value: 3, label: "live product APIs" },
+  { value: 16, label: "API areas" },
   { value: 100, suffix: "%", label: "OpenAPI 3.1" },
 ];
 
@@ -235,7 +300,6 @@ export const TECH: string[] = [
   "OpenAPI 3.1",
   "JWT / JWKS",
   "Webhooks",
-  "mTLS",
   "RBAC / ReBAC",
   "Multi-tenant",
 ];
@@ -251,8 +315,8 @@ export interface Guarantee {
 export const RELIABILITY: Guarantee[] = [
   {
     icon: "globe",
-    title: "Multi-region edge",
-    body: "Requests terminate at the edge closest to your users, with regional failover behind a single hostname.",
+    title: "One host per API",
+    body: "Each product answers on a single canonical hostname — api.id.qeet.in, api.notify.qeet.in, api.pay.qeet.in.",
   },
   {
     icon: "layers",
@@ -266,8 +330,8 @@ export const RELIABILITY: Guarantee[] = [
   },
   {
     icon: "lock",
-    title: "mTLS & scoped keys",
-    body: "Mutual TLS, OAuth 2.1 and least-privilege API-key scopes secure every call by default.",
+    title: "Scoped credentials",
+    body: "OAuth 2.1 scopes and least-privilege API keys secure every call; secrets are never returned by any endpoint.",
   },
   {
     icon: "activity",
@@ -335,16 +399,8 @@ export const DOCS: DocLink[] = [
 ];
 
 // ---- Brand logos (text-only, no trademark images) ---------------------------
-export const BRAND_LOGOS: string[] = [
-  "Axiom",
-  "Supabase",
-  "Resend",
-  "Neon",
-  "Planetscale",
-  "Upstash",
-  "Turso",
-  "Railway",
-];
+// (Customer logos intentionally absent: Qeet has no published reference
+// customers. The TECH marquee below stands in for them.)
 
 // ---- Why Qeet APIs — six differentiated reasons ----------------------------
 export interface Reason {
@@ -355,40 +411,40 @@ export interface Reason {
 }
 export const WHY_QEET: Reason[] = [
   {
-    icon: "zap",
-    metric: "<50ms",
-    title: "Fast by default",
-    body: "Every request terminates at the nearest edge — p99 latency under 50ms, globally.",
+    icon: "layers",
+    metric: "780 operations",
+    title: "The whole surface",
+    body: "Every endpoint across Qeet ID, Notify and Pay — 780 operations in 16 documented areas.",
   },
   {
     icon: "activity",
-    metric: "99.99%",
-    title: "Built to be reliable",
-    body: "Regional failover, idempotency keys, and versioned APIs that never break under you.",
+    metric: "OpenAPI 3.1",
+    title: "The spec is the source",
+    body: "Each document is vendored straight from the service that implements it and validated in CI, so the reference cannot drift from the API.",
   },
   {
     icon: "shield",
-    metric: "mTLS + OAuth 2.1",
+    metric: "OAuth 2.1 · OIDC",
     title: "Secure at every layer",
-    body: "Mutual TLS, least-privilege scopes, and signed webhooks — security is the default, not a toggle.",
+    body: "Passkeys and step-up MFA, scoped API keys, signed webhooks and least-privilege RBAC — documented per endpoint.",
   },
   {
     icon: "globe",
-    metric: "180+ countries",
-    title: "Global by design",
-    body: "Single hostname, multi-region edge. Your users get low latency wherever they are.",
+    metric: "Multi-tenant",
+    title: "Tenant-isolated by design",
+    body: "Every resource is tenant-scoped, with per-tenant policy, domains, branding and data retention.",
   },
   {
     icon: "gauge",
     metric: "Per-key limits",
-    title: "Scales with you",
-    body: "Granular rate limits, burst controls, and clear headers so you can scale predictably.",
+    title: "Predictable under load",
+    body: "Documented rate limits and idempotency keys, so retries and bursts behave the way you expect.",
   },
   {
     icon: "lock",
-    metric: "SOC 2 · GDPR",
+    metric: "SAML · SCIM · RBAC",
     title: "Enterprise-ready",
-    body: "Audit logs, RBAC, SCIM provisioning, and SSO out of the box — not bolt-on add-ons.",
+    body: "Enterprise SSO over OIDC and SAML, SCIM provisioning, immutable audit logs, and APIs that generate SOC 2 / ISO 27001 evidence from live tenant state.",
   },
 ];
 
@@ -396,53 +452,22 @@ export const WHY_QEET: Reason[] = [
 export interface PlatformMetric {
   value: number;
   prefix?: string;
-  suffix: string;
+  suffix?: string;
   label: string;
   sublabel: string;
 }
 export const PLATFORM_METRICS: PlatformMetric[] = [
-  { value: 50, prefix: "<", suffix: "ms", label: "Average latency", sublabel: "p99 at the edge" },
-  { value: 99, suffix: ".99%", label: "Uptime SLA", sublabel: "across all regions" },
-  { value: 250, suffix: "+", label: "API endpoints", sublabel: "fully OpenAPI 3.1 typed" },
-  { value: 180, suffix: "+", label: "Countries served", sublabel: "via multi-region edge" },
-  { value: 6, suffix: "", label: "Platform products", sublabel: "one key, every API" },
-  { value: 4, suffix: "", label: "SDK languages", sublabel: "cURL · JS · Go · Python" },
+  { value: 780, label: "API operations", sublabel: "across three product APIs" },
+  { value: 16, label: "API areas", sublabel: "one sidebar folder each" },
+  { value: 100, suffix: "%", label: "OpenAPI 3.1", sublabel: "every spec, validated in CI" },
+  { value: 3, label: "live product APIs", sublabel: "Qeet ID · Notify · Pay" },
+  { value: 6, label: "platform products", sublabel: "one identity across all" },
+  { value: 0, label: "hand-written specs", sublabel: "all vendored from the servers" },
 ];
 
 // ---- Testimonials ----------------------------------------------------------
-export interface Testimonial {
-  quote: string;
-  name: string;
-  role: string;
-  company: string;
-  initials: string;
-}
-export const TESTIMONIALS: Testimonial[] = [
-  {
-    quote:
-      "We evaluated five identity platforms. Qeet ID was the only one that had passkeys, SCIM, and a real OpenAPI spec on day one. The reference console alone saved us two weeks of integration work.",
-    name: "Arjun Mehta",
-    role: "CTO",
-    company: "Lattice Systems",
-    initials: "AM",
-  },
-  {
-    quote:
-      "Switching our notification stack to Qeet Notify took one afternoon. The multi-channel API is genuinely well-designed — same payload shape whether you're sending email, SMS or webhooks.",
-    name: "Priya Sundaram",
-    role: "Lead Platform Engineer",
-    company: "Finsight",
-    initials: "PS",
-  },
-  {
-    quote:
-      "The audit log API is the first one I've seen that's actually queryable in real time. Our compliance team went from dreading audit reviews to running them in self-service.",
-    name: "Tomás García",
-    role: "Platform Architect",
-    company: "Buro Cloud",
-    initials: "TG",
-  },
-];
+// (Testimonials intentionally absent: no customer has given attributable
+// permission to be quoted here.)
 
 // ---- Pricing tiers ---------------------------------------------------------
 export interface PricingFeature {
@@ -504,7 +529,7 @@ export const PRICING_TIERS: PricingTier[] = [
       { text: "Full API reference + live console", included: true },
       { text: "All 4 SDK languages", included: true },
       { text: "Dedicated Slack support", included: true },
-      { text: "99.99% uptime SLA", included: true },
+      { text: "Dedicated onboarding & migration support", included: true },
       { text: "SAML SSO, SCIM & RBAC", included: true },
     ],
     cta: "Contact sales",
@@ -532,7 +557,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Are the API specs publicly available as OpenAPI files?",
     answer:
-      "Yes. Every spec is published as OpenAPI 3.1 YAML under <code>apis.qeet.in/specs/</code>. The interactive reference is built directly from these files — they're never hand-written, so they're always in sync with the actual API surface.",
+      "Yes. Every spec is published as OpenAPI 3.1 YAML under <code>api.qeet.in/specs/</code>. The interactive reference is built directly from these files — they're never hand-written, so they're always in sync with the actual API surface.",
   },
   {
     question: "Which SDK languages are supported?",
@@ -547,7 +572,7 @@ export const FAQ_ITEMS: FaqItem[] = [
   {
     question: "Do you offer an uptime SLA?",
     answer:
-      "Growth plans include a 99.9% monthly uptime SLA; Enterprise plans include 99.99%. All plans benefit from multi-region edge routing and automatic regional failover — SLA tiers add contractual commitments and credits.",
+      "Availability commitments are agreed per contract on Enterprise plans — talk to sales for the current terms. We do not publish an SLA figure here, because the number that matters is the one in your agreement.",
   },
   {
     question: "How do webhooks work, and are they signed?",

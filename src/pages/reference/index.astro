@@ -1,63 +1,32 @@
 ---
-import BaseLayout from "../../layouts/BaseLayout.astro";
+/**
+ * The interactive API reference — Qeet ID, and the canonical entry point.
+ *
+ * One product per page (see `referenceHref` in src/config/scalar.ts): with a
+ * single Scalar `source` there is no Scalar document selector competing with
+ * the Qeet product switcher, and every product has a real, shareable URL.
+ * Qeet ID stays at `/reference` so the original route keeps working.
+ *
+ * All Scalar options live in src/config/scalar.ts, including the verified
+ * settings that remove its platform chrome through supported configuration
+ * rather than CSS, and the `customCss` theme bridge that needs no JavaScript.
+ *
+ * `renderMode="client"` matters: the default ("static") injects a complete
+ * second `<!doctype html>` document inside <main>.
+ */
 import { ScalarComponent } from "@scalar/astro";
-import { SCALAR_SOURCES } from "../../data/catalog";
+import ReferenceLayout from "../../layouts/ReferenceLayout.astro";
+import { PRODUCTS } from "../../config/products";
+import { scalarConfigFor } from "../../config/scalar";
 
-// Brand Scalar with the Qeet type system + accent; keep Scalar's excellent
-// neutral palette. theme:"none" disables presets so these vars take effect.
-const customCss = `
-  :root, .light-mode, .dark-mode {
-    --scalar-font: "Cal Sans Text", ui-sans-serif, system-ui, sans-serif;
-    --scalar-font-code: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
-  }
-  .light-mode { --scalar-color-accent: #d85301; }
-  .dark-mode  { --scalar-color-accent: #ff7d1f; }
-`;
+const product = PRODUCTS[0];
 ---
 
-<BaseLayout
-  title="API Reference"
-  description="Interactive reference for every Qeet product API — explore endpoints, schemas and run live requests for Qeet ID and Qeet Notify."
-  showFooter={false}
-  fullBleed
+<ReferenceLayout
+  title={`${product.name} API Reference`}
+  section={product.name}
+  description={`Interactive reference for the ${product.name} API — ${product.description}`}
+  activeProductId={product.id}
 >
-  <ScalarComponent
-    configuration={{
-      sources: SCALAR_SOURCES,
-      theme: "none",
-      layout: "modern",
-      hideDarkModeToggle: true,
-      withDefaultFonts: false,
-      favicon: "/brand/favicon.svg",
-      metaData: { title: "Qeet APIs · Reference" },
-      customCss,
-    }}
-  />
-</BaseLayout>
-
-<script>
-  // Drive Scalar's light/dark from the single site theme toggle. Scalar gates
-  // its palette behind .light-mode / .dark-mode classes on its root, so we
-  // mirror the site theme onto whichever root it mounts and re-apply when it
-  // re-renders (e.g. switching documents).
-  function apply(theme: string) {
-    const dark = theme === "dark";
-    document
-      .querySelectorAll(".scalar-app, .light-mode, .dark-mode")
-      .forEach((el) => {
-        el.classList.toggle("dark-mode", dark);
-        el.classList.toggle("light-mode", !dark);
-      });
-  }
-  const current = () => document.documentElement.dataset.theme || "light";
-
-  new MutationObserver(() => apply(current())).observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-  window.addEventListener("qeet:theme", (e) =>
-    apply((e as CustomEvent).detail),
-  );
-  apply(current());
-  setTimeout(() => apply(current()), 800);
-</script>
+  <ScalarComponent renderMode="client" configuration={scalarConfigFor(product)} />
+</ReferenceLayout>

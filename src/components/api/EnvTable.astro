@@ -1,0 +1,44 @@
+---
+/**
+ * The base-URL table for the guide pages.
+ *
+ * Columns are derived from src/config/products.ts, so adding a Test or Staging
+ * tier there adds a column here with no change to this file. Today that is
+ * Local only — the portal is an internal tool and does not aim Try It at the
+ * live APIs (see src/config/environments.ts).
+ *
+ * There is deliberately no "Sandbox" column: Qeet has no sandbox tier, and
+ * inventing a hostname is worse than omitting one.
+ */
+import { ENVIRONMENT_ROWS } from "../../config/environments";
+
+const columns = ENVIRONMENT_ROWS[0]?.environments.map((e) => e.name) ?? [];
+const th =
+  "border-b border-rule bg-surface-2 px-4 py-2.5 text-left font-ui text-xs font-semibold uppercase tracking-wider text-ink-faint";
+const td = "px-4 py-2.5 align-top";
+---
+
+<div class="not-prose overflow-x-auto rounded-md border border-rule">
+  <table class="w-full border-collapse text-base">
+    <thead>
+      <tr>
+        <th class={th}>Product</th>
+        {columns.map((name) => <th class={th}>{name}</th>)}
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-rule">
+      {
+        ENVIRONMENT_ROWS.map((row) => (
+          <tr>
+            <td class={`${td} font-ui text-ink`}>{row.product}</td>
+            {row.environments.map((env) => (
+              <td class={td}>
+                <code class="font-mono text-sm text-brand-deep">{env.url}</code>
+              </td>
+            ))}
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>

@@ -1,0 +1,31 @@
+---
+/**
+ * The marketing shell for `/` — the existing floating-pill header and mega
+ * footer, unchanged in kind.
+ *
+ * It stays separate from DeveloperLayout on purpose: the landing page is
+ * selling, the workspace is working, and mixing the two is what made the old
+ * `/reference` read as marketing with a spec bolted on (§8).
+ */
+import BaseLayout from "./BaseLayout.astro";
+import Footer from "../components/layout/Footer.astro";
+import Header from "../components/layout/Header.astro";
+import CommandPalette from "../components/navigation/CommandPalette.astro";
+
+interface Props {
+  title?: string;
+  description?: string;
+  ogImage?: string;
+}
+
+const { title, description, ogImage } = Astro.props;
+---
+
+<BaseLayout title={title} description={description} ogImage={ogImage}>
+  <Header />
+  <main id="main">
+    <slot />
+  </main>
+  <Footer />
+  <CommandPalette />
+</BaseLayout>

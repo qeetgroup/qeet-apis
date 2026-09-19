@@ -1,0 +1,1564 @@
+openapi: 3.1.0
+info:
+  title: Qeet Notify — Messaging API
+  version: 1.0.0
+  description: |-
+    Qeet Notify — multi-channel transactional notification platform.
+
+    Authentication: pass your API key in the `X-Qeet-Api-Key` header (scopes: `full` all · `read` GET-only · `send` POST /v1/events only).
+
+    Event intake, templates, workflows, and the notification delivery log.
+servers:
+  - url: https://api.notify.qeet.in
+    description: Production
+  - url: https://api.notify.staging.qeet.in
+    description: Staging
+  - url: http://localhost:8080
+    description: Local
+security:
+  - API-Key: []
+tags:
+  - name: Events
+    description: Trigger notification events (matched against workflows).
+  - name: Templates
+    description: Handlebars templates rendered per channel.
+  - name: Workflows
+    description: Multi-step, event-triggered notification journeys.
+  - name: Notifications
+    description: Read-only delivery log with per-notification events.
+  - name: Experiments
+    description: A/B testing on template variants with per-variant measurement (Module 18).
+  - name: Event Families
+paths:
+  /v1/events:
+    post:
+      summary: Trigger a notification event
+      description: |
+        Publishes an event that matches against active workflow triggers.
+        Idempotent if `Idempotency-Key` header is provided (Redis SETNX, 24h TTL).
+      operationId: post_v1_events
+      tags:
+        - Events
+      security:
+        - API-Key: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+          description: Client-generated UUID to deduplicate retries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - subscriber_id
+              properties:
+                event:
+                  type: string
+                  description: Event name matched against active workflow triggers.
+                  example: user.welcome
+                subscriber_id:
+                  type: string
+                  format: uuid
+                  description: Subscriber the event is raised for.
+                payload:
+                  type: object
+                  additionalProperties: true
+                  description: Arbitrary event data made available to templates.
+      responses:
+        '202':
+          description: Event accepted and queued
+          headers:
+            Idempotent-Replayed:
+              description: Set to "true" when the response is replayed from a prior idempotent request.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    example: accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/notifications:
+    get:
+      summary: List notifications
+      operationId: get_v1_notifications
+      tags:
+        - Notifications
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: subscriber_id
+          description: Filter by subscriber.
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: channel
+          description: Filter by delivery channel.
+          schema:
+            $ref: '#/components/schemas/Channel'
+        - in: query
+          name: status
+          description: Filter by delivery status.
+          schema:
+            type: string
+            enum:
+              - pending
+              - queued
+              - sent
+              - delivered
+              - failed
+              - skipped
+        - in: query
+          name: limit
+          description: Page size (1–200).
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Paginated notification list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - notifications
+                  - total
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  total:
+                    type: integer
+                    description: Total notifications matching the filter (across all pages).
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/notifications/{id}:
+    get:
+      summary: Get notification with delivery events
+      operationId: get_v1_notifications_ById
+      tags:
+        - Notifications
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification record with its delivery-event history
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - notification
+                  - delivery_events
+                properties:
+                  notification:
+                    $ref: '#/components/schemas/Notification'
+                  delivery_events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DeliveryEvent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/templates:
+    get:
+      summary: List templates
+      operationId: get_v1_templates
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: channel
+          description: Filter by delivery channel.
+          schema:
+            $ref: '#/components/schemas/Channel'
+        - in: query
+          name: limit
+          description: Page size (1–200).
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Template list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - templates
+                  - total
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+                  total:
+                    type: integer
+                    description: Number of templates returned in this page.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create template
+      operationId: post_v1_templates
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - channel
+                - body
+              properties:
+                name:
+                  type: string
+                channel:
+                  $ref: '#/components/schemas/Channel'
+                locale:
+                  type: string
+                  description: BCP-47 locale; defaults to "en".
+                subject:
+                  type: string
+                  description: Email subject line (used for the email channel).
+                body:
+                  type: string
+                  description: Handlebars template body.
+                metadata:
+                  type: object
+                  additionalProperties: true
+                  description: Free-form metadata stored with the template.
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/templates/{id}:
+    get:
+      summary: Get template
+      operationId: get_v1_templates_ById
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Template record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update template
+      operationId: put_v1_templates_ById
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: Partial update; all fields optional. Any content change bumps the version.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                subject:
+                  type: string
+                body:
+                  type: string
+                  description: Handlebars template body.
+                locale:
+                  type: string
+                  description: BCP-47 locale.
+                metadata:
+                  type: object
+                  additionalProperties: true
+                  description: Keys are merged into the existing metadata.
+                is_active:
+                  type: boolean
+      responses:
+        '200':
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - version
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  version:
+                    type: integer
+                    description: The new version after the update.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete template
+      operationId: delete_v1_templates_ById
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Template deleted (soft-deleted; is_active set to false)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/templates/{id}/publish:
+    post:
+      summary: Publish template (set is_active=true)
+      description: Records the current version as the published version in metadata.
+      operationId: post_v1_templates_ById_publish
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Template published
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - published_version
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  published_version:
+                    type: integer
+                    description: The version marked as published.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/workflows:
+    get:
+      summary: List workflows
+      operationId: get_v1_workflows
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: limit
+          description: Page size (1–200).
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Workflow list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - workflows
+                  - total
+                properties:
+                  workflows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workflow'
+                  total:
+                    type: integer
+                    description: Number of workflows returned in this page.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create workflow
+      operationId: post_v1_workflows
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - trigger_event
+              properties:
+                name:
+                  type: string
+                trigger_event:
+                  type: string
+                  description: Event name that triggers this workflow.
+                  example: user.welcome
+                steps:
+                  type: array
+                  description: Ordered workflow steps; defaults to an empty list.
+                  items:
+                    type: object
+                    additionalProperties: true
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/workflows/{id}:
+    get:
+      summary: Get workflow
+      operationId: get_v1_workflows_ById
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update workflow
+      operationId: put_v1_workflows_ById
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: Partial update; all fields optional.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                trigger_event:
+                  type: string
+                  description: Event name that triggers this workflow.
+                steps:
+                  type: array
+                  description: Replaces the step list when provided.
+                  items:
+                    type: object
+                    additionalProperties: true
+      responses:
+        '200':
+          description: Workflow updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Archive workflow
+      operationId: delete_v1_workflows_ById
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workflow archived (is_active set to false)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/workflows/{id}/activate:
+    post:
+      summary: Activate workflow
+      operationId: post_v1_workflows_ById_activate
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow activated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: active
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/workflows/{id}/pause:
+    post:
+      summary: Pause workflow
+      operationId: post_v1_workflows_ById_pause
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow paused
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: paused
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/workflows/{id}/runs:
+    get:
+      summary: List workflow run history
+      operationId: get_v1_workflows_ById_runs
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: limit
+          description: Number of most-recent runs to return (1–100).
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Run list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - runs
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkflowRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/experiments:
+    get:
+      summary: List experiments
+      operationId: get_v1_experiments
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Experiment list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - experiments
+                properties:
+                  experiments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Experiment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a draft experiment
+      operationId: post_v1_experiments
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - target_template_id
+                - variants
+              properties:
+                name:
+                  type: string
+                target_template_id:
+                  type: string
+                  format: uuid
+                  description: The control template the experiment replaces while running.
+                variants:
+                  type: array
+                  minItems: 2
+                  description: At least two variants with unique keys.
+                  items:
+                    $ref: '#/components/schemas/ExperimentVariant'
+      responses:
+        '201':
+          description: Draft experiment created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: draft
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/experiments/{id}:
+    get:
+      summary: Get an experiment
+      operationId: get_v1_experiments_ById
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Experiment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Experiment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a draft experiment
+      description: Only name and variants are applied; target_template_id is ignored. Only draft experiments can be edited.
+      operationId: put_v1_experiments_ById
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - variants
+              properties:
+                name:
+                  type: string
+                target_template_id:
+                  type: string
+                  format: uuid
+                  description: Accepted but ignored on update.
+                variants:
+                  type: array
+                  minItems: 2
+                  items:
+                    $ref: '#/components/schemas/ExperimentVariant'
+      responses:
+        '200':
+          description: Experiment updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete an experiment
+      operationId: delete_v1_experiments_ById
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/experiments/{id}/activate:
+    post:
+      summary: Start an experiment
+      description: Sets status to running. Fails with 409 if another experiment is already running for the same target template.
+      operationId: post_v1_experiments_ById_activate
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Experiment running
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: running
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/experiments/{id}/promote:
+    post:
+      summary: Promote a winner and complete the experiment
+      operationId: post_v1_experiments_ById_promote
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - winner_key
+              properties:
+                winner_key:
+                  type: string
+                  description: The variant key to record as the winner.
+      responses:
+        '200':
+          description: Experiment completed
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                  - winner_key
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: completed
+                  winner_key:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/experiments/{id}/auto-promote:
+    post:
+      summary: Auto-promote the winning variant
+      description: Completes the experiment with the leading variant only if results are statistically significant and not inconclusive; otherwise 409.
+      operationId: post_v1_experiments_ById_auto_promote
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Completed with the winning variant
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                  - winner_key
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: completed
+                  winner_key:
+                    type: string
+                    description: The auto-selected leading variant by click rate.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/experiments/{id}/results:
+    get:
+      summary: Per-variant results
+      description: Delivery/open/click metrics per variant, the leading variant by click rate, and an inconclusive flag for low-volume tests.
+      operationId: get_v1_experiments_ById_results
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Per-variant results
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - experiment_id
+                  - variants
+                  - leading_key
+                  - inconclusive
+                  - significant
+                  - confidence
+                properties:
+                  experiment_id:
+                    type: string
+                    format: uuid
+                  variants:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VariantResult'
+                  leading_key:
+                    type: string
+                    description: The variant key with the highest click rate.
+                  inconclusive:
+                    type: boolean
+                    description: True when per-variant sample sizes are too small to conclude.
+                  significant:
+                    type: boolean
+                    description: Two-proportion z-test result between the top-two variants.
+                  confidence:
+                    type: number
+                    format: float
+                    description: Rough two-tailed confidence level for the significance call.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/event-families:
+    get:
+      summary: List event families
+      description: Returns the tenant's event-family memberships — the sibling trigger events grouped into a single logical "story" so cross-event semantic deduplication (Module 16.5) can suppress duplicate sends to a subscriber. Ordered by family_key, then event_name.
+      operationId: list_v1_event_families
+      tags:
+        - Event Families
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Event-family memberships
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - families
+                properties:
+                  families:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventFamilyMembership'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Add an event to a family
+      description: Declares that event_name belongs to family_key. Idempotent — re-declaring an existing membership is a no-op that still returns 201.
+      operationId: create_v1_event_family
+      tags:
+        - Event Families
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventFamilyMembership'
+      responses:
+        '201':
+          description: Membership created (or already existed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventFamilyMembership'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Remove an event from a family
+      description: Removes the (family_key, event_name) membership. The pair may be given in the JSON body or as ?family_key=&event_name= query parameters.
+      operationId: delete_v1_event_family
+      tags:
+        - Event Families
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: family_key
+          schema:
+            type: string
+        - in: query
+          name: event_name
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Membership removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+components:
+  securitySchemes:
+    API-Key:
+      type: apiKey
+      in: header
+      name: X-Qeet-Api-Key
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required:
+        - error
+    PaginatedMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    Channel:
+      type: string
+      description: Delivery channel.
+      enum:
+        - email
+        - sms
+        - whatsapp
+        - push
+        - inapp
+        - webhook
+        - rcs
+        - chatops
+    Template:
+      type: object
+      description: A Handlebars notification template, versioned via metadata.
+      required:
+        - id
+        - name
+        - channel
+        - locale
+        - body
+        - metadata
+        - is_active
+        - version
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        channel:
+          $ref: '#/components/schemas/Channel'
+        locale:
+          type: string
+          description: BCP-47 locale (e.g. "en").
+        subject:
+          type: string
+          description: Email subject line; omitted for channels without a subject.
+        body:
+          type: string
+          description: Handlebars template body.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Free-form metadata; carries the version marker.
+        is_active:
+          type: boolean
+        version:
+          type: integer
+          description: Template version (derived from metadata.version; defaults to 1).
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Workflow:
+      type: object
+      description: A multi-step, event-triggered notification journey.
+      required:
+        - id
+        - name
+        - trigger_event
+        - steps
+        - is_active
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        trigger_event:
+          type: string
+          description: Event name that triggers this workflow.
+          example: user.welcome
+        steps:
+          type: array
+          description: Ordered workflow steps (channel sends, delays, branches).
+          items:
+            type: object
+            additionalProperties: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkflowRun:
+      type: object
+      description: One execution of a workflow for a subscriber.
+      required:
+        - id
+        - workflow_id
+        - trigger_event
+        - status
+        - current_step_index
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        subscriber_id:
+          type: string
+          format: uuid
+          description: Subscriber the run targets; omitted when not set.
+        trigger_event:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - completed
+            - failed
+            - cancelled
+        current_step_index:
+          type: integer
+          description: Zero-based index of the current/last step.
+        error:
+          type: string
+          description: Failure reason; omitted unless the run failed.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Notification:
+      type: object
+      description: A single delivered (or attempted) notification record.
+      required:
+        - id
+        - subscriber_id
+        - channel
+        - status
+        - content
+        - is_read
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_run_id:
+          type: string
+          format: uuid
+          description: Set when produced by a workflow run.
+        subscriber_id:
+          type: string
+          format: uuid
+        channel:
+          $ref: '#/components/schemas/Channel'
+        template_id:
+          type: string
+          format: uuid
+          description: Template used to render the notification, if any.
+        status:
+          type: string
+          enum:
+            - pending
+            - queued
+            - sent
+            - delivered
+            - failed
+            - skipped
+        provider:
+          type: string
+          description: Provider that handled delivery (e.g. ses, msg91).
+        provider_message_id:
+          type: string
+          description: Provider-assigned message identifier.
+        content:
+          type: object
+          additionalProperties: true
+          description: Rendered channel payload.
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    DeliveryEvent:
+      type: object
+      description: A provider-reported lifecycle event for a notification.
+      required:
+        - id
+        - event_type
+        - provider
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          description: e.g. queued, sent, delivered, opened, clicked, bounced, failed.
+        provider:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    ExperimentVariant:
+      type: object
+      description: One arm of an A/B experiment.
+      required:
+        - key
+        - template_id
+      properties:
+        key:
+          type: string
+          description: Unique variant identifier within the experiment.
+        template_id:
+          type: string
+          format: uuid
+          description: Template sent for this variant.
+        weight:
+          type: integer
+          minimum: 0
+          description: Relative split weight (non-negative); equal weights = even split.
+    Experiment:
+      type: object
+      description: An A/B test over template variants for a target template.
+      required:
+        - id
+        - name
+        - target_template_id
+        - variants
+        - status
+        - winner_key
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        target_template_id:
+          type: string
+          format: uuid
+          description: The control template the experiment replaces while running.
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExperimentVariant'
+        status:
+          type: string
+          enum:
+            - draft
+            - running
+            - completed
+        winner_key:
+          type:
+            - string
+            - 'null'
+          description: The promoted variant key; null until the experiment completes.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    VariantResult:
+      type: object
+      description: Per-variant delivery and engagement metrics.
+      required:
+        - key
+        - sent
+        - delivered
+        - opened
+        - clicked
+        - open_rate
+        - click_rate
+      properties:
+        key:
+          type: string
+        sent:
+          type: integer
+        delivered:
+          type: integer
+        opened:
+          type: integer
+        clicked:
+          type: integer
+        open_rate:
+          type: number
+          format: float
+        click_rate:
+          type: number
+          format: float
+    EventFamilyMembership:
+      type: object
+      properties:
+        family_key:
+          type: string
+          description: The logical story this event belongs to.
+        event_name:
+          type: string
+          description: The trigger event that is a member of the family.
+      required:
+        - family_key
+        - event_name
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Malformed request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Request conflicts with the current resource state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

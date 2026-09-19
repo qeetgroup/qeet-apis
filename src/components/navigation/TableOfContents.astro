@@ -1,0 +1,107 @@
+---
+/**
+ * On-this-page navigation, built from the rendered headings.
+ *
+ * Astro hands MDX headings to the layout via `Astro.props.headings`, so the
+ * list is derived from the real document — no duplicate hand-written outline to
+ * drift. Only h2/h3 appear: h4 in these guides is used for labels, not
+ * structure.
+ *
+ * Scroll-spy uses IntersectionObserver against the headings themselves, which
+ * is reading layout rather than polling state, and it degrades to a plain list
+ * of links with no JS.
+ */
+export interface Heading {
+  depth: number;
+  slug: string;
+  text: string;
+}
+
+interface Props {
+  headings: Heading[];
+}
+
+const { headings } = Astro.props;
+const items = headings.filter((h) => h.depth === 2 || h.depth === 3);
+---
+
+{
+  items.length > 1 && (
+    <nav class="toc" aria-labelledby="toc-heading" data-toc>
+      <p
+        class="mb-2.5 font-ui text-2xs font-semibold uppercase tracking-[0.14em] text-ink-faint"
+        id="toc-heading"
+      >
+        On this page
+      </p>
+      <ul class="list-none space-y-px border-l border-rule">
+        {items.map((h) => (
+          <li>
+            <a
+              href={`#${h.slug}`}
+              class:list={[
+                "-ml-px block border-l-2 border-transparent py-1 font-ui text-xs text-ink-subtle transition-colors hover:text-ink",
+                h.depth === 3 ? "pl-5" : "pl-3",
+              ]}
+              data-toc-link={h.slug}
+            >
+              {h.text}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  )
+}
+
+<style>
+  .toc {
+    position: sticky;
+    top: calc(var(--dev-header-h) + 2rem);
+    max-height: calc(100vh - var(--dev-header-h) - 4rem);
+    overflow-y: auto;
+    scrollbar-width: thin;
+  }
+  [data-toc-link][aria-current="true"] {
+    color: var(--ink);
+    font-weight: 500;
+    border-left-color: var(--brand);
+  }
+</style>
+
+<script>
+  // Mark the heading nearest the top of the viewport. `rootMargin` biases the
+  // observer so a heading counts as "current" once it reaches the header line,
+  // not when it first peeks in from the bottom.
+  const links = new Map<string, HTMLAnchorElement>();
+  for (const a of document.querySelectorAll<HTMLAnchorElement>("[data-toc-link]")) {
+    const slug = a.dataset.tocLink;
+    if (slug) links.set(slug, a);
+  }
+
+  if (links.size > 0) {
+    const targets = [...links.keys()]
+      .map((slug) => document.getElementById(slug))
+      .filter((el): el is HTMLElement => el !== null);
+
+    let current = "";
+    const setCurrent = (slug: string) => {
+      if (slug === current) return;
+      if (current) links.get(current)?.removeAttribute("aria-current");
+      current = slug;
+      links.get(slug)?.setAttribute("aria-current", "true");
+    };
+
+    const observer = new IntersectionObserver(
+      (records) => {
+        const visible = records
+          .filter((r) => r.isIntersecting)
+          .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+        if (visible[0]?.target.id) setCurrent(visible[0].target.id);
+      },
+      { rootMargin: "-25% 0px -65% 0px", threshold: 0 },
+    );
+
+    for (const t of targets) observer.observe(t);
+  }
+</script>

@@ -4,8 +4,13 @@
  * flip automatically under [data-theme="dark"]), plus a thin base + component
  * layer for things utilities can't express cleanly (prose, generated markup). */
 
+/* @import rules must precede every other at-rule, so all four sit together.
+   docs.css keeps its .prose rules unlayered, which beats the typography
+   plugin's layered defaults regardless of source order. */
 @import "tailwindcss";
 @import "./tokens.css";
+@import "./docs.css";
+@import "./reference.css";
 @plugin "@tailwindcss/typography";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
@@ -17,10 +22,59 @@
   --font-ui: "Cal Sans UI", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
 
+  /* Complete + monotonic. Every step is declared, including 2xl/3xl/4xl, because
+     leaving Tailwind's defaults in place made rounded-xl (1.5rem) LARGER than
+     rounded-2xl (1rem) and collided rounded-sm with the default rounded-md.
+     Enterprise-restrained: the small end is where docs/API chrome lives. */
+  --radius-xs: 0.25rem;
   --radius-sm: 0.375rem;
+  --radius-md: 0.5rem;
   --radius: 0.625rem;
-  --radius-lg: 1rem;
-  --radius-xl: 1.5rem;
+  --radius-lg: 0.75rem;
+  --radius-xl: 1rem;
+  --radius-2xl: 1.25rem;
+  --radius-3xl: 1.5rem;
+  --radius-4xl: 2rem;
+
+  /* Type scale. The audit found 288 arbitrary `text-[…]` values across 49
+     distinct sizes (0.92 / 0.93 / 0.94 / 0.95 / 0.96 / 0.98rem all coexisted).
+     These 9 steps cover every real use; docs/API chrome lives in 2xs–lg.
+     Paired line-heights are deliberate: tight for UI, open for reading. */
+  --text-2xs: 0.6875rem;   /* 11px — badges, method chips */
+  --text-2xs--line-height: 1.45;
+  --text-xs: 0.75rem;      /* 12px — metadata, eyebrows */
+  --text-xs--line-height: 1.5;
+  --text-sm: 0.8125rem;    /* 13px — code, dense tables */
+  --text-sm--line-height: 1.6;
+  --text-base: 0.875rem;   /* 14px — UI controls, nav */
+  --text-base--line-height: 1.55;
+  --text-md: 0.9375rem;    /* 15px — docs body */
+  --text-md--line-height: 1.62;
+  --text-lg: 1.0625rem;    /* 17px — lead paragraphs */
+  --text-lg--line-height: 1.6;
+  --text-xl: 1.1875rem;    /* 19px — h3 */
+  --text-xl--line-height: 1.4;
+  --text-2xl: 1.4375rem;   /* 23px — h2 */
+  --text-2xl--line-height: 1.3;
+  --text-3xl: 1.9375rem;   /* 31px — docs h1 (§28: 30–36px) */
+  --text-3xl--line-height: 1.2;
+}
+
+/* Shell geometry + motion → Tailwind namespaces, so layouts can say
+   `w-sidebar` / `h-dev-header` / `z-header` instead of re-deriving the value. */
+@theme inline {
+  --spacing-sidebar: var(--sidebar-w);
+  --spacing-panel: var(--panel-w);
+  --spacing-content: var(--content-w);
+  --spacing-toc: var(--toc-w);
+  --spacing-dev-header: var(--dev-header-h);
+
+  --z-index-raised: var(--z-raised);
+  --z-index-sticky: var(--z-sticky);
+  --z-index-drawer: var(--z-drawer);
+  --z-index-header: var(--z-header);
+  --z-index-popover: var(--z-popover);
+  --z-index-skip: var(--z-skip);
 }
 
 /* Semantic colors mapped to the theme-flipping vars (inline → utilities use the
@@ -46,6 +100,16 @@
   --color-brand-faint: var(--brand-faint);
   --color-success: var(--success);
   --color-warning: var(--warning);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  /* HTTP method accents. Previously unbridged, which is why components had to
+     re-type the hex (text-[#1c6b4a] dark:text-[#5bbd7a] *is* --m-get). */
+  --color-m-get: var(--m-get);
+  --color-m-post: var(--m-post);
+  --color-m-put: var(--m-put);
+  --color-m-patch: var(--m-patch);
+  --color-m-delete: var(--m-delete);
 }
 
 @layer base {
@@ -63,7 +127,11 @@
     @apply bg-bg text-ink font-sans antialiased;
     line-height: 1.65;
     font-feature-settings: "ss01", "cv01";
-    overflow-x: hidden;
+    /* No `overflow-x: hidden` here. `overflow-x: hidden` computes `overflow-y`
+       to `auto`, which makes <body> a scroll container and stops
+       `position: sticky` children from sticking to the viewport — it silently
+       broke the developer header and the reference sidebar. The guard on <html>
+       above is enough to contain horizontal overflow. */
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);
@@ -88,9 +156,9 @@
     background: color-mix(in oklab, var(--brand) 28%, transparent);
   }
   :focus-visible {
-    outline: 2px solid var(--brand);
-    outline-offset: 2px;
-    border-radius: 4px;
+    outline: var(--focus-ring-w) solid var(--focus-ring-color);
+    outline-offset: var(--focus-ring-offset);
+    border-radius: var(--radius-xs);
   }
 
   /* MDX prose overrides live unlayered below so they beat the typography
@@ -239,51 +307,7 @@
   }
 }
 
-/* MDX prose — unlayered so these beat the typography plugin's layered defaults,
- * mapping prose to brand tokens that flip under [data-theme="dark"]. */
-.prose {
-  --tw-prose-body: var(--ink-muted);
-  --tw-prose-headings: var(--ink);
-  --tw-prose-links: var(--brand-deep);
-  --tw-prose-bold: var(--ink);
-  --tw-prose-counters: var(--brand-deep);
-  --tw-prose-bullets: var(--brand);
-  --tw-prose-hr: var(--rule);
-  --tw-prose-quotes: var(--ink-subtle);
-  --tw-prose-quote-borders: var(--brand);
-  --tw-prose-code: var(--brand-deep);
-  --tw-prose-pre-bg: transparent;
-  --tw-prose-pre-code: inherit;
-  --tw-prose-th-borders: var(--rule);
-  --tw-prose-td-borders: var(--rule);
-}
-.prose :where(h1, h2, h3, h4) {
-  font-family: var(--font-display);
-}
-.prose :where(code):not(:where(pre *)) {
-  font-family: var(--font-mono);
-  font-weight: 500;
-  font-size: 0.86em;
-  background: var(--surface-2);
-  border: 1px solid var(--rule);
-  padding: 0.1rem 0.36rem;
-  border-radius: 5px;
-}
-.prose :where(code):not(:where(pre *))::before,
-.prose :where(code):not(:where(pre *))::after {
-  content: none;
-}
-.prose :where(pre) {
-  font-family: var(--font-mono);
-  border: 1px solid var(--rule);
-}
-.prose :where(blockquote) {
-  background: var(--brand-faint);
-  border-radius: 0 var(--radius) var(--radius) 0;
-  padding-block: 0.4rem;
-  font-style: normal;
-  font-weight: 400;
-}
+/* MDX prose lives in docs.css (imported below). */
 
 /* ============================================================================
  * Motion & decoration (global so Tailwind/inline refs aren't scoped-renamed).
@@ -445,7 +469,7 @@ html.has-anim:not(.anim-fallback) [data-reveal]:not(.is-in) {
 
 /* Nav dropdown z-layering */
 .nav-panel {
-  z-index: 300;
+  z-index: var(--z-popover);
 }
 
 /* Shiki dual-theme for MDX fenced code (generated markup; needs !important to

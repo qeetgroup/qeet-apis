@@ -1,0 +1,230 @@
+/* Qeet → Scalar theme bridge.
+ *
+ * This file is NOT loaded as a stylesheet. It is imported with `?raw` by
+ * src/config/scalar.ts and handed to Scalar as `customCss`, which is the
+ * supported way to set Scalar's theme (`theme: "none"` disables its presets so
+ * these take effect).
+ *
+ * ── Why the two blocks below are identical ─────────────────────────────────
+ * Scalar gates its palette behind `.light-mode` / `.dark-mode` on its own root,
+ * and its loader (@scalar/helpers/dist/theme/load-css-variables.js) matches
+ * those two selectors *exactly*. Every value here is a `var(--qeet-token)` that
+ * already flips on `[data-theme="dark"]`, so both blocks resolve to whatever
+ * the site theme currently is. Scalar's internal notion of mode becomes
+ * irrelevant, and theming needs **no JavaScript at all** — no MutationObserver,
+ * no polling, no 800ms race hedge (which is what the previous implementation
+ * used, against an undocumented `.scalar-app` selector).
+ *
+ * Verified safe: the CDN bundle references `.dark-mode` in exactly three
+ * places, and all three only set CSS variables plus `color-scheme`. No layout
+ * or component styling keys off the class. `color-scheme` is corrected
+ * separately in reference.css, since that one genuinely is class-driven.
+ *
+ * Keep both blocks byte-identical. If they ever diverge, the theme will appear
+ * to "stick" on whichever mode Scalar happens to have chosen.
+ */
+
+.light-mode {
+  /* type */
+  --scalar-font: "Cal Sans Text", ui-sans-serif, system-ui, sans-serif;
+  --scalar-font-code: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --scalar-bold: 600;
+  --scalar-semibold: 600;
+  --scalar-font-medium: 500;
+
+  /* surfaces — background-1 is Scalar's canvas, so it matches the page */
+  --scalar-background-1: var(--bg);
+  --scalar-background-2: var(--surface);
+  --scalar-background-3: var(--surface-2);
+  --scalar-background-card: var(--surface);
+  --scalar-background-accent: var(--brand-soft);
+
+  /* text */
+  --scalar-color-1: var(--ink);
+  --scalar-color-2: var(--ink-muted);
+  --scalar-color-3: var(--ink-subtle);
+  --scalar-color-disabled: var(--ink-faint);
+  --scalar-color-ghost: var(--ink-faint);
+  --scalar-color-accent: var(--brand-deep);
+  --scalar-link-color: var(--brand-deep);
+
+  /* borders + radii — small, per §28 */
+  --scalar-border-color: var(--rule);
+  --scalar-radius: var(--radius-sm);
+  --scalar-radius-lg: var(--radius-md);
+  --scalar-radius-xl: var(--radius-lg);
+
+  /* semantic + HTTP method accents, straight off the Qeet tokens */
+  --scalar-color-green: var(--m-get);
+  --scalar-color-blue: var(--m-post);
+  --scalar-color-yellow: var(--m-put);
+  --scalar-color-purple: var(--m-patch);
+  --scalar-color-red: var(--m-delete);
+  --scalar-color-orange: var(--warning);
+  --scalar-color-danger: var(--danger);
+  --scalar-color-alert: var(--warning);
+
+
+  /* the API client's primary action (Send) */
+  --scalar-button-1: var(--brand);
+  --scalar-button-1-color: var(--brand-ink);
+  --scalar-button-1-hover: var(--brand-deep);
+
+  /* tooltips */
+  --scalar-tooltip-background: var(--ink);
+  --scalar-tooltip-color: var(--bg);
+
+  /* sidebar — hidden in `classic` layout, themed anyway so nothing flashes
+     unstyled if the layout is ever switched back */
+  --scalar-sidebar-background-1: var(--bg);
+  --scalar-sidebar-color-1: var(--ink);
+  --scalar-sidebar-color-2: var(--ink-subtle);
+  --scalar-sidebar-border-color: var(--rule);
+  --scalar-sidebar-item-hover-background: var(--surface-2);
+  --scalar-sidebar-item-active-background: var(--brand-faint);
+  --scalar-sidebar-color-active: var(--brand-deep);
+  --scalar-sidebar-indent-border-active: var(--brand);
+}
+
+.dark-mode {
+  /* type */
+  --scalar-font: "Cal Sans Text", ui-sans-serif, system-ui, sans-serif;
+  --scalar-font-code: "Fira Code", ui-monospace, SFMono-Regular, Menlo, monospace;
+  --scalar-bold: 600;
+  --scalar-semibold: 600;
+  --scalar-font-medium: 500;
+
+  /* surfaces — background-1 is Scalar's canvas, so it matches the page */
+  --scalar-background-1: var(--bg);
+  --scalar-background-2: var(--surface);
+  --scalar-background-3: var(--surface-2);
+  --scalar-background-card: var(--surface);
+  --scalar-background-accent: var(--brand-soft);
+
+  /* text */
+  --scalar-color-1: var(--ink);
+  --scalar-color-2: var(--ink-muted);
+  --scalar-color-3: var(--ink-subtle);
+  --scalar-color-disabled: var(--ink-faint);
+  --scalar-color-ghost: var(--ink-faint);
+  --scalar-color-accent: var(--brand-deep);
+  --scalar-link-color: var(--brand-deep);
+
+  /* borders + radii — small, per §28 */
+  --scalar-border-color: var(--rule);
+  --scalar-radius: var(--radius-sm);
+  --scalar-radius-lg: var(--radius-md);
+  --scalar-radius-xl: var(--radius-lg);
+
+  /* semantic + HTTP method accents, straight off the Qeet tokens */
+  --scalar-color-green: var(--m-get);
+  --scalar-color-blue: var(--m-post);
+  --scalar-color-yellow: var(--m-put);
+  --scalar-color-purple: var(--m-patch);
+  --scalar-color-red: var(--m-delete);
+  --scalar-color-orange: var(--warning);
+  --scalar-color-danger: var(--danger);
+  --scalar-color-alert: var(--warning);
+
+
+  /* the API client's primary action (Send) */
+  --scalar-button-1: var(--brand);
+  --scalar-button-1-color: var(--brand-ink);
+  --scalar-button-1-hover: var(--brand-deep);
+
+  /* tooltips */
+  --scalar-tooltip-background: var(--ink);
+  --scalar-tooltip-color: var(--bg);
+
+  /* sidebar — hidden in `classic` layout, themed anyway so nothing flashes
+     unstyled if the layout is ever switched back */
+  --scalar-sidebar-background-1: var(--bg);
+  --scalar-sidebar-color-1: var(--ink);
+  --scalar-sidebar-color-2: var(--ink-subtle);
+  --scalar-sidebar-border-color: var(--rule);
+  --scalar-sidebar-item-hover-background: var(--surface-2);
+  --scalar-sidebar-item-active-background: var(--brand-faint);
+  --scalar-sidebar-color-active: var(--brand-deep);
+  --scalar-sidebar-indent-border-active: var(--brand);
+}
+
+/* ==========================================================================
+ * The API client ("Test Request") panel.
+ *
+ * Scalar's client is a full application embedded in the page, so the goal here
+ * is to make it read as a Qeet panel rather than a third-party tool that
+ * happens to open on top of the docs. Only semantic, stable class names are
+ * used (`.scalar-container`, `.scalar-client`, `.ascii-art`) — no hashed
+ * utility selectors.
+ *
+ * ── Scope carefully ───────────────────────────────────────────────────────
+ * `.scalar-client` is NOT unique to the modal. Scalar also puts it on the
+ * Server / Authentication / Client Libraries cards in the introduction
+ * (parent `.introduction-card`), and keeps an empty one mounted when no modal
+ * is open. Styling the bare class therefore restyled those cards and painted
+ * artefacts over the page. Everything below is scoped to
+ * `.scalar-container > .scalar-client`, which is only ever the modal.
+ * ========================================================================== */
+
+/* Frame it as a contained panel.
+ *
+ * Untouched, the client spans the full viewport width, so it read as the page
+ * suddenly changing rather than as something opening on top of it. Capping the
+ * width and rounding the corners is enough to make it a panel.
+ *
+ * NO page backdrop. An earlier attempt hung a `100vmax` spread shadow off this
+ * element to dim the page behind the modal; `.scalar-client` is also used for
+ * hidden, off-screen elements that are always in the DOM, so that shadow
+ * painted a grey wash over the entire site whether or not a modal was open.
+ * Scalar's own modal already sits on `margin: auto` with a border, which is
+ * sufficient — and a wrong backdrop is far worse than no backdrop. */
+.scalar-container > .scalar-client {
+  /* `!important` is deliberate here, and only here.
+   *
+   * Scalar styles this element with `.scalar-app-layout[data-v-<hash>]` — a Vue
+   * scoped-style selector of equal specificity to any class pair we can write,
+   * and the hash changes between Scalar releases, so matching it would be a
+   * guaranteed future break. Overriding the two properties we actually need is
+   * more stable than out-specifying a version-coupled selector.
+   *
+   * Scalar's own rule already centres the panel and gives it a border; its
+   * 1390px cap is simply wider than most viewports, which is why the panel
+   * read as full-bleed rather than as something floating above the page. */
+  /* Wider than Scalar's own 1390px cap, but still inset from the viewport so
+     it reads as a panel rather than a full-screen takeover. The request and
+     response columns both need room: request bodies and JSON responses are
+     what people actually read in here. */
+  max-width: min(88rem, calc(100vw - 3rem)) !important;
+  border-radius: var(--radius-lg) !important;
+  border-color: var(--rule-strong) !important;
+  /* Not set by Scalar, so no override needed. */
+  box-shadow: var(--shadow-lg);
+}
+
+/* Scalar fills the empty Response pane with a large ASCII-art rendering of its
+   own logo. Third-party branding does not belong in the middle of a Qeet
+   product, so it is replaced with a quiet instruction. */
+.scalar-container > .scalar-client .ascii-art {
+  display: none;
+}
+
+/* The container that held the logo. `capitalize` is Scalar's own class on it,
+   which would title-case our sentence, so reset it. */
+.scalar-container > .scalar-client [class*="flex-center"]:has(.ascii-art)::before {
+  content: "Send the request to see the response.";
+  display: block;
+  max-width: 24ch;
+  text-align: center;
+  text-transform: none;
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  line-height: 1.55;
+  color: var(--ink-faint);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scalar-container > .scalar-client * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

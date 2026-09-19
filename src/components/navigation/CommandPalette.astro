@@ -1,0 +1,305 @@
+---
+/**
+ * The ⌘K command palette — Qeet's own search across guides, headings, API tags
+ * and all 780 operations (O3).
+ *
+ * Built on <dialog>, so focus trapping, Escape-to-close, the backdrop and
+ * inert-ing the page behind it are the platform's job rather than ours. The
+ * index is fetched once on first open (~150 KB, not on the critical path) and
+ * ranked with a small scoring function — no dependency, ~120 lines of script.
+ *
+ * Results use `role="listbox"`/`option` with `aria-activedescendant`, which is
+ * the correct pattern for a combobox-style popup: the input keeps focus while
+ * arrow keys move the active option.
+ */
+---
+
+<dialog
+  class="palette m-0 mx-auto max-h-none w-full max-w-[38rem] rounded-xl border border-rule bg-surface p-0 text-ink shadow-(--shadow-lg) backdrop:bg-ink/35 backdrop:backdrop-blur-sm"
+  data-palette
+  aria-label="Search documentation"
+>
+  <div class="flex items-center gap-2.5 border-b border-rule px-4 py-3">
+    <svg
+      class="h-4 w-4 shrink-0 text-ink-faint"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      stroke-width="2"
+      stroke-linecap="round"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7"></circle>
+      <path d="m20 20-3.5-3.5"></path>
+    </svg>
+    <input
+      type="search"
+      class="min-w-0 flex-1 bg-transparent font-ui text-lg text-ink outline-none placeholder:text-ink-faint [&::-webkit-search-cancel-button]:hidden"
+      placeholder="Search guides, endpoints and schemas…"
+      aria-label="Search query"
+      autocomplete="off"
+      spellcheck="false"
+      role="combobox"
+      aria-expanded="true"
+      aria-controls="palette-results"
+      data-palette-input
+    />
+    <kbd
+      class="rounded-xs border border-rule bg-surface-2 px-1.5 py-0.5 font-mono text-2xs text-ink-faint"
+      >esc</kbd
+    >
+  </div>
+
+  <div
+    class="max-h-[min(24rem,60vh)] overflow-y-auto overscroll-contain py-1.5"
+    id="palette-results"
+    role="listbox"
+    aria-label="Search results"
+    data-palette-results
+  >
+    <p class="px-4 py-6 text-center font-ui text-base text-ink-subtle" data-palette-empty>
+      Start typing to search the documentation.
+    </p>
+  </div>
+
+  <div
+    class="flex items-center gap-4 border-t border-rule px-4 py-2 font-ui text-2xs text-ink-faint"
+  >
+    <span><kbd class="font-mono">↑↓</kbd> navigate</span>
+    <span><kbd class="font-mono">↵</kbd> open</span>
+    <span class="ml-auto" data-palette-count></span>
+  </div>
+</dialog>
+
+<style>
+  /* Anchor near the top rather than dead-centre: results grow downward and the
+     input stays where the eye already is. */
+  .palette {
+    margin-top: min(12vh, 7rem);
+  }
+  .palette[open] {
+    animation: palette-in var(--dur-fast) var(--ease);
+  }
+  @keyframes palette-in {
+    from {
+      opacity: 0;
+      transform: translateY(-4px);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .palette[open] {
+      animation: none;
+    }
+  }
+</style>
+
+<style is:global>
+  /* Global, not scoped: the result rows are injected with innerHTML, so they
+     carry no `data-astro-cid-*` attribute and a scoped selector would never
+     match them. That is why arrow-key selection looked like it did nothing —
+     `aria-selected` was moving, but nothing rendered. */
+  .palette-item[aria-selected="true"] {
+    background: var(--surface-2);
+  }
+  .palette-item[aria-selected="true"] .palette-item-title {
+    color: var(--ink);
+    font-weight: 500;
+  }
+  /* A brand rail, so the active row is never signalled by colour alone. */
+  .palette-item {
+    border-left: 2px solid transparent;
+  }
+  .palette-item[aria-selected="true"] {
+    border-left-color: var(--brand);
+  }
+</style>
+
+<script>
+  interface Entry {
+    kind: "guide" | "heading" | "tag" | "operation";
+    title: string;
+    section?: string;
+    description?: string;
+    method?: string;
+    path?: string;
+    tag?: string;
+    url: string;
+  }
+
+  const dialogEl = document.querySelector<HTMLDialogElement>("[data-palette]");
+  const inputEl = document.querySelector<HTMLInputElement>("[data-palette-input]");
+  const resultsEl = document.querySelector<HTMLElement>("[data-palette-results]");
+  const countEl = document.querySelector<HTMLElement>("[data-palette-count]");
+
+  if (dialogEl && inputEl && resultsEl && countEl) {
+    // Re-bound as non-nullable so the helpers below don't each need a guard.
+    const dialog = dialogEl;
+    const input = inputEl;
+    const results = resultsEl;
+    const count = countEl;
+
+    let entries: Entry[] | null = null;
+    let active = 0;
+    let shown: Entry[] = [];
+
+    async function load() {
+      if (entries) return entries;
+      try {
+        const res = await fetch("/search-index.json");
+        entries = ((await res.json()) as { entries: Entry[] }).entries;
+      } catch {
+        entries = [];
+      }
+      return entries;
+    }
+
+    /** Small, predictable ranking: prefix beats word-start beats substring. */
+    function score(entry: Entry, q: string): number {
+      const title = entry.title.toLowerCase();
+      const path = entry.path?.toLowerCase() ?? "";
+      if (title === q) return 1000;
+      if (title.startsWith(q)) return 800;
+      if (path.startsWith(q)) return 700;
+      if (new RegExp(`\\b${q.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`).test(title)) return 600;
+      if (title.includes(q)) return 400;
+      if (path.includes(q)) return 300;
+      if (entry.section?.toLowerCase().includes(q)) return 120;
+      if (entry.description?.toLowerCase().includes(q)) return 100;
+      return 0;
+    }
+
+    // Guides outrank raw operations at equal relevance: someone searching
+    // "authentication" usually wants the guide, not POST /v1/auth/login.
+    const KIND_BONUS = { guide: 60, heading: 30, tag: 20, operation: 0 } as const;
+
+    function render(query: string) {
+      const q = query.trim().toLowerCase();
+      if (!q) {
+        shown = [];
+        results.innerHTML =
+          '<p class="px-4 py-6 text-center font-ui text-base text-ink-subtle">Start typing to search the documentation.</p>';
+        count.textContent = "";
+        return;
+      }
+
+      shown = (entries ?? [])
+        .map((e) => ({ e, s: score(e, q) + KIND_BONUS[e.kind] }))
+        .filter((r) => r.s > 0)
+        .sort((a, b) => b.s - a.s)
+        .slice(0, 30)
+        .map((r) => r.e);
+
+      if (shown.length === 0) {
+        results.innerHTML = `<p class="px-4 py-6 text-center font-ui text-base text-ink-subtle">No matches for “${escapeHtml(query)}”.</p>`;
+        count.textContent = "";
+        return;
+      }
+
+      active = 0;
+      results.innerHTML = shown
+        .map((e, i) => {
+          const meta = e.kind === "operation" ? e.path : (e.section ?? "");
+          const badge =
+            e.kind === "operation" && e.method
+              ? `<span class="ref-op-method" data-method="${e.method.toLowerCase()}">${e.method}</span>`
+              : `<span class="font-ui text-2xs uppercase tracking-wide text-ink-faint">${e.kind}</span>`;
+          return `<a id="palette-opt-${i}" role="option" aria-selected="${i === 0}" href="${e.url}"
+              class="palette-item flex items-baseline gap-3 px-4 py-2 transition-colors hover:bg-surface-2">
+              <span class="w-14 shrink-0 text-right">${badge}</span>
+              <span class="min-w-0 flex-1">
+                <span class="palette-item-title block truncate font-ui text-base text-ink">${escapeHtml(e.title)}</span>
+                ${meta ? `<span class="block truncate font-mono text-2xs text-ink-subtle">${escapeHtml(meta)}</span>` : ""}
+              </span>
+            </a>`;
+        })
+        .join("");
+      input.setAttribute("aria-activedescendant", "palette-opt-0");
+      count.textContent = `${shown.length} result${shown.length === 1 ? "" : "s"}`;
+    }
+
+    function escapeHtml(s: string) {
+      return s.replace(
+        /[&<>"']/g,
+        (c) =>
+          ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c] ?? c,
+      );
+    }
+
+    function move(delta: number) {
+      const items = results.querySelectorAll<HTMLElement>(".palette-item");
+      if (items.length === 0) return;
+      items[active]?.setAttribute("aria-selected", "false");
+      active = (active + delta + items.length) % items.length;
+      const next = items[active];
+      next.setAttribute("aria-selected", "true");
+      next.scrollIntoView({ block: "nearest" });
+      input.setAttribute("aria-activedescendant", next.id);
+    }
+
+    async function open() {
+      if (dialog.open) return;
+      dialog.showModal();
+      input.value = "";
+      render("");
+      await load();
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        void open();
+      }
+    });
+    for (const trigger of document.querySelectorAll("[data-search-trigger]")) {
+      trigger.addEventListener("click", () => void open());
+    }
+
+    input.addEventListener("input", () => render(input.value));
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        move(1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        move(-1);
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        const items = results.querySelectorAll<HTMLAnchorElement>(".palette-item");
+        items[active]?.click();
+      }
+    });
+
+    // Clicking the backdrop closes: <dialog> reports clicks outside the panel
+    // as landing on the dialog element itself.
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) dialog.close();
+    });
+
+    /**
+     * Close on selection.
+     *
+     * Most results are same-page hash links (`/reference#...`), which change
+     * the URL without a page load — so without this the palette stayed open on
+     * top of the endpoint the reader had just chosen. Cross-page results close
+     * too; the navigation continues normally either way.
+     *
+     * Runs on `click` so it covers both the mouse and Enter (which calls
+     * `.click()` on the active row).
+     */
+    results.addEventListener("click", (event) => {
+      const link = (event.target as HTMLElement).closest<HTMLAnchorElement>(".palette-item");
+      if (!link) return;
+      dialog.close();
+
+      // A hash-only change on the current page fires no navigation and, if the
+      // hash already matches, no `hashchange` either. Nudge the listeners that
+      // the reference layout relies on so the endpoint is still revealed.
+      const target = new URL(link.href, location.href);
+      if (target.pathname === location.pathname && target.hash) {
+        if (target.hash === location.hash) {
+          window.dispatchEvent(new HashChangeEvent("hashchange"));
+        }
+      }
+    });
+  }
+</script>

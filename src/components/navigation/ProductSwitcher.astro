@@ -1,0 +1,94 @@
+---
+/**
+ * Qeet-owned product switcher for the developer workspace.
+ *
+ * A native <details> disclosure, so it opens, closes on Escape, closes on
+ * outside click and is keyboard-operable with no framework and ~20 lines of
+ * script. Deliberately not `role="menu"`: that pattern demands arrow-key
+ * roving-tabindex semantics, and claiming it without implementing it is worse
+ * than a plain list of links (a defect the audit found in the marketing header).
+ *
+ * On /reference this switches the Scalar document; elsewhere it deep-links into
+ * the reference. The lifecycle badge renders only for products the portfolio
+ * marks `development` — never a fabricated "GA"/"Beta" label.
+ */
+import { PRODUCTS } from "../../config/products";
+import { referenceHref } from "../../config/scalar";
+import Icon from "../shared/Icon.astro";
+
+interface Props {
+  /** Currently selected product id, if any. */
+  activeId?: string;
+  class?: string;
+}
+
+const { activeId, class: className } = Astro.props;
+const active = PRODUCTS.find((p) => p.id === activeId) ?? PRODUCTS[0];
+---
+
+<details class:list={["product-switcher relative", className]} data-product-switcher>
+  <summary
+    class="flex cursor-pointer list-none items-center gap-2 rounded-md border border-rule bg-surface px-2.5 py-1.5 font-ui text-base font-medium text-ink transition-colors hover:border-rule-strong [&::-webkit-details-marker]:hidden"
+    aria-haspopup="true"
+  >
+    <Icon name={active.icon} class="h-3.5 w-3.5 text-brand-deep" />
+    <span>{active.name}</span>
+    <Icon name="chevron-down" class="ps-chevron h-3.5 w-3.5 text-ink-faint" />
+  </summary>
+
+  <div
+    class="absolute left-0 top-[calc(100%+0.4rem)] z-popover w-72 overflow-hidden rounded-lg border border-rule bg-surface shadow-(--shadow-md)"
+  >
+    <ul class="list-none p-1.5">
+      {
+        PRODUCTS.map((p) => (
+          <li>
+            <a
+              href={referenceHref(p.id)}
+              class="flex items-start gap-2.5 rounded-md px-2.5 py-2 transition-colors hover:bg-surface-2"
+              aria-current={p.id === active.id ? "true" : undefined}
+              data-product-id={p.id}
+            >
+              <Icon name={p.icon} class="mt-0.5 h-4 w-4 shrink-0 text-brand-deep" />
+              <span class="min-w-0">
+                <span class="flex items-center gap-2">
+                  <span class="font-ui text-base font-medium text-ink">{p.name}</span>
+                  {p.lifecycle === "development" && (
+                    <span class="rounded-xs bg-surface-3 px-1.5 py-0.5 font-ui text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
+                      In development
+                    </span>
+                  )}
+                </span>
+                <span class="mt-0.5 block font-ui text-xs text-ink-subtle">{p.kind}</span>
+              </span>
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+  </div>
+</details>
+
+<style>
+  .product-switcher[open] .ps-chevron {
+    transform: rotate(180deg);
+  }
+  .ps-chevron {
+    transition: transform var(--dur-fast) var(--ease);
+  }
+</style>
+
+<script>
+  // Close on outside click and on Escape. Escape also restores focus to the
+  // summary, so keyboard users aren't dropped at the top of the document.
+  for (const el of document.querySelectorAll<HTMLDetailsElement>("[data-product-switcher]")) {
+    document.addEventListener("click", (e) => {
+      if (el.open && !el.contains(e.target as Node)) el.open = false;
+    });
+    el.addEventListener("keydown", (e) => {
+      if (e.key !== "Escape" || !el.open) return;
+      el.open = false;
+      el.querySelector("summary")?.focus();
+    });
+  }
+</script>

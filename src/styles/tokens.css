@@ -1,4 +1,4 @@
-/* Qeet design tokens for apis.qeet.in.
+/* Qeet design tokens for api.qeet.in.
  *
  * Type system is the Qeet brand face from @qeetrix/ui (Cal Sans Display / Text /
  * UI + Fira Code), self-hosted here so this portal stays a standalone repo
@@ -7,21 +7,18 @@
  * Toggle by setting `data-theme="dark"` on <html>. */
 
 /* ---- Cal Sans Display — large headlines, hero ---- */
-@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoLight.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoRegular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoMedium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoSemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoBold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 
 /* ---- Cal Sans Text — body copy ---- */
-@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Light.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-SemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
 
 /* ---- Cal Sans UI — controls, labels, nav ---- */
-@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UILight.woff2") format("woff2"); font-weight: 300; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UIRegular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UIMedium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
 @font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UISemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
@@ -81,13 +78,52 @@
   --shadow-bezel: inset 0 1px 0 color-mix(in oklab, white 88%, transparent), inset 0 -1px 0 color-mix(in oklab, var(--ink) 5%, transparent);
   --shadow-glow: 0 18px 58px -28px color-mix(in oklab, var(--brand) 58%, transparent);
 
-  /* rhythm (radii are in @theme) */
+  /* rhythm (radii + type scale are in @theme) */
   --container: 72rem;
   --container-wide: 80rem;
-  --header-h: 5.5rem;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-spring: cubic-bezier(0.32, 0.72, 0, 1);
   --ease-heavy: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* ---- shell geometry -----------------------------------------------------
+   * The marketing header is a floating pill; the developer workspace header is
+   * a compact bar. Both are declared here so scroll-padding, sticky offsets and
+   * full-height panes can be derived instead of guessed. */
+  --header-h: 5.5rem;        /* marketing (/) — the floating pill */
+  --dev-header-h: 4rem;      /* developer workspace — 64px, enterprise-compact */
+  --sidebar-w: 17rem;        /* docs + reference left navigation (272px) */
+  --panel-w: 27rem;          /* reference right rail (432px) */
+  --content-w: 48rem;        /* docs measure (768px ≈ 75ch at 16px) */
+  --toc-w: 15rem;            /* docs right table of contents */
+
+  /* ---- spacing scale (4/8-based) -----------------------------------------
+   * Section rhythm was a `py-[clamp(3.5rem,8vw,6.5rem)]` copy-pasted 13×.
+   * These are the four rhythms that actually existed, named once. */
+  --space-section: clamp(3.5rem, 8vw, 6.5rem);
+  --space-section-sm: clamp(3rem, 7vw, 5.5rem);
+  --space-block: clamp(2.5rem, 6vw, 4rem);
+  --space-gutter: 1.5rem;
+
+  /* ---- z-index ladder -----------------------------------------------------
+   * Previously 6 uncoordinated magic numbers (including a skip-link/header
+   * collision at z-200). Ordered, named, and spaced for insertion. */
+  --z-base: 0;
+  --z-raised: 10;
+  --z-sticky: 100;
+  --z-drawer: 180;
+  --z-header: 190;
+  --z-popover: 300;
+  --z-skip: 400;   /* must beat the sticky header, or focus is invisible */
+
+  /* ---- focus ring ---------------------------------------------------------*/
+  --focus-ring-w: 2px;
+  --focus-ring-offset: 2px;
+  --focus-ring-color: var(--brand);
+
+  /* ---- motion -------------------------------------------------------------*/
+  --dur-fast: 0.15s;
+  --dur: 0.25s;
+  --dur-slow: 0.45s;
 }
 
 [data-theme="dark"] {

@@ -1,0 +1,3621 @@
+{
+  "info": {
+    "_postman_id": "a7c1e2f4-9d6b-4c58-b2a1-qeetnotify0001",
+    "name": "Qeet Notify API (v1)",
+    "description": "Qeet Notify — multi-channel transactional notification platform.\n\nThis collection covers every /v1 operation across the four OpenAPI 3.1 specs in api/openapi/ (messaging, subscribers, deliverability, operations) plus the health probes.\n\nAuth: set the collection variable `apiKey` to a `qn_live_…` key; it is sent as the `X-Qeet-Api-Key` header on every request (scopes: full = all · read = GET-only · send = POST /v1/events only). Health, unsubscribe, and provider webhooks are unauthenticated.\n\nSet `baseUrl` (API, default http://localhost:8080) and `sseUrl` (SSE stream, default http://localhost:8082).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "apikey",
+    "apikey": [
+      {
+        "key": "key",
+        "value": "X-Qeet-Api-Key",
+        "type": "string"
+      },
+      {
+        "key": "value",
+        "value": "{{apiKey}}",
+        "type": "string"
+      },
+      {
+        "key": "in",
+        "value": "header",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://api.notify.qeet.in"
+    },
+    {
+      "key": "sseUrl",
+      "value": ""
+    },
+    {
+      "key": "apiKey",
+      "value": "qn_live_replace_me"
+    }
+  ],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "Liveness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/healthz",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "healthz"
+              ]
+            },
+            "description": "Liveness",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Readiness",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/readyz",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "readyz"
+              ]
+            },
+            "description": "Readiness",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Messaging",
+      "item": [
+        {
+          "name": "Events",
+          "item": [
+            {
+              "name": "Trigger a notification event",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/events",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "events"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"event\": \"user.welcome\",\n  \"subscriber_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"payload\": {\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Publishes an event that matches against active workflow triggers.\nIdempotent if `Idempotency-Key` header is provided (Redis SETNX, 24h TTL).\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Notifications",
+          "item": [
+            {
+              "name": "List notifications",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/notifications?subscriber_id=&channel=&status=pending&limit=50&offset=0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "notifications"
+                  ],
+                  "query": [
+                    {
+                      "key": "subscriber_id",
+                      "value": "",
+                      "disabled": true,
+                      "description": "Filter by subscriber."
+                    },
+                    {
+                      "key": "channel",
+                      "value": "",
+                      "disabled": true,
+                      "description": "Filter by delivery channel."
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "disabled": true,
+                      "description": "Filter by delivery status."
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50",
+                      "disabled": true,
+                      "description": "Page size (1–200)."
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "List notifications"
+              },
+              "response": []
+            },
+            {
+              "name": "Get notification with delivery events",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/notifications/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "notifications",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Get notification with delivery events"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Templates",
+          "item": [
+            {
+              "name": "List templates",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/templates?channel=&limit=50&offset=0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "templates"
+                  ],
+                  "query": [
+                    {
+                      "key": "channel",
+                      "value": "",
+                      "disabled": true,
+                      "description": "Filter by delivery channel."
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50",
+                      "disabled": true,
+                      "description": "Page size (1–200)."
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "List templates"
+              },
+              "response": []
+            },
+            {
+              "name": "Create template",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/templates",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "templates"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"channel\": \"email\",\n  \"locale\": \"string\",\n  \"subject\": \"string\",\n  \"body\": \"string\",\n  \"metadata\": {\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create template"
+              },
+              "response": []
+            },
+            {
+              "name": "Get template",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/templates/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "templates",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Get template"
+              },
+              "response": []
+            },
+            {
+              "name": "Update template",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/templates/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "templates",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"subject\": \"string\",\n  \"body\": \"string\",\n  \"locale\": \"string\",\n  \"metadata\": {\n  },\n  \"is_active\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Update template"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete template",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/templates/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "templates",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete template"
+              },
+              "response": []
+            },
+            {
+              "name": "Publish template (set is_active=true)",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/templates/:id/publish",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "templates",
+                    ":id",
+                    "publish"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Records the current version as the published version in metadata."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Workflows",
+          "item": [
+            {
+              "name": "List workflows",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/workflows?limit=50&offset=0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "workflows"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "50",
+                      "disabled": true,
+                      "description": "Page size (1–200)."
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "List workflows"
+              },
+              "response": []
+            },
+            {
+              "name": "Create workflow",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/workflows",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "workflows"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"trigger_event\": \"user.welcome\",\n  \"steps\": [\n    {\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create workflow"
+              },
+              "response": []
+            },
+            {
+              "name": "Get workflow",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/workflows/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "workflows",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Get workflow"
+              },
+              "response": []
+            },
+            {
+              "name": "Update workflow",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/workflows/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "workflows",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"trigger_event\": \"string\",\n  \"steps\": [\n    {\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Update workflow"
+              },
+              "response": []
+            },
+            {
+              "name": "Archive workflow",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/workflows/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "workflows",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Archive workflow"
+              },
+              "response": []
+            },
+            {
+              "name": "Activate workflow",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/workflows/:id/activate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "workflows",
+                    ":id",
+                    "activate"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Activate workflow"
+              },
+              "response": []
+            },
+            {
+              "name": "Pause workflow",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/workflows/:id/pause",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "workflows",
+                    ":id",
+                    "pause"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Pause workflow"
+              },
+              "response": []
+            },
+            {
+              "name": "List workflow run history",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/workflows/:id/runs?limit=20",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "workflows",
+                    ":id",
+                    "runs"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "20",
+                      "disabled": true,
+                      "description": "Number of most-recent runs to return (1–100)."
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "List workflow run history"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Experiments",
+          "item": [
+            {
+              "name": "List experiments",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments"
+                  ]
+                },
+                "description": "List experiments"
+              },
+              "response": []
+            },
+            {
+              "name": "Create a draft experiment",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"target_template_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"variants\": [\n    {\n      \"key\": \"string\",\n      \"template_id\": \"00000000-0000-0000-0000-000000000000\",\n      \"weight\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create a draft experiment"
+              },
+              "response": []
+            },
+            {
+              "name": "Get an experiment",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Get an experiment"
+              },
+              "response": []
+            },
+            {
+              "name": "Update a draft experiment",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"target_template_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"variants\": [\n    {\n      \"key\": \"string\",\n      \"template_id\": \"00000000-0000-0000-0000-000000000000\",\n      \"weight\": 0\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Only name and variants are applied; target_template_id is ignored. Only draft experiments can be edited."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete an experiment",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete an experiment"
+              },
+              "response": []
+            },
+            {
+              "name": "Start an experiment",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments/:id/activate",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments",
+                    ":id",
+                    "activate"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Sets status to running. Fails with 409 if another experiment is already running for the same target template."
+              },
+              "response": []
+            },
+            {
+              "name": "Promote a winner and complete the experiment",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments/:id/promote",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments",
+                    ":id",
+                    "promote"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"winner_key\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Promote a winner and complete the experiment"
+              },
+              "response": []
+            },
+            {
+              "name": "Auto-promote the winning variant",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments/:id/auto-promote",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments",
+                    ":id",
+                    "auto-promote"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Completes the experiment with the leading variant only if results are statistically significant and not inconclusive; otherwise 409."
+              },
+              "response": []
+            },
+            {
+              "name": "Per-variant results",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/experiments/:id/results",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "experiments",
+                    ":id",
+                    "results"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delivery/open/click metrics per variant, the leading variant by click rate, and an inconclusive flag for low-volume tests."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Event Families",
+          "item": [
+            {
+              "name": "List event families",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/event-families",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "event-families"
+                  ]
+                },
+                "description": "Returns the tenant's event-family memberships — the sibling trigger events grouped into a single logical \"story\" so cross-event semantic deduplication (Module 16.5) can suppress duplicate sends to a subscriber. Ordered by family_key, then event_name."
+              },
+              "response": []
+            },
+            {
+              "name": "Add an event to a family",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/event-families",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "event-families"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"family_key\": \"string\",\n  \"event_name\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Declares that event_name belongs to family_key. Idempotent — re-declaring an existing membership is a no-op that still returns 201."
+              },
+              "response": []
+            },
+            {
+              "name": "Remove an event from a family",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/event-families?family_key=&event_name=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "event-families"
+                  ],
+                  "query": [
+                    {
+                      "key": "family_key",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "event_name",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Removes the (family_key, event_name) membership. The pair may be given in the JSON body or as ?family_key=&event_name= query parameters."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Subscribers",
+      "item": [
+        {
+          "name": "Subscribers",
+          "item": [
+            {
+              "name": "List subscribers",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers?limit=50&offset=0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "50",
+                      "disabled": true,
+                      "description": "Max subscribers to return (1–200)."
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "disabled": true,
+                      "description": "Number of subscribers to skip."
+                    }
+                  ]
+                },
+                "description": "List subscribers"
+              },
+              "response": []
+            },
+            {
+              "name": "Create a subscriber",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"external_id\": \"string\",\n  \"email\": \"user@example.com\",\n  \"phone\": \"string\",\n  \"whatsapp_id\": \"string\",\n  \"locale\": \"string\",\n  \"timezone\": \"string\",\n  \"metadata\": {\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create a subscriber"
+              },
+              "response": []
+            },
+            {
+              "name": "Get subscriber",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Get subscriber"
+              },
+              "response": []
+            },
+            {
+              "name": "Update subscriber",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"locale\": \"string\",\n  \"timezone\": \"string\",\n  \"metadata\": {\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Update subscriber"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete subscriber",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "DPDP right-to-erasure — nulls all PII, empties push tokens/metadata, and marks the subscriber deleted."
+              },
+              "response": []
+            },
+            {
+              "name": "Export subscriber PII data (DPDP DSR)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID/data",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID",
+                    "data"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "DPDP Data-Subject-Rights export: all personal data held for one subscriber — decrypted profile PII, the current preference matrix, and the full consent history."
+              },
+              "response": []
+            },
+            {
+              "name": "Get notification preferences",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID/preferences",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID",
+                    "preferences"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Returns the subscriber's channel+category opt-in matrix."
+              },
+              "response": []
+            },
+            {
+              "name": "Update notification preferences",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID/preferences",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID",
+                    "preferences"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"preferences\": [\n    {\n      \"channel\": \"string\",\n      \"category\": \"string\",\n      \"is_opted_in\": true\n    }\n  ]\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Upserts one or more channel+category opt-in states; each change is also appended to the consent ledger. Items with an empty channel are skipped."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Consent",
+          "item": [
+            {
+              "name": "Get consent history",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID/consent",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID",
+                    "consent"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Returns a subscriber's append-only DPDP consent trail, newest first — used for Data-Subject-Rights access / export requests."
+              },
+              "response": []
+            },
+            {
+              "name": "Record a consent change",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID/consent",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID",
+                    "consent"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel\": \"email\",\n  \"category\": \"string\",\n  \"opted_in\": true,\n  \"source\": \"api\",\n  \"purpose\": \"string\",\n  \"version\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Appends a consent change to the immutable ledger and mirrors it into the mutable preferences matrix (same transaction), so the opt-in/out takes effect on the next send. Actor and IP are captured from the request."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Devices",
+          "item": [
+            {
+              "name": "List device tokens",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID/devices",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID",
+                    "devices"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Returns a subscriber's registered push tokens."
+              },
+              "response": []
+            },
+            {
+              "name": "Register a device token",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID/devices",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID",
+                    "devices"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"provider\": \"fcm\",\n  \"token\": \"string\",\n  \"platform\": \"android\",\n  \"p256dh\": \"string\",\n  \"auth\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Registers (or refreshes) a push token on a subscriber. The token is\nde-duplicated by value, so re-registration updates the provider/platform\nrather than creating a duplicate. For provider \"webpush\", token is the\nbrowser subscription's endpoint URL and p256dh/auth (both required)\ncarry the subscription's client keys.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Unregister a device token",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/subscribers/:subscriberID/devices/:token",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "subscribers",
+                    ":subscriberID",
+                    "devices",
+                    ":token"
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    },
+                    {
+                      "key": "token",
+                      "value": "",
+                      "description": "The push token value to remove."
+                    }
+                  ]
+                },
+                "description": "Unregister a device token"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Deliverability",
+      "item": [
+        {
+          "name": "DeadLetters",
+          "item": [
+            {
+              "name": "List dead-lettered jobs",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/dlq?status=pending&channel=email&limit=50",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "dlq"
+                  ],
+                  "query": [
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "disabled": true
+                    },
+                    {
+                      "key": "channel",
+                      "value": "email",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Lists notification jobs that exhausted their delivery retries and were\ndead-lettered, newest first. A drainer copies each NOTIFY_DLQ entry into\na queryable table so failed sends can be inspected and replayed.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Get a dead-lettered job",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/dlq/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "dlq",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Get a dead-lettered job"
+              },
+              "response": []
+            },
+            {
+              "name": "Discard a dead-lettered job",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/dlq/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "dlq",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Marks a pending dead-letter discarded without redriving it."
+              },
+              "response": []
+            },
+            {
+              "name": "Redrive a dead-lettered job",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/dlq/:id/redrive",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "dlq",
+                    ":id",
+                    "redrive"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Republishes the original job onto its channel subject for another\ndelivery attempt and marks it redriven. This is the supported replay\npath for exhausted-retry failures.\n"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "DLT",
+          "item": [
+            {
+              "name": "List TRAI DLT templates",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/dlt/templates?channel=sms&carrier=&status=pending",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "dlt",
+                    "templates"
+                  ],
+                  "query": [
+                    {
+                      "key": "channel",
+                      "value": "sms",
+                      "disabled": true
+                    },
+                    {
+                      "key": "carrier",
+                      "value": "",
+                      "disabled": true,
+                      "description": "Filter by registered carrier (e.g. airtel, jio, all)."
+                    },
+                    {
+                      "key": "status",
+                      "value": "pending",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Lists the tenant's DLT / WhatsApp BSP template registrations,\nnewest first, optionally filtered by channel, carrier, or status.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Register a TRAI DLT template",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/dlt/templates",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "dlt",
+                    "templates"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"carrier\": \"string\",\n  \"channel\": \"sms\",\n  \"template_id_ext\": \"string\",\n  \"template_name\": \"string\",\n  \"pe_id\": \"string\",\n  \"sender_id\": \"string\",\n  \"category\": \"transactional\",\n  \"body_regex\": \"string\",\n  \"metadata\": {\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "DLT (Distributed Ledger Technology) templates are mandatory for SMS in India.\nEvery outbound SMS body must match a pre-registered DLT template regex. `channel`\ndefaults to `sms` and `category` to `transactional`.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Update DLT template",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/dlt/templates/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "dlt",
+                    "templates",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"status\": \"pending\",\n  \"pe_id\": \"string\",\n  \"sender_id\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Updates a DLT template's approval status, principal-entity ID, or\nsender ID. Only supplied fields are changed.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete DLT template",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/dlt/templates/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "dlt",
+                    "templates",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete DLT template"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "NDNC",
+          "item": [
+            {
+              "name": "List NDNC entries",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/ndnc?limit=100",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "ndnc"
+                  ],
+                  "query": [
+                    {
+                      "key": "limit",
+                      "value": "100",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Lists registered National Do-Not-Call (DND) entries as SHA-256 phone\nhashes. This is national reference data — an entry applies to every\nsender, so it is not tenant-scoped.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Register a phone on the DND list",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/ndnc",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "ndnc"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone\": \"string\",\n  \"category\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Adds a phone to the national DND list (source=manual). Idempotent. Note:\nthis is national data — the entry suppresses promotional SMS for every\ntenant, matching TRAI DND semantics.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Check DND status",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/ndnc/check?phone=&category=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "ndnc",
+                    "check"
+                  ],
+                  "query": [
+                    {
+                      "key": "phone",
+                      "value": "",
+                      "disabled": false,
+                      "description": "E.164 phone (hashed server-side)"
+                    },
+                    {
+                      "key": "category",
+                      "value": "",
+                      "disabled": true,
+                      "description": "Optional DLT category; defaults to any"
+                    }
+                  ]
+                },
+                "description": "Reports whether a phone is on the DND list. Safe, read-only."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Providers",
+          "item": [
+            {
+              "name": "List provider configurations",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/providers",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "providers"
+                  ]
+                },
+                "description": "Lists the tenant's provider configs (credentials never returned)."
+              },
+              "response": []
+            },
+            {
+              "name": "Create provider configuration",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/providers",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "providers"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel\": \"email\",\n  \"provider\": \"ses\",\n  \"priority\": 0,\n  \"config\": {\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create provider configuration"
+              },
+              "response": []
+            },
+            {
+              "name": "Update provider configuration",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/providers/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "providers",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"priority\": 0,\n  \"is_active\": true,\n  \"config\": {\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Updates provider priority, active state, and/or credentials. Only\nsupplied fields are changed.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete provider configuration",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/providers/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "providers",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete provider configuration"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Suppressions",
+          "item": [
+            {
+              "name": "List suppressions",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/suppressions?channel=email",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "suppressions"
+                  ],
+                  "query": [
+                    {
+                      "key": "channel",
+                      "value": "email",
+                      "disabled": true,
+                      "description": "Filter by channel"
+                    }
+                  ]
+                },
+                "description": "List suppressions"
+              },
+              "response": []
+            },
+            {
+              "name": "Add a suppression",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/suppressions",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "suppressions"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel\": \"email\",\n  \"value\": \"string\",\n  \"reason\": \"hard_bounce\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Suppresses future sends to an address on a channel. The plaintext value\nis hashed (SHA-256) with the same scheme the channel workers use when\nchecking suppression, so the entry takes effect immediately. Idempotent:\nre-adding the same value updates its reason.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Remove a suppression",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/suppressions/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "suppressions",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Removes an address from the suppression list, re-enabling sends."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Email Deliverability",
+          "item": [
+            {
+              "name": "List sender domains",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/deliverability/domains",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "deliverability",
+                    "domains"
+                  ]
+                },
+                "description": "List sender domains"
+              },
+              "response": []
+            },
+            {
+              "name": "Register a sender domain",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/deliverability/domains",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "deliverability",
+                    "domains"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"domain\": \"mail.acme.com\",\n  \"dkim_selector\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Registers a sending domain (unverified until checked). Idempotent —\nre-registering an existing domain updates its DKIM selector.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Get a sender domain + DNS records to publish",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/deliverability/domains/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "deliverability",
+                    "domains",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Returns the sender domain plus the DNS record names to publish for\nSPF, DKIM, and DMARC verification.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete a sender domain",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/deliverability/domains/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "deliverability",
+                    "domains",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete a sender domain"
+              },
+              "response": []
+            },
+            {
+              "name": "Verify SPF/DKIM/DMARC via DNS",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/deliverability/domains/:id/verify",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "deliverability",
+                    "domains",
+                    ":id",
+                    "verify"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Resolves the domain's TXT records and updates verification state."
+              },
+              "response": []
+            },
+            {
+              "name": "Email reputation (bounce/complaint rates)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/deliverability/reputation",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "deliverability",
+                    "reputation"
+                  ]
+                },
+                "description": "Email bounce and complaint rates from delivery_events with a status against the Gmail/Yahoo/Microsoft 2024+ thresholds (Module 23.3)."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Inbound",
+          "item": [
+            {
+              "name": "List inbound messages",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/inbound?channel=whatsapp",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "inbound"
+                  ],
+                  "query": [
+                    {
+                      "key": "channel",
+                      "value": "whatsapp",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Lists the tenant's inbound messages, newest first (limit 100). The\nsender is exposed only as a last-4 masked reference — never the raw address.\n"
+              },
+              "response": []
+            },
+            {
+              "name": "List WhatsApp number mappings",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/wa-numbers",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "wa-numbers"
+                  ]
+                },
+                "description": "List WhatsApp number mappings"
+              },
+              "response": []
+            },
+            {
+              "name": "Map a WhatsApp phone_number_id to this tenant",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/wa-numbers",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "wa-numbers"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"phone_number_id\": \"string\",\n  \"label\": \"string\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Routes inbound WhatsApp messages received on this Meta phone_number_id to the tenant."
+              },
+              "response": []
+            },
+            {
+              "name": "Remove a WhatsApp number mapping",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/wa-numbers/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "wa-numbers",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Remove a WhatsApp number mapping"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Compliance",
+          "item": [
+            {
+              "name": "Unified compliance dashboard",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/compliance/dashboard",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "compliance",
+                    "dashboard"
+                  ]
+                },
+                "description": "Per-tenant compliance posture across regimes (TRAI DLT, WhatsApp/Meta templates, NDNC registry, DPDP consent, email auth), each with a red/amber/green status. A regime whose data source is not yet available reads as `unknown`, never as compliant; the overall status is the worst known pane."
+              },
+              "response": []
+            },
+            {
+              "name": "Pre-send compliance validation",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/compliance/preflight",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "compliance",
+                    "preflight"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel\": \"email\",\n  \"to\": \"string\",\n  \"category\": \"promotional\",\n  \"body\": \"string\",\n  \"carrier\": \"string\",\n  \"subscriber_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Runs the deterministic send gates (DLT template match, NDNC scrubbing, promotional window, subscriber consent) for a proposed send and reports whether it would be allowed, with a per-check breakdown. Checks that cannot be evaluated return `unknown` and do not block."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "IP Warmup",
+          "item": [
+            {
+              "name": "List IP warmup pools",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/ip-warmup/pools",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "ip-warmup",
+                    "pools"
+                  ]
+                },
+                "description": "Returns the tenant's dedicated-IP warmup pools, newest first (Module 23.2). A warmup pool governs the daily send ceiling for an email stream while a dedicated IP ramps its reputation."
+              },
+              "response": []
+            },
+            {
+              "name": "Create an IP warmup pool",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/ip-warmup/pools",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "ip-warmup",
+                    "pools"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"stream\": \"string\",\n  \"provider\": \"ses\",\n  \"is_dedicated\": true,\n  \"warmup_started_on\": \"2026-01-01\",\n  \"target_daily_volume\": 0\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Creates a warmup pool. warmup_started_on defaults to today; a pool starts active and un-throttled. name must be unique per tenant."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete an IP warmup pool",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/ip-warmup/pools/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "ip-warmup",
+                    "pools",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete an IP warmup pool"
+              },
+              "response": []
+            },
+            {
+              "name": "IP warmup plan & progress",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/ip-warmup/pools/:id/status",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "ip-warmup",
+                    "pools",
+                    ":id",
+                    "status"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Returns the computed warmup plan for a pool: the day-in-warmup, today's daily cap (reduced when the pool is complaint-throttled), sends so far today, and remaining headroom."
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Operations",
+      "item": [
+        {
+          "name": "Analytics",
+          "item": [
+            {
+              "name": "Delivery analytics (funnel totals)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/analytics/delivery",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "analytics",
+                    "delivery"
+                  ]
+                },
+                "description": "Aggregate delivery funnel totals for the authenticated tenant, counted from delivery_events by event type. Takes no query parameters."
+              },
+              "response": []
+            },
+            {
+              "name": "Per-channel engagement rates & scores",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/analytics/engagement?since=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "analytics",
+                    "engagement"
+                  ],
+                  "query": [
+                    {
+                      "key": "since",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Open/click/delivery rates and a 0–100 engagement score per channel (Module 28.1/28.2), derived from delivery_events. Optional ?since filter."
+              },
+              "response": []
+            },
+            {
+              "name": "Per-subscriber engagement score",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/analytics/engagement/subscribers/:subscriberID?since=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "analytics",
+                    "engagement",
+                    "subscribers",
+                    ":subscriberID"
+                  ],
+                  "query": [
+                    {
+                      "key": "since",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "key": "subscriberID",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Per-subscriber engagement score"
+              },
+              "response": []
+            },
+            {
+              "name": "Per-template quality score",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/analytics/quality?since=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "analytics",
+                    "quality"
+                  ],
+                  "query": [
+                    {
+                      "key": "since",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "A 0–100 composite per template blending open/click rates against spam-complaint and bounce penalties (Module 28.4)."
+              },
+              "response": []
+            },
+            {
+              "name": "Export delivery events",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/delivery-events?notification_id=&event_type=&since=&until=&limit=100&offset=0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "delivery-events"
+                  ],
+                  "query": [
+                    {
+                      "key": "notification_id",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "event_type",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "since",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "until",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "100",
+                      "disabled": true
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Unified, ordered per-tenant delivery lifecycle events (Module 26.3) for warehouse sync and auditing. Filterable by notification, event type, and time range."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "APIKeys",
+          "item": [
+            {
+              "name": "List API keys",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/api-keys",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "api-keys"
+                  ]
+                },
+                "description": "List API keys"
+              },
+              "response": []
+            },
+            {
+              "name": "Create API key",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/api-keys",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "api-keys"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"scope\": \"full\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create API key"
+              },
+              "response": []
+            },
+            {
+              "name": "Revoke API key",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/api-keys/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "api-keys",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Revoke API key"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Audit",
+          "item": [
+            {
+              "name": "List audit log entries",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/audit-logs?action=&resource_type=&actor_id=&from=&to=&limit=50&offset=0",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "audit-logs"
+                  ],
+                  "query": [
+                    {
+                      "key": "action",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "resource_type",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "actor_id",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "from",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "to",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "limit",
+                      "value": "50",
+                      "disabled": true
+                    },
+                    {
+                      "key": "offset",
+                      "value": "0",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Paginated, newest-first audit trail for the authenticated tenant. Filterable by action, resource_type, actor_id, and a from/to time range."
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Billing",
+          "item": [
+            {
+              "name": "Current usage & quota",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/usage",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "usage"
+                  ]
+                },
+                "description": "Current calendar-month usage (billable messages by channel, plus per-workflow-run count), the tenant's plan, and the quota assessment (Module 43.1/43.2). Metering is derived from stored notifications/runs, so it is idempotent."
+              },
+              "response": []
+            },
+            {
+              "name": "Export daily usage records",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/usage/daily?since=&until=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "usage",
+                    "daily"
+                  ],
+                  "query": [
+                    {
+                      "key": "since",
+                      "value": "",
+                      "disabled": true
+                    },
+                    {
+                      "key": "until",
+                      "value": "",
+                      "disabled": true
+                    }
+                  ]
+                },
+                "description": "Export daily usage records"
+              },
+              "response": []
+            },
+            {
+              "name": "Get the tenant's plan",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/billing/plan",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "billing",
+                    "plan"
+                  ]
+                },
+                "description": "Get the tenant's plan"
+              },
+              "response": []
+            },
+            {
+              "name": "Set the tenant's plan",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/billing/plan",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "billing",
+                    "plan"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"plan\": \"free\",\n  \"monthly_quota\": 0,\n  \"overage_allowed\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Set the tenant's plan"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Environments",
+          "item": [
+            {
+              "name": "List environments",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/environments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "environments"
+                  ]
+                },
+                "description": "List environments"
+              },
+              "response": []
+            },
+            {
+              "name": "Create/register an environment",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/environments",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "environments"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"slug\": \"staging\",\n  \"name\": \"string\",\n  \"is_default\": true\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create/register an environment"
+              },
+              "response": []
+            },
+            {
+              "name": "Promotion / change history",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/environments/changes?environment=",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "environments",
+                    "changes"
+                  ],
+                  "query": [
+                    {
+                      "key": "environment",
+                      "value": "",
+                      "disabled": true,
+                      "description": "Filter to promotions targeting this environment."
+                    }
+                  ]
+                },
+                "description": "Promotion / change history"
+              },
+              "response": []
+            },
+            {
+              "name": "Promote a template or workflow between environments",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/environments/promote",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "environments",
+                    "promote"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"resource_type\": \"template\",\n  \"resource_id\": \"00000000-0000-0000-0000-000000000000\",\n  \"to_environment\": \"production\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Copies the resource into the target environment (upsert) and records a change-history entry. Only the production environment executes at runtime, so promoting into production makes a change live."
+              },
+              "response": []
+            },
+            {
+              "name": "Delete an environment from the registry",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/environments/:slug",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "environments",
+                    ":slug"
+                  ],
+                  "variable": [
+                    {
+                      "key": "slug",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete an environment from the registry"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Broadcasts",
+          "item": [
+            {
+              "name": "List broadcasts",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/broadcasts",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "broadcasts"
+                  ]
+                },
+                "description": "List broadcasts"
+              },
+              "response": []
+            },
+            {
+              "name": "Create a draft broadcast",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/broadcasts",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "broadcasts"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"name\": \"string\",\n  \"event\": \"string\",\n  \"audience\": {\n    \"external_ids\": [\n      \"string\"\n    ],\n    \"metadata\": {\n      \"key\": \"string\",\n      \"value\": \"string\"\n    }\n  },\n  \"payload\": {\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Create a draft broadcast"
+              },
+              "response": []
+            },
+            {
+              "name": "Dry-run recipient count",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/broadcasts/preview",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "broadcasts",
+                    "preview"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"audience\": {\n    \"external_ids\": [\n      \"string\"\n    ],\n    \"metadata\": {\n      \"key\": \"string\",\n      \"value\": \"string\"\n    }\n  }\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Counts recipients for an audience and how many have globally opted out. Channel-specific suppression and NDNC are enforced per send."
+              },
+              "response": []
+            },
+            {
+              "name": "Get a broadcast (with progress)",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/broadcasts/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "broadcasts",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Get a broadcast (with progress)"
+              },
+              "response": []
+            },
+            {
+              "name": "Queue a broadcast for fan-out",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/broadcasts/:id/send",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "broadcasts",
+                    ":id",
+                    "send"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Queue a broadcast for fan-out"
+              },
+              "response": []
+            },
+            {
+              "name": "Upload a recipient list (CSV)",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "text/csv"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/broadcasts/:id/recipients",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "broadcasts",
+                    ":id",
+                    "recipients"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "external_id,email,phone\nsub_001,user@example.com,+919876543210\n",
+                  "options": {
+                    "raw": {
+                      "language": "text"
+                    }
+                  }
+                },
+                "description": "Uploads a CSV / newline list of subscriber external IDs for a draft broadcast; the fan-out then targets those recipients instead of the audience filter. Body is raw text/csv or text/plain (optional `external_id` header row); blanks and duplicates are ignored. Body is capped at ~5 MB."
+              },
+              "response": []
+            },
+            {
+              "name": "Cancel a broadcast",
+              "request": {
+                "method": "POST",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/broadcasts/:id/cancel",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "broadcasts",
+                    ":id",
+                    "cancel"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Cancel a broadcast"
+              },
+              "response": []
+            }
+          ]
+        },
+        {
+          "name": "Batching",
+          "item": [
+            {
+              "name": "List batching rules",
+              "request": {
+                "method": "GET",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/batching/rules",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "batching",
+                    "rules"
+                  ]
+                },
+                "description": "List batching rules"
+              },
+              "response": []
+            },
+            {
+              "name": "Create or upsert a batching rule",
+              "request": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/batching/rules",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "batching",
+                    "rules"
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel\": \"email\",\n  \"category\": \"string\",\n  \"max_per_period\": 0,\n  \"period_seconds\": 0,\n  \"cap_mode\": \"hard\",\n  \"throttle_per_second\": 0,\n  \"digest_enabled\": true,\n  \"digest_window_secs\": 0,\n  \"digest_max_count\": 0,\n  \"digest_template_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Idempotent on the (channel, category) pair — re-posting the same pair replaces the rule."
+              },
+              "response": []
+            },
+            {
+              "name": "Update a batching rule",
+              "request": {
+                "method": "PUT",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/batching/rules/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "batching",
+                    "rules",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"channel\": \"email\",\n  \"category\": \"string\",\n  \"max_per_period\": 0,\n  \"period_seconds\": 0,\n  \"cap_mode\": \"hard\",\n  \"throttle_per_second\": 0,\n  \"digest_enabled\": true,\n  \"digest_window_secs\": 0,\n  \"digest_max_count\": 0,\n  \"digest_template_id\": \"00000000-0000-0000-0000-000000000000\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "description": "Update a batching rule"
+              },
+              "response": []
+            },
+            {
+              "name": "Delete a batching rule",
+              "request": {
+                "method": "DELETE",
+                "header": [],
+                "url": {
+                  "raw": "{{baseUrl}}/v1/batching/rules/:id",
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "v1",
+                    "batching",
+                    "rules",
+                    ":id"
+                  ],
+                  "variable": [
+                    {
+                      "key": "id",
+                      "value": ""
+                    }
+                  ]
+                },
+                "description": "Delete a batching rule"
+              },
+              "response": []
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Public",
+      "item": [
+        {
+          "name": "One-click unsubscribe",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/unsubscribe?tenant_id=&subscriber_id=&channel=all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "unsubscribe"
+              ],
+              "query": [
+                {
+                  "key": "tenant_id",
+                  "value": "",
+                  "disabled": false,
+                  "description": "Tenant that owns the subscriber."
+                },
+                {
+                  "key": "subscriber_id",
+                  "value": "",
+                  "disabled": false,
+                  "description": "Subscriber to opt out."
+                },
+                {
+                  "key": "channel",
+                  "value": "all",
+                  "disabled": true,
+                  "description": "Channel to opt out of; defaults to all channels."
+                }
+              ]
+            },
+            "description": "Unauthenticated opt-out used by List-Unsubscribe headers and hosted preference-page links. Records an opt-out (and a consent-ledger entry) for the given channel, defaulting to all channels.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Inbound email provider webhook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/webhooks/email/:provider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "webhooks",
+                "email",
+                ":provider"
+              ],
+              "variable": [
+                {
+                  "key": "provider",
+                  "value": ""
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Provider callback (SES/Resend) for bounces and complaints; matched addresses are auto-suppressed.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Inbound SMS delivery receipt (DLR)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/webhooks/sms/:provider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "webhooks",
+                "sms",
+                ":provider"
+              ],
+              "variable": [
+                {
+                  "key": "provider",
+                  "value": ""
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Provider DLR callback (MSG91 and generic) — normalized into delivery events and notification status, matched by provider_message_id.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "WhatsApp (Meta) webhook verification",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/webhooks/whatsapp/:provider?hub.mode=&hub.verify_token=&hub.challenge=",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "webhooks",
+                "whatsapp",
+                ":provider"
+              ],
+              "query": [
+                {
+                  "key": "hub.mode",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "hub.verify_token",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "hub.challenge",
+                  "value": "",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "provider",
+                  "value": ""
+                }
+              ]
+            },
+            "description": "Meta's subscription handshake — echoes hub.challenge when hub.verify_token matches.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "WhatsApp (Meta) status callback",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/webhooks/whatsapp/:provider",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "webhooks",
+                "whatsapp",
+                ":provider"
+              ],
+              "variable": [
+                {
+                  "key": "provider",
+                  "value": ""
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "description": "Meta status callbacks (sent/delivered/read/failed) — normalized into delivery events and notification status, matched by provider_message_id. Inbound messages are acknowledged.",
+            "auth": {
+              "type": "noauth"
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

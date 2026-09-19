@@ -1,0 +1,129 @@
+---
+/**
+ * The three-area guide layout: navigation · content · on-this-page.
+ *
+ * Replaces the old 25-line DocLayout, under which every guide was an orphan —
+ * a centred column with no sidebar, no TOC, no breadcrumbs and no way to reach
+ * the next page. The MDX frontmatter contract (`title` / `description` /
+ * `eyebrow`) is unchanged, so no page had to be rewritten to adopt this.
+ *
+ * Page titles are marketing-sized no more: the H1 comes off the type scale at
+ * ~31px rather than a `clamp(2.1rem, 4.5vw, 3rem)` that peaked above 48px.
+ */
+import DeveloperLayout from "./DeveloperLayout.astro";
+import DocsSidebar from "../components/layout/DocsSidebar.astro";
+import Breadcrumbs from "../components/navigation/Breadcrumbs.astro";
+import TableOfContents, { type Heading } from "../components/navigation/TableOfContents.astro";
+import { DOCS_NAV, isActive } from "../config/navigation";
+
+interface Props {
+  frontmatter: {
+    title: string;
+    description?: string;
+    eyebrow?: string;
+  };
+  headings?: Heading[];
+}
+
+const { frontmatter, headings = [] } = Astro.props;
+const { title, description, eyebrow } = frontmatter;
+
+// Locate the page in DOCS_NAV so the breadcrumb section is derived, not typed.
+const pathname = Astro.url.pathname;
+const section = DOCS_NAV.find((s) => s.items.some((i) => isActive(pathname, i)));
+---
+
+<DeveloperLayout title={title} description={description} type="article" hasSidebar>
+  <div class="docs-shell">
+    <DocsSidebar />
+
+    <main id="main" class="min-w-0">
+      <article class="mx-auto w-full max-w-content px-6 py-10 lg:px-10">
+        <Breadcrumbs
+          class="mb-5"
+          items={[
+            { label: "Developers", href: "/" },
+            ...(section ? [{ label: section.title }] : []),
+            { label: title },
+          ]}
+        />
+
+        <header class="mb-8 border-b border-rule pb-6">
+          {
+            eyebrow && (
+              <p class="mb-2 font-ui text-2xs font-semibold uppercase tracking-[0.16em] text-brand-deep">
+                {eyebrow}
+              </p>
+            )
+          }
+          <h1 class="text-3xl font-semibold tracking-[-0.015em] text-ink">{title}</h1>
+          {description && <p class="mt-3 max-w-[68ch] text-lg text-ink-muted">{description}</p>}
+        </header>
+
+        <div class="prose max-w-none">
+          <slot />
+        </div>
+      </article>
+    </main>
+
+    <aside class="hidden py-10 pr-8 xl:block" aria-label="On this page">
+      <TableOfContents headings={headings} />
+    </aside>
+  </div>
+</DeveloperLayout>
+
+<style>
+  /* Two areas up to xl, three above it. The content column keeps its measure
+     rather than stretching, so long reading sessions stay comfortable. */
+  .docs-shell {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+  @media (min-width: 1024px) {
+    .docs-shell {
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+    }
+  }
+  @media (min-width: 1280px) {
+    .docs-shell {
+      grid-template-columns: var(--sidebar-w) minmax(0, 1fr) var(--toc-w);
+    }
+  }
+</style>
+
+<script>
+  // Drawer toggle for the docs sidebar below 1024px. Sets `data-open`, which
+  // the sidebar's own CSS uses to slide in and to restore visibility (and
+  // therefore focusability).
+  const toggle = document.querySelector<HTMLButtonElement>("[data-sidebar-toggle]");
+  const nav = document.querySelector<HTMLElement>("[data-docs-nav]");
+
+  if (toggle && nav) {
+    const setOpen = (open: boolean) => {
+      nav.dataset.open = String(open);
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.setAttribute("aria-label", open ? "Hide navigation" : "Show navigation");
+      if (open) nav.querySelector<HTMLAnchorElement>("a")?.focus();
+    };
+
+    toggle.addEventListener("click", () => setOpen(nav.dataset.open !== "true"));
+
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && nav.dataset.open === "true") {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+
+    // Clicking a destination closes the drawer.
+    nav.addEventListener("click", (e) => {
+      if ((e.target as HTMLElement).closest("a")) setOpen(false);
+    });
+
+    // Returning to desktop must clear the drawer state, or the nav stays
+    // hidden once the fixed positioning no longer applies.
+    matchMedia("(min-width: 1024px)").addEventListener("change", (e) => {
+      if (e.matches) setOpen(false);
+    });
+  }
+</script>

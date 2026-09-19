@@ -1,0 +1,5582 @@
+openapi: 3.1.0
+info:
+  title: Qeet Notify API
+  version: 1.0.0
+  description: Multi-channel transactional notifications — messaging and templates, subscribers and consent, deliverability, and platform operations.
+servers:
+  - url: https://api.notify.qeet.in
+    description: Production
+  - url: https://api.notify.staging.qeet.in
+    description: Staging
+  - url: http://localhost:8080
+    description: Local
+security:
+  - API-Key: []
+tags:
+  - name: Events
+    description: Trigger notification events (matched against workflows).
+  - name: Notifications
+    description: Read-only delivery log with per-notification events.
+  - name: Templates
+    description: Handlebars templates rendered per channel.
+  - name: Workflows
+    description: Multi-step, event-triggered notification journeys.
+  - name: Experiments
+    description: A/B testing on template variants with per-variant measurement (Module 18).
+  - name: Event Families
+  - name: Subscribers
+    description: Recipients; PII encrypted at rest, DPDP erasure on delete.
+  - name: Consent
+    description: Append-only DPDP consent ledger.
+  - name: Devices
+    description: Push device-token registration.
+  - name: Public
+    description: Unauthenticated one-click unsubscribe.
+  - name: DeadLetters
+    description: Failed jobs — inspect, redrive, discard.
+  - name: DLT
+  - name: NDNC
+    description: National Do-Not-Call registry.
+  - name: Providers
+    description: Per-channel provider configs (encrypted credentials).
+  - name: Suppressions
+    description: Blocked addresses (hashed).
+  - name: Email Deliverability
+    description: Sender-domain SPF/DKIM/DMARC verification & reputation (Module 23).
+  - name: Inbound
+    description: Inbound messages & WhatsApp number→tenant mapping (Module 26.2).
+  - name: Compliance
+    description: Unified compliance dashboard & pre-send validation (Module 35).
+  - name: IP Warmup
+  - name: Health
+    description: Liveness and readiness.
+  - name: Analytics
+    description: Per-tenant delivery funnel metrics.
+  - name: APIKeys
+    description: Scoped API key lifecycle.
+  - name: Audit
+    description: Append-only audit log query.
+  - name: Billing
+    description: Usage metering, plans & quotas (Module 43).
+  - name: Environments
+    description: Environments & change management — promotion + history (Module 44).
+  - name: Broadcasts
+    description: Bulk & broadcast sending to a list or segment (Module 19).
+  - name: Batching
+    description: Batching, digest & throttling rules (Module 16).
+x-tagGroups:
+  - name: Messaging
+    tags:
+      - Events
+      - Notifications
+      - Templates
+      - Workflows
+      - Experiments
+      - Event Families
+  - name: Subscribers
+    tags:
+      - Subscribers
+      - Consent
+      - Devices
+      - Public
+  - name: Deliverability
+    tags:
+      - DeadLetters
+      - DLT
+      - NDNC
+      - Providers
+      - Suppressions
+      - Email Deliverability
+      - Inbound
+      - Compliance
+      - IP Warmup
+  - name: Operations
+    tags:
+      - Health
+      - Analytics
+      - APIKeys
+      - Audit
+      - Billing
+      - Environments
+      - Broadcasts
+      - Batching
+paths:
+  /v1/events:
+    post:
+      summary: Trigger a notification event
+      description: |
+        Publishes an event that matches against active workflow triggers.
+        Idempotent if `Idempotency-Key` header is provided (Redis SETNX, 24h TTL).
+      operationId: post_v1_events
+      tags:
+        - Events
+      security:
+        - API-Key: []
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          schema:
+            type: string
+          description: Client-generated UUID to deduplicate retries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - event
+                - subscriber_id
+              properties:
+                event:
+                  type: string
+                  description: Event name matched against active workflow triggers.
+                  example: user.welcome
+                subscriber_id:
+                  type: string
+                  format: uuid
+                  description: Subscriber the event is raised for.
+                payload:
+                  type: object
+                  additionalProperties: true
+                  description: Arbitrary event data made available to templates.
+      responses:
+        '202':
+          description: Event accepted and queued
+          headers:
+            Idempotent-Replayed:
+              description: Set to "true" when the response is replayed from a prior idempotent request.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - status
+                properties:
+                  status:
+                    type: string
+                    example: accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/notifications:
+    get:
+      summary: List notifications
+      operationId: get_v1_notifications
+      tags:
+        - Notifications
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: subscriber_id
+          description: Filter by subscriber.
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: channel
+          description: Filter by delivery channel.
+          schema:
+            $ref: '#/components/schemas/Channel'
+        - in: query
+          name: status
+          description: Filter by delivery status.
+          schema:
+            type: string
+            enum:
+              - pending
+              - queued
+              - sent
+              - delivered
+              - failed
+              - skipped
+        - in: query
+          name: limit
+          description: Page size (1–200).
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Paginated notification list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - notifications
+                  - total
+                properties:
+                  notifications:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Notification'
+                  total:
+                    type: integer
+                    description: Total notifications matching the filter (across all pages).
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/notifications/{id}:
+    get:
+      summary: Get notification with delivery events
+      operationId: get_v1_notifications_ById
+      tags:
+        - Notifications
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Notification record with its delivery-event history
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - notification
+                  - delivery_events
+                properties:
+                  notification:
+                    $ref: '#/components/schemas/Notification'
+                  delivery_events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DeliveryEvent'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/templates:
+    get:
+      summary: List templates
+      operationId: get_v1_templates
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: channel
+          description: Filter by delivery channel.
+          schema:
+            $ref: '#/components/schemas/Channel'
+        - in: query
+          name: limit
+          description: Page size (1–200).
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Template list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - templates
+                  - total
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Template'
+                  total:
+                    type: integer
+                    description: Number of templates returned in this page.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create template
+      operationId: post_v1_templates
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - channel
+                - body
+              properties:
+                name:
+                  type: string
+                channel:
+                  $ref: '#/components/schemas/Channel'
+                locale:
+                  type: string
+                  description: BCP-47 locale; defaults to "en".
+                subject:
+                  type: string
+                  description: Email subject line (used for the email channel).
+                body:
+                  type: string
+                  description: Handlebars template body.
+                metadata:
+                  type: object
+                  additionalProperties: true
+                  description: Free-form metadata stored with the template.
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/templates/{id}:
+    get:
+      summary: Get template
+      operationId: get_v1_templates_ById
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Template record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Template'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update template
+      operationId: put_v1_templates_ById
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: Partial update; all fields optional. Any content change bumps the version.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                subject:
+                  type: string
+                body:
+                  type: string
+                  description: Handlebars template body.
+                locale:
+                  type: string
+                  description: BCP-47 locale.
+                metadata:
+                  type: object
+                  additionalProperties: true
+                  description: Keys are merged into the existing metadata.
+                is_active:
+                  type: boolean
+      responses:
+        '200':
+          description: Template updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - version
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  version:
+                    type: integer
+                    description: The new version after the update.
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete template
+      operationId: delete_v1_templates_ById
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Template deleted (soft-deleted; is_active set to false)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/templates/{id}/publish:
+    post:
+      summary: Publish template (set is_active=true)
+      description: Records the current version as the published version in metadata.
+      operationId: post_v1_templates_ById_publish
+      tags:
+        - Templates
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Template published
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - published_version
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  published_version:
+                    type: integer
+                    description: The version marked as published.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/workflows:
+    get:
+      summary: List workflows
+      operationId: get_v1_workflows
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: limit
+          description: Page size (1–200).
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Workflow list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - workflows
+                  - total
+                properties:
+                  workflows:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Workflow'
+                  total:
+                    type: integer
+                    description: Number of workflows returned in this page.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create workflow
+      operationId: post_v1_workflows
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - trigger_event
+              properties:
+                name:
+                  type: string
+                trigger_event:
+                  type: string
+                  description: Event name that triggers this workflow.
+                  example: user.welcome
+                steps:
+                  type: array
+                  description: Ordered workflow steps; defaults to an empty list.
+                  items:
+                    type: object
+                    additionalProperties: true
+      responses:
+        '201':
+          description: Workflow created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/workflows/{id}:
+    get:
+      summary: Get workflow
+      operationId: get_v1_workflows_ById
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Workflow'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update workflow
+      operationId: put_v1_workflows_ById
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        description: Partial update; all fields optional.
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                trigger_event:
+                  type: string
+                  description: Event name that triggers this workflow.
+                steps:
+                  type: array
+                  description: Replaces the step list when provided.
+                  items:
+                    type: object
+                    additionalProperties: true
+      responses:
+        '200':
+          description: Workflow updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Archive workflow
+      operationId: delete_v1_workflows_ById
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Workflow archived (is_active set to false)
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/workflows/{id}/activate:
+    post:
+      summary: Activate workflow
+      operationId: post_v1_workflows_ById_activate
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow activated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: active
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/workflows/{id}/pause:
+    post:
+      summary: Pause workflow
+      operationId: post_v1_workflows_ById_pause
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Workflow paused
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: paused
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/workflows/{id}/runs:
+    get:
+      summary: List workflow run history
+      operationId: get_v1_workflows_ById_runs
+      tags:
+        - Workflows
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: limit
+          description: Number of most-recent runs to return (1–100).
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Run list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - runs
+                properties:
+                  runs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WorkflowRun'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/experiments:
+    get:
+      summary: List experiments
+      operationId: get_v1_experiments
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Experiment list
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - experiments
+                properties:
+                  experiments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Experiment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a draft experiment
+      operationId: post_v1_experiments
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - target_template_id
+                - variants
+              properties:
+                name:
+                  type: string
+                target_template_id:
+                  type: string
+                  format: uuid
+                  description: The control template the experiment replaces while running.
+                variants:
+                  type: array
+                  minItems: 2
+                  description: At least two variants with unique keys.
+                  items:
+                    $ref: '#/components/schemas/ExperimentVariant'
+      responses:
+        '201':
+          description: Draft experiment created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: draft
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/experiments/{id}:
+    get:
+      summary: Get an experiment
+      operationId: get_v1_experiments_ById
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Experiment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Experiment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update a draft experiment
+      description: Only name and variants are applied; target_template_id is ignored. Only draft experiments can be edited.
+      operationId: put_v1_experiments_ById
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - variants
+              properties:
+                name:
+                  type: string
+                target_template_id:
+                  type: string
+                  format: uuid
+                  description: Accepted but ignored on update.
+                variants:
+                  type: array
+                  minItems: 2
+                  items:
+                    $ref: '#/components/schemas/ExperimentVariant'
+      responses:
+        '200':
+          description: Experiment updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete an experiment
+      operationId: delete_v1_experiments_ById
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/experiments/{id}/activate:
+    post:
+      summary: Start an experiment
+      description: Sets status to running. Fails with 409 if another experiment is already running for the same target template.
+      operationId: post_v1_experiments_ById_activate
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Experiment running
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: running
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/experiments/{id}/promote:
+    post:
+      summary: Promote a winner and complete the experiment
+      operationId: post_v1_experiments_ById_promote
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - winner_key
+              properties:
+                winner_key:
+                  type: string
+                  description: The variant key to record as the winner.
+      responses:
+        '200':
+          description: Experiment completed
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                  - winner_key
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: completed
+                  winner_key:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/experiments/{id}/auto-promote:
+    post:
+      summary: Auto-promote the winning variant
+      description: Completes the experiment with the leading variant only if results are statistically significant and not inconclusive; otherwise 409.
+      operationId: post_v1_experiments_ById_auto_promote
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Completed with the winning variant
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                  - winner_key
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: completed
+                  winner_key:
+                    type: string
+                    description: The auto-selected leading variant by click rate.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/experiments/{id}/results:
+    get:
+      summary: Per-variant results
+      description: Delivery/open/click metrics per variant, the leading variant by click rate, and an inconclusive flag for low-volume tests.
+      operationId: get_v1_experiments_ById_results
+      tags:
+        - Experiments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Per-variant results
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - experiment_id
+                  - variants
+                  - leading_key
+                  - inconclusive
+                  - significant
+                  - confidence
+                properties:
+                  experiment_id:
+                    type: string
+                    format: uuid
+                  variants:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/VariantResult'
+                  leading_key:
+                    type: string
+                    description: The variant key with the highest click rate.
+                  inconclusive:
+                    type: boolean
+                    description: True when per-variant sample sizes are too small to conclude.
+                  significant:
+                    type: boolean
+                    description: Two-proportion z-test result between the top-two variants.
+                  confidence:
+                    type: number
+                    format: float
+                    description: Rough two-tailed confidence level for the significance call.
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/event-families:
+    get:
+      summary: List event families
+      description: Returns the tenant's event-family memberships — the sibling trigger events grouped into a single logical "story" so cross-event semantic deduplication (Module 16.5) can suppress duplicate sends to a subscriber. Ordered by family_key, then event_name.
+      operationId: list_v1_event_families
+      tags:
+        - Event Families
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Event-family memberships
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - families
+                properties:
+                  families:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EventFamilyMembership'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Add an event to a family
+      description: Declares that event_name belongs to family_key. Idempotent — re-declaring an existing membership is a no-op that still returns 201.
+      operationId: create_v1_event_family
+      tags:
+        - Event Families
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EventFamilyMembership'
+      responses:
+        '201':
+          description: Membership created (or already existed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EventFamilyMembership'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Remove an event from a family
+      description: Removes the (family_key, event_name) membership. The pair may be given in the JSON body or as ?family_key=&event_name= query parameters.
+      operationId: delete_v1_event_family
+      tags:
+        - Event Families
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: family_key
+          schema:
+            type: string
+        - in: query
+          name: event_name
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Membership removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/subscribers:
+    get:
+      summary: List subscribers
+      operationId: get_v1_subscribers
+      tags:
+        - Subscribers
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: limit
+          description: Max subscribers to return (1–200).
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          description: Number of subscribers to skip.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Paginated subscriber list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscribers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subscriber'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a subscriber
+      operationId: post_v1_subscribers
+      tags:
+        - Subscribers
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - external_id
+              properties:
+                external_id:
+                  type: string
+                  description: Your stable identifier for this recipient.
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                  format: phone
+                  description: E.164 format e.g. +919876543210
+                whatsapp_id:
+                  type: string
+                  description: WhatsApp contact ID, if different from phone.
+                locale:
+                  type: string
+                  description: BCP-47 locale; defaults to en.
+                  default: en
+                timezone:
+                  type: string
+                  description: IANA timezone; defaults to UTC.
+                  default: UTC
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Subscriber created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriberIDResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/subscribers/{subscriberID}:
+    get:
+      summary: Get subscriber
+      operationId: get_v1_subscribers_BySubscriberID
+      tags:
+        - Subscribers
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subscriber record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscriber'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update subscriber
+      operationId: put_v1_subscribers_BySubscriberID
+      tags:
+        - Subscribers
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Only locale, timezone, and metadata are mutable; metadata is merged key-by-key.
+              properties:
+                locale:
+                  type: string
+                timezone:
+                  type: string
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriberIDResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete subscriber
+      operationId: delete_v1_subscribers_BySubscriberID
+      tags:
+        - Subscribers
+      description: DPDP right-to-erasure — nulls all PII, empties push tokens/metadata, and marks the subscriber deleted.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/subscribers/{subscriberID}/consent:
+    get:
+      summary: Get consent history
+      operationId: get_v1_subscribers_BySubscriberID_consent
+      tags:
+        - Consent
+      description: Returns a subscriber's append-only DPDP consent trail, newest first — used for Data-Subject-Rights access / export requests.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Consent ledger entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  consent:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConsentEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Record a consent change
+      operationId: post_v1_subscribers_BySubscriberID_consent
+      tags:
+        - Consent
+      description: Appends a consent change to the immutable ledger and mirrors it into the mutable preferences matrix (same transaction), so the opt-in/out takes effect on the next send. Actor and IP are captured from the request.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - channel
+                - opted_in
+              properties:
+                channel:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - whatsapp
+                    - push
+                    - inapp
+                    - webhook
+                    - rcs
+                    - chatops
+                    - all
+                category:
+                  type: string
+                  default: all
+                opted_in:
+                  type: boolean
+                source:
+                  type: string
+                  enum:
+                    - api
+                    - preference_center
+                    - import
+                    - unsubscribe_link
+                    - system
+                  default: api
+                purpose:
+                  type: string
+                version:
+                  type: string
+                  description: Consent-policy version, if known
+      responses:
+        '201':
+          description: Consent recorded and preferences updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscriber_id:
+                    type: string
+                    format: uuid
+                  channel:
+                    type: string
+                  category:
+                    type: string
+                  opted_in:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/subscribers/{subscriberID}/data:
+    get:
+      summary: Export subscriber PII data (DPDP DSR)
+      operationId: get_v1_subscribers_BySubscriberID_data
+      tags:
+        - Subscribers
+      description: 'DPDP Data-Subject-Rights export: all personal data held for one subscriber — decrypted profile PII, the current preference matrix, and the full consent history.'
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Full subscriber data export including consent ledger
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataExport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/subscribers/{subscriberID}/devices:
+    get:
+      summary: List device tokens
+      operationId: get_v1_subscribers_BySubscriberID_devices
+      tags:
+        - Devices
+      description: Returns a subscriber's registered push tokens.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Registered device tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Register a device token
+      operationId: post_v1_subscribers_BySubscriberID_devices
+      tags:
+        - Devices
+      description: |
+        Registers (or refreshes) a push token on a subscriber. The token is
+        de-duplicated by value, so re-registration updates the provider/platform
+        rather than creating a duplicate. For provider "webpush", token is the
+        browser subscription's endpoint URL and p256dh/auth (both required)
+        carry the subscription's client keys.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                provider:
+                  type: string
+                  enum:
+                    - fcm
+                    - apns
+                    - webpush
+                token:
+                  type: string
+                  description: FCM/APNs device token, or (webpush) the subscription endpoint URL.
+                platform:
+                  type: string
+                  enum:
+                    - android
+                    - ios
+                    - web
+                p256dh:
+                  type: string
+                  description: 'Required when provider is webpush: subscription client public key (base64url).'
+                auth:
+                  type: string
+                  description: 'Required when provider is webpush: subscription client auth secret (base64url).'
+      responses:
+        '201':
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscriber_id:
+                    type: string
+                    format: uuid
+                  provider:
+                    type: string
+                  platform:
+                    type: string
+                  registered:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/subscribers/{subscriberID}/devices/{token}:
+    delete:
+      summary: Unregister a device token
+      operationId: delete_v1_subscribers_BySubscriberID_devices_ByToken
+      tags:
+        - Devices
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+          description: The push token value to remove.
+      responses:
+        '204':
+          description: Unregistered
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/subscribers/{subscriberID}/preferences:
+    get:
+      summary: Get notification preferences
+      operationId: get_v1_subscribers_BySubscriberID_preferences
+      tags:
+        - Subscribers
+      description: Returns the subscriber's channel+category opt-in matrix.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Preference matrix
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenceMatrix'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      summary: Update notification preferences
+      operationId: put_v1_subscribers_BySubscriberID_preferences
+      tags:
+        - Subscribers
+      description: Upserts one or more channel+category opt-in states; each change is also appended to the consent ledger. Items with an empty channel are skipped.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferenceMatrix'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/unsubscribe:
+    get:
+      operationId: get_v1_unsubscribe
+      summary: One-click unsubscribe
+      tags:
+        - Public
+      description: Unauthenticated opt-out used by List-Unsubscribe headers and hosted preference-page links. Records an opt-out (and a consent-ledger entry) for the given channel, defaulting to all channels.
+      security: []
+      parameters:
+        - in: query
+          name: tenant_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Tenant that owns the subscriber.
+        - in: query
+          name: subscriber_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Subscriber to opt out.
+        - in: query
+          name: channel
+          required: false
+          schema:
+            type: string
+            default: all
+          description: Channel to opt out of; defaults to all channels.
+      responses:
+        '200':
+          description: Unsubscribe recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/dlq:
+    get:
+      summary: List dead-lettered jobs
+      operationId: get_v1_dlq
+      tags:
+        - DeadLetters
+      description: |
+        Lists notification jobs that exhausted their delivery retries and were
+        dead-lettered, newest first. A drainer copies each NOTIFY_DLQ entry into
+        a queryable table so failed sends can be inspected and replayed.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - redriven
+              - discarded
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum:
+              - email
+              - sms
+              - whatsapp
+              - push
+              - inapp
+              - webhook
+              - rcs
+              - chatops
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        '200':
+          description: Dead-letter list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dead_letters:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DeadLetter'
+                required:
+                  - dead_letters
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/dlq/{id}:
+    get:
+      summary: Get a dead-lettered job
+      operationId: get_v1_dlq_ById
+      tags:
+        - DeadLetters
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dead-letter record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeadLetter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Discard a dead-lettered job
+      operationId: delete_v1_dlq_ById
+      tags:
+        - DeadLetters
+      description: Marks a pending dead-letter discarded without redriving it.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Discarded
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found or not in the pending state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /v1/dlq/{id}/redrive:
+    post:
+      summary: Redrive a dead-lettered job
+      operationId: post_v1_dlq_ById_redrive
+      tags:
+        - DeadLetters
+      description: |
+        Republishes the original job onto its channel subject for another
+        delivery attempt and marks it redriven. This is the supported replay
+        path for exhausted-retry failures.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Redriven
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: redriven
+                required:
+                  - id
+                  - status
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found or not in the pending state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Republish to the message bus failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /v1/dlt/templates:
+    get:
+      summary: List TRAI DLT templates
+      operationId: get_v1_dlt_templates
+      tags:
+        - DLT
+      description: |
+        Lists the tenant's DLT / WhatsApp BSP template registrations,
+        newest first, optionally filtered by channel, carrier, or status.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum:
+              - sms
+              - whatsapp
+        - in: query
+          name: carrier
+          description: Filter by registered carrier (e.g. airtel, jio, all).
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - approved
+              - rejected
+      responses:
+        '200':
+          description: DLT template list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dlt_templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DltTemplate'
+                required:
+                  - dlt_templates
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Register a TRAI DLT template
+      description: |
+        DLT (Distributed Ledger Technology) templates are mandatory for SMS in India.
+        Every outbound SMS body must match a pre-registered DLT template regex. `channel`
+        defaults to `sms` and `category` to `transactional`.
+      operationId: post_v1_dlt_templates
+      tags:
+        - DLT
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - carrier
+                - template_id_ext
+                - template_name
+                - body_regex
+              properties:
+                carrier:
+                  type: string
+                  description: Registered carrier (e.g. airtel, jio, vodafone, bsnl, meta, all)
+                channel:
+                  type: string
+                  enum:
+                    - sms
+                    - whatsapp
+                  default: sms
+                template_id_ext:
+                  type: string
+                  description: TRAI DLT template ID or Meta template name
+                template_name:
+                  type: string
+                pe_id:
+                  type: string
+                  nullable: true
+                  description: TRAI Principal Entity ID
+                sender_id:
+                  type: string
+                  nullable: true
+                  description: TRAI Sender Header / WhatsApp display name
+                category:
+                  type: string
+                  enum:
+                    - transactional
+                    - promotional
+                    - service_explicit
+                    - service_implicit
+                  default: transactional
+                body_regex:
+                  type: string
+                  description: Regex that matches approved message bodies
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Registered (status starts as pending)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: pending
+                required:
+                  - id
+                  - status
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/dlt/templates/{id}:
+    put:
+      summary: Update DLT template
+      description: |
+        Updates a DLT template's approval status, principal-entity ID, or
+        sender ID. Only supplied fields are changed.
+      operationId: put_v1_dlt_templates_ById
+      tags:
+        - DLT
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - pending
+                    - approved
+                    - rejected
+                pe_id:
+                  type: string
+                sender_id:
+                  type: string
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                required:
+                  - id
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete DLT template
+      operationId: delete_v1_dlt_templates_ById
+      tags:
+        - DLT
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/ndnc:
+    get:
+      summary: List NDNC entries
+      operationId: get_v1_ndnc
+      tags:
+        - NDNC
+      description: |
+        Lists registered National Do-Not-Call (DND) entries as SHA-256 phone
+        hashes. This is national reference data — an entry applies to every
+        sender, so it is not tenant-scoped.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+      responses:
+        '200':
+          description: NDNC entries (phone hashes only)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ndnc:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NdncEntry'
+                required:
+                  - ndnc
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Register a phone on the DND list
+      operationId: post_v1_ndnc
+      tags:
+        - NDNC
+      description: |
+        Adds a phone to the national DND list (source=manual). Idempotent. Note:
+        this is national data — the entry suppresses promotional SMS for every
+        tenant, matching TRAI DND semantics.
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+              properties:
+                phone:
+                  type: string
+                  description: E.164 phone, e.g. +919876543210 (hashed server-side)
+                category:
+                  type: string
+                  default: all
+                  description: '''all'' or a specific DLT category'
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registered:
+                    type: boolean
+                  category:
+                    type: string
+                required:
+                  - registered
+                  - category
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/ndnc/check:
+    get:
+      summary: Check DND status
+      operationId: get_v1_ndnc_check
+      tags:
+        - NDNC
+      description: Reports whether a phone is on the DND list. Safe, read-only.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: phone
+          required: true
+          schema:
+            type: string
+          description: E.164 phone (hashed server-side)
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Optional DLT category; defaults to any
+      responses:
+        '200':
+          description: DND status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registered:
+                    type: boolean
+                required:
+                  - registered
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/providers:
+    get:
+      summary: List provider configurations
+      operationId: get_v1_providers
+      tags:
+        - Providers
+      description: Lists the tenant's provider configs (credentials never returned).
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Provider config list (credentials redacted)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Provider'
+                required:
+                  - providers
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create provider configuration
+      operationId: post_v1_providers
+      tags:
+        - Providers
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - channel
+                - provider
+                - config
+              properties:
+                channel:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - whatsapp
+                    - push
+                    - webhook
+                    - rcs
+                    - chatops
+                provider:
+                  type: string
+                  example: ses
+                  description: 'Provider adapter. email: ses | resend. sms (India, DLT/NDNC-compliant): msg91 | 2factor. sms (international, used for non-+91 destinations): twilio | plivo. whatsapp: meta. push: fcm | apns | webpush. rcs: rbm. chatops: slack | teams | line.'
+                priority:
+                  type: integer
+                  default: 1
+                  description: Lower number = higher priority (used for fallback ordering). Defaults to 1.
+                config:
+                  type: object
+                  additionalProperties: true
+                  description: 'Provider-specific credentials (encrypted at rest). e.g. msg91/2factor: {api_key}; twilio: {account_sid, auth_token, from}; plivo: {auth_id, auth_token, from}; rbm: {service_account}; slack/teams: {webhook_url}; line: {channel_token, to}.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                required:
+                  - id
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/providers/{id}:
+    put:
+      summary: Update provider configuration
+      description: |
+        Updates provider priority, active state, and/or credentials. Only
+        supplied fields are changed.
+      operationId: put_v1_providers_ById
+      tags:
+        - Providers
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                priority:
+                  type: integer
+                is_active:
+                  type: boolean
+                config:
+                  type: object
+                  additionalProperties: true
+                  description: Provider-specific credentials (re-encrypted at rest).
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                required:
+                  - id
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      summary: Delete provider configuration
+      operationId: delete_v1_providers_ById
+      tags:
+        - Providers
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/suppressions:
+    get:
+      summary: List suppressions
+      operationId: get_v1_suppressions
+      tags:
+        - Suppressions
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: channel
+          description: Filter by channel
+          schema:
+            type: string
+            enum:
+              - email
+              - sms
+              - whatsapp
+              - push
+              - inapp
+              - webhook
+              - rcs
+              - chatops
+      responses:
+        '200':
+          description: |
+            Suppression list. Only the SHA-256 value hash is returned — the
+            underlying email/phone is never stored in plaintext.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suppressions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Suppression'
+                required:
+                  - suppressions
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Add a suppression
+      operationId: post_v1_suppressions
+      tags:
+        - Suppressions
+      description: |
+        Suppresses future sends to an address on a channel. The plaintext value
+        is hashed (SHA-256) with the same scheme the channel workers use when
+        checking suppression, so the entry takes effect immediately. Idempotent:
+        re-adding the same value updates its reason.
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - channel
+                - value
+              properties:
+                channel:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - whatsapp
+                    - push
+                    - inapp
+                    - webhook
+                    - rcs
+                    - chatops
+                value:
+                  type: string
+                  description: Plaintext email / phone / token to suppress (hashed server-side)
+                reason:
+                  type: string
+                  enum:
+                    - hard_bounce
+                    - spam_complaint
+                    - manual
+                    - unsubscribe
+                    - ndnc
+                  default: manual
+      responses:
+        '201':
+          description: Suppression created (or reason updated if already present)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  channel:
+                    type: string
+                  value_hash:
+                    type: string
+                  reason:
+                    type: string
+                required:
+                  - id
+                  - channel
+                  - value_hash
+                  - reason
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/suppressions/{id}:
+    delete:
+      summary: Remove a suppression
+      operationId: delete_v1_suppressions_ById
+      tags:
+        - Suppressions
+      description: Removes an address from the suppression list, re-enabling sends.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/webhooks/email/{provider}:
+    post:
+      operationId: post_v1_webhooks_email_ByProvider
+      summary: Inbound email provider webhook
+      tags:
+        - Public
+      security: []
+      description: Provider callback (SES/Resend) for bounces and complaints; matched addresses are auto-suppressed.
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            enum:
+              - ses
+              - resend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Event accepted (acked even when it is not a type we handle)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/webhooks/sms/{provider}:
+    post:
+      operationId: post_v1_webhooks_sms_ByProvider
+      summary: Inbound SMS delivery receipt (DLR)
+      tags:
+        - Public
+      security: []
+      description: Provider DLR callback (MSG91 and generic) — normalized into delivery events and notification status, matched by provider_message_id.
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            example: msg91
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Callback accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/webhooks/whatsapp/{provider}:
+    get:
+      operationId: get_v1_webhooks_whatsapp_ByProvider
+      summary: WhatsApp (Meta) webhook verification
+      tags:
+        - Public
+      security: []
+      description: Meta's subscription handshake — echoes hub.challenge when hub.verify_token matches.
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            example: meta
+        - in: query
+          name: hub.mode
+          schema:
+            type: string
+        - in: query
+          name: hub.verify_token
+          schema:
+            type: string
+        - in: query
+          name: hub.challenge
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge echoed
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: The hub.challenge value, echoed verbatim.
+        '403':
+          description: Verification failed
+    post:
+      operationId: post_v1_webhooks_whatsapp_ByProvider
+      summary: WhatsApp (Meta) status callback
+      tags:
+        - Public
+      security: []
+      description: Meta status callbacks (sent/delivered/read/failed) — normalized into delivery events and notification status, matched by provider_message_id. Inbound messages are acknowledged.
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            example: meta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Callback accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/deliverability/domains:
+    get:
+      summary: List sender domains
+      operationId: get_v1_deliverability_domains
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Sender domains with SPF/DKIM/DMARC status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domains:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SenderDomain'
+                required:
+                  - domains
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Register a sender domain
+      operationId: post_v1_deliverability_domains
+      tags:
+        - Email Deliverability
+      description: |
+        Registers a sending domain (unverified until checked). Idempotent —
+        re-registering an existing domain updates its DKIM selector.
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - domain
+              properties:
+                domain:
+                  type: string
+                  example: mail.acme.com
+                dkim_selector:
+                  type: string
+                  default: qeet
+      responses:
+        '201':
+          description: Registered (unverified)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  domain:
+                    type: string
+                    description: The normalized (lower-cased) domain.
+                required:
+                  - id
+                  - domain
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/deliverability/domains/{id}:
+    get:
+      summary: Get a sender domain + DNS records to publish
+      description: |
+        Returns the sender domain plus the DNS record names to publish for
+        SPF, DKIM, and DMARC verification.
+      operationId: get_v1_deliverability_domains_ById
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sender domain with the DNS host names to publish
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domain:
+                    $ref: '#/components/schemas/SenderDomain'
+                  dns_checks:
+                    type: object
+                    description: DNS host names whose TXT records must be published/resolved.
+                    properties:
+                      spf:
+                        type: string
+                        description: The apex/sending domain (SPF TXT lives here).
+                      dkim:
+                        type: string
+                        example: qeet._domainkey.mail.acme.com
+                      dmarc:
+                        type: string
+                        example: _dmarc.mail.acme.com
+                required:
+                  - domain
+                  - dns_checks
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a sender domain
+      operationId: delete_v1_deliverability_domains_ById
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/deliverability/domains/{id}/verify:
+    post:
+      summary: Verify SPF/DKIM/DMARC via DNS
+      description: Resolves the domain's TXT records and updates verification state.
+      operationId: post_v1_deliverability_domains_ById_verify
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domain:
+                    type: string
+                  spf_verified:
+                    type: boolean
+                  dkim_verified:
+                    type: boolean
+                  dmarc_verified:
+                    type: boolean
+                  fully_verified:
+                    type: boolean
+                    description: True only when SPF, DKIM, and DMARC all pass.
+                required:
+                  - domain
+                  - spf_verified
+                  - dkim_verified
+                  - dmarc_verified
+                  - fully_verified
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/deliverability/reputation:
+    get:
+      summary: Email reputation (bounce/complaint rates)
+      description: Email bounce and complaint rates from delivery_events with a status against the Gmail/Yahoo/Microsoft 2024+ thresholds (Module 23.3).
+      operationId: get_v1_deliverability_reputation
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Reputation snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReputationSnapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/inbound:
+    get:
+      summary: List inbound messages
+      operationId: get_v1_inbound
+      tags:
+        - Inbound
+      description: |
+        Lists the tenant's inbound messages, newest first (limit 100). The
+        sender is exposed only as a last-4 masked reference — never the raw address.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum:
+              - whatsapp
+              - sms
+      responses:
+        '200':
+          description: Inbound messages (newest first)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inbound:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InboundMessage'
+                required:
+                  - inbound
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/wa-numbers:
+    get:
+      summary: List WhatsApp number mappings
+      operationId: get_v1_wa_numbers
+      tags:
+        - Inbound
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: WhatsApp number → tenant mappings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wa_numbers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WaNumber'
+                required:
+                  - wa_numbers
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Map a WhatsApp phone_number_id to this tenant
+      description: Routes inbound WhatsApp messages received on this Meta phone_number_id to the tenant.
+      operationId: post_v1_wa_numbers
+      tags:
+        - Inbound
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone_number_id
+              properties:
+                phone_number_id:
+                  type: string
+                label:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  phone_number_id:
+                    type: string
+                  label:
+                    type: string
+                required:
+                  - id
+                  - phone_number_id
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/wa-numbers/{id}:
+    delete:
+      summary: Remove a WhatsApp number mapping
+      operationId: delete_v1_wa_numbers_ById
+      tags:
+        - Inbound
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/compliance/dashboard:
+    get:
+      summary: Unified compliance dashboard
+      description: Per-tenant compliance posture across regimes (TRAI DLT, WhatsApp/Meta templates, NDNC registry, DPDP consent, email auth), each with a red/amber/green status. A regime whose data source is not yet available reads as `unknown`, never as compliant; the overall status is the worst known pane.
+      operationId: get_v1_compliance_dashboard
+      tags:
+        - Compliance
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Compliance snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/compliance/preflight:
+    post:
+      summary: Pre-send compliance validation
+      description: Runs the deterministic send gates (DLT template match, NDNC scrubbing, promotional window, subscriber consent) for a proposed send and reports whether it would be allowed, with a per-check breakdown. Checks that cannot be evaluated return `unknown` and do not block.
+      operationId: post_v1_compliance_preflight
+      tags:
+        - Compliance
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - channel
+              properties:
+                channel:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - whatsapp
+                    - push
+                    - inapp
+                    - webhook
+                    - rcs
+                    - chatops
+                to:
+                  type: string
+                  description: Destination phone (sms/whatsapp) or email.
+                category:
+                  type: string
+                  example: promotional
+                body:
+                  type: string
+                  description: Message body — matched against approved DLT templates for SMS.
+                carrier:
+                  type: string
+                  description: Optional carrier for DLT matching; defaults to 'all'.
+                subscriber_id:
+                  type: string
+                  format: uuid
+                  description: Optional — enables the consent check.
+      responses:
+        '200':
+          description: Preflight verdict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreflightResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/ip-warmup/pools:
+    get:
+      summary: List IP warmup pools
+      description: Returns the tenant's dedicated-IP warmup pools, newest first (Module 23.2). A warmup pool governs the daily send ceiling for an email stream while a dedicated IP ramps its reputation.
+      operationId: list_v1_ip_warmup_pools
+      tags:
+        - IP Warmup
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Warmup pools
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pools:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IPWarmupPool'
+                required:
+                  - pools
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create an IP warmup pool
+      description: Creates a warmup pool. warmup_started_on defaults to today; a pool starts active and un-throttled. name must be unique per tenant.
+      operationId: create_v1_ip_warmup_pool
+      tags:
+        - IP Warmup
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - provider
+                - target_daily_volume
+              properties:
+                name:
+                  type: string
+                stream:
+                  type: string
+                  nullable: true
+                  description: Sending stream this pool governs (e.g. promotional). Null means a catch-all across all email streams.
+                provider:
+                  type: string
+                  example: ses
+                is_dedicated:
+                  type: boolean
+                warmup_started_on:
+                  type: string
+                  format: date
+                  description: YYYY-MM-DD; defaults to today.
+                target_daily_volume:
+                  type: integer
+                  description: The post-warmup daily ceiling.
+      responses:
+        '201':
+          description: Pool created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/ip-warmup/pools/{id}:
+    delete:
+      summary: Delete an IP warmup pool
+      operationId: delete_v1_ip_warmup_pool
+      tags:
+        - IP Warmup
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Pool deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/ip-warmup/pools/{id}/status:
+    get:
+      summary: IP warmup plan & progress
+      description: 'Returns the computed warmup plan for a pool: the day-in-warmup, today''s daily cap (reduced when the pool is complaint-throttled), sends so far today, and remaining headroom.'
+      operationId: get_v1_ip_warmup_pool_status
+      tags:
+        - IP Warmup
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Warmup status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/IPWarmupPool'
+                  - type: object
+                    properties:
+                      day_in_warmup:
+                        type: integer
+                      warmup_complete:
+                        type: boolean
+                      daily_cap:
+                        type: integer
+                      sent_today:
+                        type: integer
+                      remaining:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /healthz:
+    get:
+      summary: Liveness
+      operationId: get_healthz
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /readyz:
+    get:
+      summary: Readiness
+      operationId: get_readyz
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /v1/analytics/delivery:
+    get:
+      summary: Delivery analytics (funnel totals)
+      description: Aggregate delivery funnel totals for the authenticated tenant, counted from delivery_events by event type. Takes no query parameters.
+      operationId: get_v1_analytics_delivery
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Aggregate delivery funnel totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsFunnel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/api-keys:
+    get:
+      summary: List API keys
+      operationId: get_v1_api_keys
+      tags:
+        - APIKeys
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: API key list (hashed values only — raw key shown once on creation)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - api_keys
+                properties:
+                  api_keys:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create API key
+      operationId: post_v1_api_keys
+      tags:
+        - APIKeys
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                scope:
+                  type: string
+                  enum:
+                    - full
+                    - read
+                    - send
+                  default: full
+                  description: |
+                    full = all endpoints; read = GET only; send = POST /v1/events only. Defaults to full when omitted.
+      responses:
+        '201':
+          description: Created — raw key returned ONCE; store it securely
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/api-keys/{id}:
+    delete:
+      summary: Revoke API key
+      operationId: delete_v1_api_keys_ById
+      tags:
+        - APIKeys
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/audit-logs:
+    get:
+      summary: List audit log entries
+      description: Paginated, newest-first audit trail for the authenticated tenant. Filterable by action, resource_type, actor_id, and a from/to time range.
+      operationId: get_v1_audit_logs
+      tags:
+        - Audit
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: action
+          schema:
+            type: string
+        - in: query
+          name: resource_type
+          schema:
+            type: string
+        - in: query
+          name: actor_id
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Paginated audit log
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - logs
+                  - total
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLog'
+                  total:
+                    type: integer
+                    format: int64
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analytics/engagement:
+    get:
+      summary: Per-channel engagement rates & scores
+      description: Open/click/delivery rates and a 0–100 engagement score per channel (Module 28.1/28.2), derived from delivery_events. Optional ?since filter.
+      operationId: get_v1_analytics_engagement
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Per-channel engagement
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - channels
+                properties:
+                  channels:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EngagementRow'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analytics/engagement/subscribers/{subscriberID}:
+    get:
+      summary: Per-subscriber engagement score
+      operationId: get_v1_analytics_engagement_subscriber
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Per-channel engagement scores for the subscriber
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - subscriber_id
+                  - channels
+                properties:
+                  subscriber_id:
+                    type: string
+                    format: uuid
+                  channels:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channel:
+                          type: string
+                        engagement_score:
+                          type: integer
+                        opened:
+                          type: integer
+                        clicked:
+                          type: integer
+                        sent:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analytics/quality:
+    get:
+      summary: Per-template quality score
+      description: A 0–100 composite per template blending open/click rates against spam-complaint and bounce penalties (Module 28.4).
+      operationId: get_v1_analytics_quality
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Per-template quality scores
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - templates
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TemplateQuality'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/usage:
+    get:
+      summary: Current usage & quota
+      description: Current calendar-month usage (billable messages by channel, plus per-workflow-run count), the tenant's plan, and the quota assessment (Module 43.1/43.2). Metering is derived from stored notifications/runs, so it is idempotent.
+      operationId: get_v1_usage
+      tags:
+        - Billing
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Usage snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/usage/daily:
+    get:
+      summary: Export daily usage records
+      operationId: get_v1_usage_daily
+      tags:
+        - Billing
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: until
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Per-day, per-channel billable counts
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - records
+                properties:
+                  records:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        day:
+                          type: string
+                          example: '2026-07-16'
+                        channel:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/billing/plan:
+    get:
+      summary: Get the tenant's plan
+      operationId: get_v1_billing_plan
+      tags:
+        - Billing
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Effective plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingPlan'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      summary: Set the tenant's plan
+      operationId: put_v1_billing_plan
+      tags:
+        - Billing
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - plan
+              properties:
+                plan:
+                  type: string
+                  enum:
+                    - free
+                    - starter
+                    - growth
+                    - scale
+                    - enterprise
+                monthly_quota:
+                  type: integer
+                  nullable: true
+                  description: Override the tier default (0 = unlimited).
+                overage_allowed:
+                  type: boolean
+                  nullable: true
+      responses:
+        '200':
+          description: Updated plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingPlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/environments:
+    get:
+      summary: List environments
+      operationId: get_v1_environments
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Environment registry
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - environments
+                properties:
+                  environments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Environment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create/register an environment
+      operationId: post_v1_environments
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - slug
+              properties:
+                slug:
+                  type: string
+                  example: staging
+                  description: Lowercase alphanumeric/hyphen, 1–40 chars.
+                name:
+                  type: string
+                  description: Defaults to the slug when omitted.
+                is_default:
+                  type: boolean
+      responses:
+        '201':
+          description: Created (idempotent upsert on slug)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - slug
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  slug:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/environments/changes:
+    get:
+      summary: Promotion / change history
+      operationId: get_v1_environments_changes
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: environment
+          schema:
+            type: string
+          description: Filter to promotions targeting this environment.
+      responses:
+        '200':
+          description: Change history (newest first, max 200)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - changes
+                properties:
+                  changes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EnvironmentChange'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/environments/promote:
+    post:
+      summary: Promote a template or workflow between environments
+      description: Copies the resource into the target environment (upsert) and records a change-history entry. Only the production environment executes at runtime, so promoting into production makes a change live.
+      operationId: post_v1_environments_promote
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_type
+                - resource_id
+                - to_environment
+              properties:
+                resource_type:
+                  type: string
+                  enum:
+                    - template
+                    - workflow
+                resource_id:
+                  type: string
+                  format: uuid
+                to_environment:
+                  type: string
+                  example: production
+      responses:
+        '200':
+          description: Promoted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - resource_type
+                  - resource_id
+                  - to_environment
+                properties:
+                  resource_type:
+                    type: string
+                    enum:
+                      - template
+                      - workflow
+                  resource_id:
+                    type: string
+                    format: uuid
+                    description: The id of the resource copy created in the target environment.
+                  from_environment:
+                    type: string
+                  to_environment:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/environments/{slug}:
+    delete:
+      summary: Delete an environment from the registry
+      operationId: delete_v1_environments_BySlug
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/broadcasts:
+    get:
+      summary: List broadcasts
+      operationId: get_v1_broadcasts
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Broadcast list (with progress)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - broadcasts
+                properties:
+                  broadcasts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Broadcast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a draft broadcast
+      operationId: post_v1_broadcasts
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastRequest'
+      responses:
+        '201':
+          description: Created (draft)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: draft
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/broadcasts/preview:
+    post:
+      summary: Dry-run recipient count
+      description: Counts recipients for an audience and how many have globally opted out. Channel-specific suppression and NDNC are enforced per send.
+      operationId: post_v1_broadcasts_preview
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                audience:
+                  $ref: '#/components/schemas/BroadcastAudience'
+      responses:
+        '200':
+          description: Recipient counts
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - recipients
+                  - opted_out
+                  - deliverable
+                properties:
+                  recipients:
+                    type: integer
+                  opted_out:
+                    type: integer
+                  deliverable:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/broadcasts/{id}:
+    get:
+      summary: Get a broadcast (with progress)
+      operationId: get_v1_broadcasts_ById
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Broadcast
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/broadcasts/{id}/send:
+    post:
+      summary: Queue a broadcast for fan-out
+      operationId: post_v1_broadcasts_ById_send
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: queued
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/broadcasts/{id}/recipients:
+    post:
+      summary: Upload a recipient list (CSV)
+      description: Uploads a CSV / newline list of subscriber external IDs for a draft broadcast; the fan-out then targets those recipients instead of the audience filter. Body is raw text/csv or text/plain (optional `external_id` header row); blanks and duplicates are ignored. Body is capped at ~5 MB.
+      operationId: post_v1_broadcasts_ById_recipients
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+              example: |
+                external_id
+                usr_001
+                usr_002
+      responses:
+        '200':
+          description: Recipients added
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - broadcast_id
+                  - recipients_added
+                properties:
+                  broadcast_id:
+                    type: string
+                    format: uuid
+                  recipients_added:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/broadcasts/{id}/cancel:
+    post:
+      summary: Cancel a broadcast
+      operationId: post_v1_broadcasts_ById_cancel
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Cancelled
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/delivery-events:
+    get:
+      summary: Export delivery events
+      description: Unified, ordered per-tenant delivery lifecycle events (Module 26.3) for warehouse sync and auditing. Filterable by notification, event type, and time range.
+      operationId: get_v1_delivery_events
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: notification_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: event_type
+          schema:
+            type: string
+            example: delivered
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: until
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Delivery events
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - events
+                  - limit
+                  - offset
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DeliveryEvent'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/batching/rules:
+    get:
+      summary: List batching rules
+      operationId: get_v1_batching_rules
+      tags:
+        - Batching
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Batching rules
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - rules
+                properties:
+                  rules:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BatchingRule'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create or upsert a batching rule
+      description: Idempotent on the (channel, category) pair — re-posting the same pair replaces the rule.
+      operationId: post_v1_batching_rules
+      tags:
+        - Batching
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchingRule'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - channel
+                  - category
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  channel:
+                    type: string
+                  category:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/batching/rules/{id}:
+    put:
+      summary: Update a batching rule
+      operationId: put_v1_batching_rules_ById
+      tags:
+        - Batching
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchingRule'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete a batching rule
+      operationId: delete_v1_batching_rules_ById
+      tags:
+        - Batching
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    API-Key:
+      type: apiKey
+      in: header
+      name: X-Qeet-Api-Key
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required:
+        - error
+    PaginatedMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    Channel:
+      type: string
+      description: Delivery channel.
+      enum:
+        - email
+        - sms
+        - whatsapp
+        - push
+        - inapp
+        - webhook
+        - rcs
+        - chatops
+    Template:
+      type: object
+      description: A Handlebars notification template, versioned via metadata.
+      required:
+        - id
+        - name
+        - channel
+        - locale
+        - body
+        - metadata
+        - is_active
+        - version
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        channel:
+          $ref: '#/components/schemas/Channel'
+        locale:
+          type: string
+          description: BCP-47 locale (e.g. "en").
+        subject:
+          type: string
+          description: Email subject line; omitted for channels without a subject.
+        body:
+          type: string
+          description: Handlebars template body.
+        metadata:
+          type: object
+          additionalProperties: true
+          description: Free-form metadata; carries the version marker.
+        is_active:
+          type: boolean
+        version:
+          type: integer
+          description: Template version (derived from metadata.version; defaults to 1).
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Workflow:
+      type: object
+      description: A multi-step, event-triggered notification journey.
+      required:
+        - id
+        - name
+        - trigger_event
+        - steps
+        - is_active
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        trigger_event:
+          type: string
+          description: Event name that triggers this workflow.
+          example: user.welcome
+        steps:
+          type: array
+          description: Ordered workflow steps (channel sends, delays, branches).
+          items:
+            type: object
+            additionalProperties: true
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    WorkflowRun:
+      type: object
+      description: One execution of a workflow for a subscriber.
+      required:
+        - id
+        - workflow_id
+        - trigger_event
+        - status
+        - current_step_index
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_id:
+          type: string
+          format: uuid
+        subscriber_id:
+          type: string
+          format: uuid
+          description: Subscriber the run targets; omitted when not set.
+        trigger_event:
+          type: string
+        status:
+          type: string
+          enum:
+            - running
+            - completed
+            - failed
+            - cancelled
+        current_step_index:
+          type: integer
+          description: Zero-based index of the current/last step.
+        error:
+          type: string
+          description: Failure reason; omitted unless the run failed.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Notification:
+      type: object
+      description: A single delivered (or attempted) notification record.
+      required:
+        - id
+        - subscriber_id
+        - channel
+        - status
+        - content
+        - is_read
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        workflow_run_id:
+          type: string
+          format: uuid
+          description: Set when produced by a workflow run.
+        subscriber_id:
+          type: string
+          format: uuid
+        channel:
+          $ref: '#/components/schemas/Channel'
+        template_id:
+          type: string
+          format: uuid
+          description: Template used to render the notification, if any.
+        status:
+          type: string
+          enum:
+            - pending
+            - queued
+            - sent
+            - delivered
+            - failed
+            - skipped
+        provider:
+          type: string
+          description: Provider that handled delivery (e.g. ses, msg91).
+        provider_message_id:
+          type: string
+          description: Provider-assigned message identifier.
+        content:
+          type: object
+          additionalProperties: true
+          description: Rendered channel payload.
+        is_read:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    DeliveryEvent:
+      type: object
+      description: A provider-reported lifecycle event for a notification.
+      required:
+        - id
+        - event_type
+        - provider
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+          description: e.g. queued, sent, delivered, opened, clicked, bounced, failed.
+        provider:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+    ExperimentVariant:
+      type: object
+      description: One arm of an A/B experiment.
+      required:
+        - key
+        - template_id
+      properties:
+        key:
+          type: string
+          description: Unique variant identifier within the experiment.
+        template_id:
+          type: string
+          format: uuid
+          description: Template sent for this variant.
+        weight:
+          type: integer
+          minimum: 0
+          description: Relative split weight (non-negative); equal weights = even split.
+    Experiment:
+      type: object
+      description: An A/B test over template variants for a target template.
+      required:
+        - id
+        - name
+        - target_template_id
+        - variants
+        - status
+        - winner_key
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        target_template_id:
+          type: string
+          format: uuid
+          description: The control template the experiment replaces while running.
+        variants:
+          type: array
+          items:
+            $ref: '#/components/schemas/ExperimentVariant'
+        status:
+          type: string
+          enum:
+            - draft
+            - running
+            - completed
+        winner_key:
+          type:
+            - string
+            - 'null'
+          description: The promoted variant key; null until the experiment completes.
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    VariantResult:
+      type: object
+      description: Per-variant delivery and engagement metrics.
+      required:
+        - key
+        - sent
+        - delivered
+        - opened
+        - clicked
+        - open_rate
+        - click_rate
+      properties:
+        key:
+          type: string
+        sent:
+          type: integer
+        delivered:
+          type: integer
+        opened:
+          type: integer
+        clicked:
+          type: integer
+        open_rate:
+          type: number
+          format: float
+        click_rate:
+          type: number
+          format: float
+    EventFamilyMembership:
+      type: object
+      properties:
+        family_key:
+          type: string
+          description: The logical story this event belongs to.
+        event_name:
+          type: string
+          description: The trigger event that is a member of the family.
+      required:
+        - family_key
+        - event_name
+    Subscriber:
+      type: object
+      description: A notification recipient. PII (email/phone/whatsapp_id) is encrypted at rest and is not returned by list/get; use the data-export endpoint for decrypted PII.
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        locale:
+          type: string
+        timezone:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        is_deleted:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SubscriberIDResponse:
+      type: object
+      description: Identifier of the affected subscriber.
+      properties:
+        id:
+          type: string
+          format: uuid
+      required:
+        - id
+    Preference:
+      type: object
+      description: A single channel+category opt-in state.
+      properties:
+        channel:
+          type: string
+        category:
+          type: string
+        is_opted_in:
+          type: boolean
+    PreferenceMatrix:
+      type: object
+      properties:
+        preferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/Preference'
+    ConsentEntry:
+      type: object
+      description: One append-only DPDP consent-ledger record.
+      properties:
+        channel:
+          type: string
+        category:
+          type: string
+        opted_in:
+          type: boolean
+        source:
+          type: string
+        purpose:
+          type: string
+          nullable: true
+        version:
+          type: string
+          nullable: true
+        actor:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    Device:
+      type: object
+      description: A registered push token (element of the subscriber's push_tokens array).
+      properties:
+        provider:
+          type: string
+          enum:
+            - fcm
+            - apns
+            - webpush
+        token:
+          type: string
+          description: FCM/APNs device token, or (webpush) the subscription endpoint URL.
+        platform:
+          type: string
+          enum:
+            - android
+            - ios
+            - web
+        p256dh:
+          type: string
+          nullable: true
+          description: 'webpush only: subscription client public key (base64url).'
+        auth:
+          type: string
+          nullable: true
+          description: 'webpush only: subscription client auth secret (base64url).'
+    DataExport:
+      type: object
+      description: Full DPDP data-subject-rights export for one subscriber — decrypted profile PII, current preference matrix, and full consent history.
+      properties:
+        subscriber:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            external_id:
+              type: string
+            email:
+              type: string
+              format: email
+              nullable: true
+            phone:
+              type: string
+              format: phone
+              nullable: true
+            whatsapp_id:
+              type: string
+              nullable: true
+            locale:
+              type: string
+            timezone:
+              type: string
+            metadata:
+              type: object
+              additionalProperties: true
+            is_deleted:
+              type: boolean
+            created_at:
+              type: string
+              format: date-time
+        preferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/Preference'
+        consent_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsentEntry'
+    IPWarmupPool:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        stream:
+          type: string
+          nullable: true
+        provider:
+          type: string
+        is_dedicated:
+          type: boolean
+        warmup_started_on:
+          type: string
+          format: date
+        target_daily_volume:
+          type: integer
+        status:
+          type: string
+          enum:
+            - active
+            - paused
+            - completed
+        throttled:
+          type: boolean
+    DeadLetter:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        subject:
+          type: string
+          description: Original channel subject the job is redriven to
+        payload:
+          type: object
+          additionalProperties: true
+          description: The original ChannelJob
+        error:
+          type: string
+          nullable: true
+        attempts:
+          type: integer
+        status:
+          type: string
+          enum:
+            - pending
+            - redriven
+            - discarded
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+    Provider:
+      type: object
+      description: A provider config (credentials are never returned).
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        provider:
+          type: string
+        priority:
+          type: integer
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Suppression:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        value_hash:
+          type: string
+          description: SHA-256 of the suppressed address; plaintext is never stored.
+        reason:
+          type: string
+          enum:
+            - hard_bounce
+            - spam_complaint
+            - manual
+            - unsubscribe
+            - ndnc
+        created_at:
+          type: string
+          format: date-time
+    DltTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        carrier:
+          type: string
+        channel:
+          type: string
+          enum:
+            - sms
+            - whatsapp
+        template_id_ext:
+          type: string
+          description: TRAI DLT template ID or Meta template name
+        template_name:
+          type: string
+        pe_id:
+          type: string
+          nullable: true
+        sender_id:
+          type: string
+          nullable: true
+        category:
+          type: string
+          enum:
+            - transactional
+            - promotional
+            - service_explicit
+            - service_implicit
+        body_regex:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - approved
+            - rejected
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    NdncEntry:
+      type: object
+      description: A national DND entry — phone hash only, not tenant-scoped.
+      properties:
+        phone_hash:
+          type: string
+          description: SHA-256 of the phone number.
+        category:
+          type: string
+        source:
+          type: string
+          enum:
+            - manual
+            - trai_sync
+        created_at:
+          type: string
+          format: date-time
+    SenderDomain:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        domain:
+          type: string
+        dkim_selector:
+          type: string
+        spf_verified:
+          type: boolean
+        dkim_verified:
+          type: boolean
+        dmarc_verified:
+          type: boolean
+        last_checked_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    ReputationSnapshot:
+      type: object
+      properties:
+        channel:
+          type: string
+          example: email
+        sent:
+          type: integer
+        bounced:
+          type: integer
+        complained:
+          type: integer
+        bounce_rate:
+          type: number
+        complaint_rate:
+          type: number
+        status:
+          type: string
+          enum:
+            - healthy
+            - at_risk
+            - critical
+    InboundMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        provider:
+          type: string
+          nullable: true
+        from_ref:
+          type: string
+          nullable: true
+          description: Last-4 masked sender reference; the raw address is never returned.
+        body:
+          type: string
+          nullable: true
+        received_at:
+          type: string
+          format: date-time
+    WaNumber:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phone_number_id:
+          type: string
+        label:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    CompliancePane:
+      type: object
+      properties:
+        regime:
+          type: string
+          example: dlt_sms
+        status:
+          type: string
+          enum:
+            - green
+            - amber
+            - red
+            - unknown
+        detail:
+          type: string
+        metrics:
+          type: object
+          additionalProperties: true
+      required:
+        - regime
+        - status
+        - detail
+    ComplianceDashboard:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        overall:
+          type: string
+          enum:
+            - green
+            - amber
+            - red
+            - unknown
+        promotional_window_open:
+          type: boolean
+        panes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompliancePane'
+        generated_at:
+          type: string
+          format: date-time
+      required:
+        - tenant_id
+        - overall
+        - promotional_window_open
+        - panes
+        - generated_at
+    PreflightCheck:
+      type: object
+      properties:
+        name:
+          type: string
+          example: dlt_template
+        status:
+          type: string
+          enum:
+            - green
+            - red
+            - unknown
+        detail:
+          type: string
+      required:
+        - name
+        - status
+        - detail
+    PreflightResult:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreflightCheck'
+      required:
+        - allowed
+        - checks
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+      required:
+        - status
+    AnalyticsFunnel:
+      type: object
+      description: Aggregate delivery funnel totals for the tenant, counted by delivery-event type.
+      properties:
+        queued:
+          type: integer
+          format: int64
+        sent:
+          type: integer
+          format: int64
+        delivered:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        opened:
+          type: integer
+          format: int64
+    ApiKey:
+      type: object
+      description: A stored API key. The raw secret is never returned after creation.
+      required:
+        - id
+        - name
+        - prefix
+        - scope
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prefix:
+          type: string
+          description: First 16 chars of the raw key ("qn_live_" + 8 hex) — safe to display.
+        scope:
+          type: string
+          enum:
+            - full
+            - read
+            - send
+        created_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+    ApiKeyCreated:
+      type: object
+      description: Returned once on creation — the raw key is stored only as a SHA-256 hash and is never retrievable again.
+      required:
+        - id
+        - key
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          description: Raw API key — shown ONCE. Store it securely; it cannot be recovered.
+        prefix:
+          type: string
+        scope:
+          type: string
+          enum:
+            - full
+            - read
+            - send
+        warning:
+          type: string
+    AuditLog:
+      type: object
+      required:
+        - id
+        - actor_type
+        - actor_id
+        - action
+        - resource_type
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        actor_type:
+          type: string
+          description: e.g. api_key or system.
+        actor_id:
+          type: string
+          description: Actor identifier (e.g. apikey:<fingerprint>).
+        action:
+          type: string
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+          nullable: true
+        old_value:
+          type: object
+          additionalProperties: true
+          nullable: true
+        new_value:
+          type: object
+          additionalProperties: true
+          nullable: true
+        ip_address:
+          type: string
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+    Environment:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - is_default
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    EnvironmentChange:
+      type: object
+      description: A promotion/change-history entry recorded when a resource is promoted.
+      required:
+        - id
+        - resource_type
+        - resource_id
+        - to_environment
+        - action
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        resource_type:
+          type: string
+          enum:
+            - template
+            - workflow
+        resource_id:
+          type: string
+          format: uuid
+          description: The id of the resource copy created in the target environment.
+        source_resource_id:
+          type: string
+          format: uuid
+          nullable: true
+        from_environment:
+          type: string
+          nullable: true
+        to_environment:
+          type: string
+        action:
+          type: string
+        actor:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    BroadcastAudience:
+      type: object
+      description: Recipient selector. Empty = all active subscribers; external_ids targets a list; metadata targets a segment.
+      properties:
+        external_ids:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          properties:
+            key:
+              type: string
+            value:
+              type: string
+    BroadcastRequest:
+      type: object
+      required:
+        - name
+        - event
+      properties:
+        name:
+          type: string
+        event:
+          type: string
+          description: Trigger event fired for each recipient (matched against workflows).
+        audience:
+          $ref: '#/components/schemas/BroadcastAudience'
+        payload:
+          type: object
+          additionalProperties: true
+    Broadcast:
+      type: object
+      required:
+        - id
+        - name
+        - event
+        - status
+        - sent_count
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        event:
+          type: string
+        audience:
+          $ref: '#/components/schemas/BroadcastAudience'
+        payload:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum:
+            - draft
+            - queued
+            - running
+            - completed
+            - cancelled
+        total_recipients:
+          type: integer
+          nullable: true
+        sent_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    EngagementRow:
+      type: object
+      description: Per-channel engagement rates and a 0–100 score (Module 28.1/28.2).
+      properties:
+        channel:
+          type: string
+        sent:
+          type: integer
+        delivered:
+          type: integer
+        opened:
+          type: integer
+        clicked:
+          type: integer
+        delivery_rate:
+          type: number
+          format: float
+        open_rate:
+          type: number
+          format: float
+        click_rate:
+          type: number
+          format: float
+        engagement_score:
+          type: integer
+          description: 0–100 composite weighting clicks above opens.
+    TemplateQuality:
+      type: object
+      description: Per-template composite quality score (Module 28.4).
+      properties:
+        template_id:
+          type: string
+          format: uuid
+        sent:
+          type: integer
+        open_rate:
+          type: number
+          format: float
+        click_rate:
+          type: number
+          format: float
+        complaint_rate:
+          type: number
+          format: float
+        quality_score:
+          type: integer
+          description: 0–100; 50 baseline plus open/click bonuses minus complaint/bounce penalties.
+    UsageSummary:
+      type: object
+      description: Current calendar-month usage, plan, and quota assessment (Module 43.1/43.2).
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            label:
+              type: string
+              description: Calendar month, e.g. "2026-07".
+        plan:
+          $ref: '#/components/schemas/BillingPlan'
+        usage:
+          type: object
+          properties:
+            messages_total:
+              type: integer
+            workflow_runs:
+              type: integer
+            by_channel:
+              type: object
+              additionalProperties:
+                type: integer
+        quota:
+          type: object
+          properties:
+            used:
+              type: integer
+            monthly_quota:
+              type: integer
+            status:
+              type: string
+              enum:
+                - within
+                - approaching
+                - exceeded
+            blocked:
+              type: boolean
+    BillingPlan:
+      type: object
+      properties:
+        tier:
+          type: string
+          enum:
+            - free
+            - starter
+            - growth
+            - scale
+            - enterprise
+        monthly_quota:
+          type: integer
+          description: Billable messages included per month; 0 = unlimited.
+        overage_allowed:
+          type: boolean
+    BatchingRule:
+      type: object
+      description: 'Send-pacing policy resolved most-specific-first: (channel, category) → (channel, all) → (all, category) → (all, all). Transactional/security sends bypass it.'
+      required:
+        - channel
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        channel:
+          type: string
+          enum:
+            - email
+            - sms
+            - whatsapp
+            - push
+            - inapp
+            - webhook
+            - rcs
+            - chatops
+            - all
+        category:
+          type: string
+          default: all
+        max_per_period:
+          type: integer
+          nullable: true
+          description: Frequency cap — max sends per subscriber per period (16.2).
+        period_seconds:
+          type: integer
+          nullable: true
+        cap_mode:
+          type: string
+          enum:
+            - hard
+            - soft
+          default: hard
+          description: hard = skip over-cap sends; soft = allow and log.
+        throttle_per_second:
+          type: integer
+          nullable: true
+          description: Per-tenant/channel send-rate ceiling; over-rate sends defer, never drop (16.3).
+        digest_enabled:
+          type: boolean
+          default: false
+        digest_window_secs:
+          type: integer
+          nullable: true
+          description: Required when digest_enabled — the time window before a digest closes (16.1).
+        digest_max_count:
+          type: integer
+          nullable: true
+          description: Close the digest early once this many sends accumulate.
+        digest_template_id:
+          type: string
+          format: uuid
+          nullable: true
+        is_active:
+          type: boolean
+          default: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Malformed request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Request conflicts with the current resource state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

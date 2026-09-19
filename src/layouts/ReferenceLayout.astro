@@ -1,0 +1,249 @@
+---
+/**
+ * The reference workspace: Qeet navigation on the left, Scalar in the pane.
+ *
+ * Ownership, which is the whole point of this layout:
+ *   Qeet    — shell, header, product switching, left API navigation, theming,
+ *             search, active state, deep links
+ *   Scalar  — OpenAPI rendering, schemas, request building, code samples and
+ *             the API client
+ *
+ * No footer: Scalar runs the full remaining viewport height.
+ */
+import DeveloperLayout from "./DeveloperLayout.astro";
+import ReferenceSidebar from "../components/layout/ReferenceSidebar.astro";
+
+interface Props {
+  title?: string;
+  section?: string;
+  description?: string;
+  activeProductId: string;
+}
+
+const { title, section, description, activeProductId } = Astro.props;
+---
+
+<DeveloperLayout
+  title={title}
+  section={section}
+  description={description}
+  productId={activeProductId}
+  hasSidebar
+  showFooter={false}
+>
+  <div class="reference-shell">
+    <ReferenceSidebar activeProductId={activeProductId} />
+    <main id="main" class="reference-pane">
+      <slot />
+    </main>
+  </div>
+</DeveloperLayout>
+
+<script>
+  /**
+   * Active-state synchronisation between the Qeet sidebar and Scalar (plan O4).
+   *
+   * Seven behaviours, all required:
+   *   1. sidebar → Scalar navigation
+   *   2. scroll position → active sidebar item
+   *   3. auto-expand the active tag group
+   *   4. hash update without a scroll jump
+   *   5. browser back/forward restoration
+   *   6. refresh / deep-link restoration
+   *   7. keyboard navigation
+   *
+   * Anchors line up because both sides generate slugs with the same rules:
+   * src/config/scalar.ts passes `generateTagSlug`/`generateOperationSlug` to
+   * Scalar, and src/lib/api/openapi.ts re-implements them for this sidebar.
+   */
+  const navEl = document.querySelector<HTMLElement>("[data-reference-nav]");
+  const paneEl = document.querySelector<HTMLElement>(".reference-pane");
+
+  if (navEl && paneEl) {
+    // Re-bound non-nullable: the helpers below are function declarations, which
+    // TypeScript cannot narrow from the enclosing guard.
+    const nav = navEl;
+    const pane = paneEl;
+
+    const opLinks = () => nav.querySelectorAll<HTMLAnchorElement>("[data-op-slug]");
+
+    /** (3) Expand the group containing a slug, collapsing nothing else. */
+    function expandFor(slug: string) {
+      const link = nav.querySelector<HTMLAnchorElement>(`[data-op-slug="${CSS.escape(slug)}"]`);
+      const tag = link?.dataset.opTag;
+      if (!tag) return;
+      const toggle = nav.querySelector<HTMLButtonElement>(
+        `[data-tag-toggle="${CSS.escape(tag)}"]`,
+      );
+      const panel = toggle?.getAttribute("aria-controls");
+      if (!toggle || !panel) return;
+      toggle.setAttribute("aria-expanded", "true");
+      document.getElementById(panel)?.removeAttribute("hidden");
+    }
+
+    let current = "";
+    /** (2) Mark one row active; `aria-current` also drives the brand rail. */
+    function setActive(slug: string, opts: { scrollIntoView?: boolean } = {}) {
+      if (slug === current) return;
+      current = slug;
+      for (const a of opLinks()) {
+        const isActive = a.dataset.opSlug === slug;
+        if (isActive) {
+          a.setAttribute("aria-current", "true");
+          if (opts.scrollIntoView) a.scrollIntoView({ block: "nearest" });
+        } else {
+          a.removeAttribute("aria-current");
+        }
+      }
+    }
+
+    /** Tag sections expand/collapse. */
+    nav.addEventListener("click", (event) => {
+      const toggle = (event.target as HTMLElement).closest<HTMLButtonElement>("[data-tag-toggle]");
+      if (!toggle) return;
+      const panelId = toggle.getAttribute("aria-controls");
+      const panel = panelId ? document.getElementById(panelId) : null;
+      if (!panel) return;
+      const open = toggle.getAttribute("aria-expanded") === "true";
+      toggle.setAttribute("aria-expanded", String(!open));
+      panel.toggleAttribute("hidden", open);
+    });
+
+    /**
+     * The scroll-spy must not fight a deliberate click: without this window it
+     * immediately rewrites the hash to whatever is topmost mid-scroll.
+     */
+    let suppressSpyUntil = 0;
+
+    /** (1) + (4) Sidebar click → scroll the pane, update the hash, mark active.
+     *
+     * The scroll is done here rather than left to the browser: calling
+     * `replaceState` in the same tick cancels the native fragment jump, and
+     * `replaceState` is what keeps Back meaning "the page I came from" instead
+     * of "the last endpoint I looked at". */
+    nav.addEventListener("click", (event) => {
+      const link = (event.target as HTMLElement).closest<HTMLAnchorElement>("[data-op-slug]");
+      const slug = link?.dataset.opSlug;
+      if (!slug) return;
+
+      event.preventDefault();
+      suppressSpyUntil = Date.now() + 400;
+      setActive(slug);
+      history.replaceState(null, "", `#${slug}`);
+
+      // `scroll-margin-top` on the target (see reference.css) keeps the heading
+      // clear of the sticky header.
+      // Instant, not smooth: with every tag expanded the document is tens of
+      // thousands of pixels tall, so a smooth jump is both slow and long
+      // enough for the scroll-spy to hijack it mid-flight. `instant` also
+      // overrides the global `scroll-behavior: smooth`.
+      const target =
+        document.getElementById(slug) ??
+        // Scalar has not rendered this operation yet: fall back to its tag
+        // section so the reader still lands in the right place.
+        document.getElementById(slug.split("/").slice(0, 3).join("/"));
+      target?.scrollIntoView({ behavior: "instant", block: "start" });
+    });
+
+    /** (7) Keyboard: ↑/↓ across visible operations, Home/End to the ends. */
+    nav.addEventListener("keydown", (event) => {
+      if (!["ArrowDown", "ArrowUp", "Home", "End"].includes(event.key)) return;
+      const visible = [...opLinks()].filter((a) => a.offsetParent !== null);
+      if (visible.length === 0) return;
+      const index = visible.findIndex((a) => a === document.activeElement);
+      if (index === -1 && event.key !== "Home" && event.key !== "End") return;
+
+      event.preventDefault();
+      const next =
+        event.key === "Home"
+          ? visible[0]
+          : event.key === "End"
+            ? visible[visible.length - 1]
+            : visible[(index + (event.key === "ArrowDown" ? 1 : -1) + visible.length) % visible.length];
+      next?.focus();
+    });
+
+    /** (2) Scroll-spy over Scalar's rendered operation sections.
+     *
+     * Scalar mounts asynchronously from a CDN, so the sections don't exist on
+     * first paint. A MutationObserver on the pane re-attaches the
+     * IntersectionObserver as content arrives, then stops once it has settled.
+     * This observes *layout*, which is the standard docs scrollspy pattern —
+     * unlike the theme observer this replaces, it is not polling for state.
+     */
+    let io: IntersectionObserver | null = null;
+    function attachScrollSpy() {
+      const targets = [...opLinks()]
+        .map((a) => a.dataset.opSlug)
+        .filter((s): s is string => Boolean(s))
+        .map((s) => document.getElementById(s))
+        .filter((el): el is HTMLElement => el !== null);
+      if (targets.length === 0) return false;
+
+      io?.disconnect();
+      io = new IntersectionObserver(
+        (records) => {
+          const visible = records
+            .filter((r) => r.isIntersecting)
+            .sort((a, b) => a.boundingClientRect.top - b.boundingClientRect.top);
+          if (Date.now() < suppressSpyUntil) return;
+          const id = visible[0]?.target.id;
+          if (id) {
+            setActive(id, { scrollIntoView: true });
+            history.replaceState(null, "", `#${id}`);
+          }
+        },
+        { rootMargin: "-20% 0px -70% 0px" },
+      );
+      for (const t of targets) io.observe(t);
+      return true;
+    }
+
+    // Scalar's `classic` layout renders each tag's operations only once the
+    // section is expanded, so targets keep appearing. Stay subscribed and
+    // re-attach on a debounce rather than disconnecting after the first hit.
+    let reattach: ReturnType<typeof setTimeout> | undefined;
+    const mo = new MutationObserver(() => {
+      clearTimeout(reattach);
+      reattach = setTimeout(attachScrollSpy, 200);
+    });
+    mo.observe(pane, { childList: true, subtree: true });
+    attachScrollSpy();
+
+    /** (5) + (6) Restore from the URL on load and on back/forward. */
+    function restoreFromHash() {
+      const slug = decodeURIComponent(location.hash.replace(/^#/, ""));
+      if (!slug) return;
+      suppressSpyUntil = Date.now() + 400;
+      expandFor(slug);
+      setActive(slug, { scrollIntoView: true });
+      document.getElementById(slug)?.scrollIntoView({ behavior: "instant", block: "start" });
+    }
+    restoreFromHash();
+    window.addEventListener("hashchange", restoreFromHash);
+    window.addEventListener("popstate", restoreFromHash);
+
+    /** Mobile drawer, shared with the header's toggle. */
+    const toggle = document.querySelector<HTMLButtonElement>("[data-sidebar-toggle]");
+    if (toggle) {
+      const setOpen = (open: boolean) => {
+        nav.dataset.open = String(open);
+        toggle.setAttribute("aria-expanded", String(open));
+        toggle.setAttribute("aria-label", open ? "Hide navigation" : "Show navigation");
+      };
+      toggle.addEventListener("click", () => setOpen(nav.dataset.open !== "true"));
+      document.addEventListener("keydown", (e) => {
+        if (e.key === "Escape" && nav.dataset.open === "true") {
+          setOpen(false);
+          toggle.focus();
+        }
+      });
+      nav.addEventListener("click", (e) => {
+        if ((e.target as HTMLElement).closest("[data-op-slug]")) setOpen(false);
+      });
+      matchMedia("(min-width: 1024px)").addEventListener("change", (e) => {
+        if (e.matches) setOpen(false);
+      });
+    }
+  }
+</script>

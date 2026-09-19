@@ -1,0 +1,175 @@
+/* The /reference workspace shell — the Qeet-owned frame around Scalar.
+ *
+ * Scalar's own styling lives in scalar.css (passed to it via `customCss`);
+ * everything here is Qeet chrome: the full-height grid, the left API navigation,
+ * and the panes. Keeping the two files apart matters — one is ours, the other
+ * crosses a version boundary into a third-party runtime. */
+
+/* Full-height workspace: header, then a single scroll context per pane so the
+   left navigation doesn't scroll away with the document. */
+.reference-shell {
+  display: grid;
+  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  min-height: calc(100vh - var(--dev-header-h));
+}
+
+.reference-nav {
+  position: sticky;
+  top: var(--dev-header-h);
+  height: calc(100vh - var(--dev-header-h));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  border-right: 1px solid var(--rule);
+  background: var(--bg);
+  scrollbar-width: thin;
+}
+
+/* `dvh` keeps the panes correct while mobile browser chrome collapses; the
+   `vh` declarations above remain the fallback for engines without it. */
+@supports (height: 100dvh) {
+  .reference-shell {
+    min-height: calc(100dvh - var(--dev-header-h));
+  }
+  .reference-nav {
+    height: calc(100dvh - var(--dev-header-h));
+  }
+}
+
+.reference-pane {
+  min-width: 0; /* lets long code samples scroll instead of widening the grid */
+}
+
+/* Scalar anchors are `<document>/tag/<tag>/<METHOD>/<path>`, so every section
+   id starts with the product slug. Offsetting them keeps a jumped-to heading
+   clear of the sticky developer header instead of hidden beneath it. */
+.reference-pane [id^="qeet-"] {
+  scroll-margin-top: calc(var(--dev-header-h) + 1.25rem);
+}
+
+/* Below the laptop breakpoint the navigation becomes a drawer and the Scalar
+   pane takes the full width (never three squashed columns — §18). */
+@media (max-width: 1023px) {
+  .reference-shell {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .reference-nav {
+    position: fixed;
+    top: var(--dev-header-h);
+    left: 0;
+    width: min(20rem, 86vw);
+    z-index: var(--z-drawer);
+    transform: translateX(-100%);
+    transition: transform var(--dur) var(--ease);
+    box-shadow: var(--shadow-lg);
+  }
+  .reference-nav[data-open="true"] {
+    transform: translateX(0);
+  }
+  /* Closed drawer must leave the tab order, not just go invisible — the audit
+     found the marketing drawer keeping ~15 links focusable while hidden. */
+  .reference-nav:not([data-open="true"]) {
+    visibility: hidden;
+  }
+}
+
+/* ---- left API navigation --------------------------------------------------
+ * Hierarchy is carried by type, indent and a single hairline — no cards, no
+ * shadows, no nested boxes. */
+
+.ref-group {
+  border-top: 1px solid var(--rule);
+}
+.ref-group:first-child {
+  border-top: 0;
+}
+
+.ref-group-label {
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--ink-faint);
+}
+
+.ref-tag-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  padding: 0.3rem 0.75rem 0.3rem 0.85rem;
+  font-family: var(--font-ui);
+  font-size: var(--text-base);
+  color: var(--ink-muted);
+  text-align: left;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+.ref-tag-toggle:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+.ref-tag-toggle[aria-expanded="true"] {
+  color: var(--ink);
+  font-weight: 500;
+}
+.ref-tag-chevron {
+  flex: none;
+  transition: transform var(--dur-fast) var(--ease);
+}
+.ref-tag-toggle[aria-expanded="true"] .ref-tag-chevron {
+  transform: rotate(90deg);
+}
+
+/* Operation rows: method + path, monospace, dense. The active row is marked by
+   both a brand rail and a weight change — never colour alone (§19). */
+.ref-op {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  padding: 0.22rem 0.75rem 0.22rem 1.6rem;
+  border-left: 2px solid transparent;
+  color: var(--ink-subtle);
+  font-size: var(--text-sm);
+  transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+}
+.ref-op:hover {
+  color: var(--ink);
+  background: var(--surface-2);
+}
+.ref-op[aria-current="true"] {
+  color: var(--ink);
+  font-weight: 500;
+  border-left-color: var(--brand);
+  background: var(--brand-faint);
+}
+/* Navigation uses Cal Sans UI, not Fira Code. Per the brand roles, Cal Sans UI
+   is the interface face (nav, controls, metadata, badges) and Fira Code is for
+   code and request/response bodies — which here means the Scalar pane, not the
+   sidebar. `tabular-nums` keeps the method column aligned without a monospace
+   face, since the glyphs no longer share a fixed advance width. */
+.ref-op-method {
+  flex: none;
+  min-width: 3.25rem;
+  font-family: var(--font-ui);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-variant-numeric: tabular-nums;
+}
+.ref-op-path {
+  font-family: var(--font-ui);
+  overflow-wrap: anywhere;
+}
+
+/* Method colours come from the bridged tokens (--m-get … --m-delete). */
+.ref-op-method[data-method="get"] { color: var(--m-get); }
+.ref-op-method[data-method="post"] { color: var(--m-post); }
+.ref-op-method[data-method="put"] { color: var(--m-put); }
+.ref-op-method[data-method="patch"] { color: var(--m-patch); }
+.ref-op-method[data-method="delete"] { color: var(--m-delete); }
+.ref-op-method[data-method="head"],
+.ref-op-method[data-method="options"],
+.ref-op-method[data-method="trace"] { color: var(--ink-faint); }

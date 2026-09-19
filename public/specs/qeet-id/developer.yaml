@@ -5,7 +5,7 @@ info:
   description: |-
     Qeet ID identity platform — full HTTP surface.
 
-    This document is generated to cover EVERY route mounted by the chi router (internal/http/router.go) and is guarded by internal/http/openapi_coverage_test.go, which fails CI if any mounted route is undocumented. Launch-critical families (Auth, OIDC/OAuth, SCIM, SAML, Users, Tenants, RBAC, API Keys) carry fully-described request/response bodies; remaining admin CRUD routes carry accurate path/method/params/security with summarized bodies (noted in each operation's description).
+    This document covers routes mounted by internal/bootstrap/router.go. internal/bootstrap/openapi_coverage_test.go walks the production mount helpers and fails when a mounted operation is undocumented, a documented operation is stale, or API-auth security declarations disagree with runtime classification. Launch-critical families carry fully-described request/response bodies; remaining admin CRUD routes carry accurate path/method/params/security with summarized bodies.
 
     Auth modes: `bearerAuth` (user/service JWT), `apiKeyAuth` (`Authorization: ApiKey <key>`), `scimBearer` (per-tenant SCIM token), `clientCredentials` (OAuth M2M), and `ssoCookie` (hosted-login SSO session).
 servers:
@@ -22,6 +22,10 @@ tags:
     description: Outbound webhook endpoint management.
   - name: Secrets
     description: Per-tenant encrypted secrets vault.
+  - name: Credentials
+  - name: Agents
+  - name: Auth Hooks
+  - name: Token Vault
 paths:
   /v1/api-keys:
     post:
@@ -30,8 +34,8 @@ paths:
       tags:
         - API Keys
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -73,8 +77,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Revoked
@@ -97,8 +101,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: API keys
@@ -158,8 +162,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Issued credentials (registry view)
@@ -189,8 +193,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -242,8 +246,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Revoked
@@ -298,8 +302,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Agents (secrets are write-only, not returned)
@@ -329,8 +333,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -339,6 +343,7 @@ paths:
               type: object
               required:
                 - name
+                - sponsor_user_id
               properties:
                 name:
                   type: string
@@ -348,6 +353,10 @@ paths:
                     type: string
                 token_ttl_seconds:
                   type: integer
+                sponsor_user_id:
+                  type: string
+                  format: uuid
+                  description: The named human owner accountable for this agent. Must be a member of this tenant.
       responses:
         '201':
           description: Agent created (secret returned once)
@@ -380,8 +389,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Deleted
@@ -409,8 +418,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -435,6 +444,7 @@ paths:
     post:
       operationId: post_v1_tenants_ByTenantID_agents_ById_suspend
       summary: Suspend agent
+      description: Move an agent to `suspended` (reversible). Its tokens are denied at authz within one request cycle.
       tags:
         - Agents
       parameters:
@@ -449,17 +459,95 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
-        '204':
-          description: Suspended
+        '200':
+          description: New lifecycle status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentStatus'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/tenants/{tenantID}/agents/{id}/resume:
+    post:
+      operationId: post_v1_tenants_ByTenantID_agents_ById_resume
+      summary: Resume agent
+      description: Move a suspended agent back to `active`.
+      tags:
+        - Agents
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '200':
+          description: New lifecycle status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/tenants/{tenantID}/agents/{id}/decommission:
+    post:
+      operationId: post_v1_tenants_ByTenantID_agents_ById_decommission
+      summary: Decommission agent
+      description: Permanently retire an agent (terminal). It can no longer mint tokens and is excluded from listings.
+      tags:
+        - Agents
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '200':
+          description: New lifecycle status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AgentStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /v1/tenants/{tenantID}/agents/kill-all:
     post:
       operationId: post_v1_tenants_ByTenantID_agents_kill_all
@@ -474,8 +562,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Agents suspended
@@ -490,6 +578,89 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /v1/tenants/{tenantID}/agents/sponsored-by/{userID}:
+    get:
+      operationId: get_v1_tenants_ByTenantID_agents_sponsored_by_ByUserID
+      summary: List agents sponsored by a user
+      description: What an admin needs to see before offboarding userID — every agent they're the accountable owner of.
+      tags:
+        - Agents
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/tenants/{tenantID}/agents/sponsored-by/{userID}/transfer:
+    post:
+      operationId: post_v1_tenants_ByTenantID_agents_sponsored_by_ByUserID_transfer
+      summary: Transfer sponsorship
+      description: Reassigns every agent userID sponsors to to_user_id in one call — the offboarding operation, so no agent is left with an owner who no longer has access.
+      tags:
+        - Agents
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: userID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - to_user_id
+              properties:
+                to_user_id:
+                  type: string
+                  format: uuid
+                  description: Must be a member of this tenant.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  transferred:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
   /v1/tenants/{tenantID}/auth-hooks:
     get:
       operationId: get_v1_tenants_ByTenantID_auth_hooks
@@ -503,8 +674,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Configured hooks (secrets are write-only, not returned)
@@ -534,8 +705,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -584,8 +755,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -623,8 +794,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Removed
@@ -648,8 +819,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: '{ name, value }'
@@ -681,8 +852,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -714,8 +885,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -761,8 +932,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '204':
@@ -794,8 +965,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -841,8 +1012,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -870,6 +1041,251 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+  /v1/tenants/{tenantID}/vault/tokens/providers:
+    post:
+      operationId: post_v1_tenants_ByTenantID_vault_tokens_providers
+      summary: Register a Token Vault OAuth2 provider
+      tags:
+        - Token Vault
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - provider
+                - client_id
+                - client_secret
+                - authorize_url
+                - token_url
+              properties:
+                provider:
+                  type: string
+                  description: A short key naming the third-party service, e.g. "slack", "github", "google", or any custom name.
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+                authorize_url:
+                  type: string
+                  format: uri
+                token_url:
+                  type: string
+                  format: uri
+                scopes:
+                  type: string
+        description: Registers (or updates) the OAuth2 endpoints + client credentials for one third-party provider, tenant-wide.
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+    get:
+      operationId: get_v1_tenants_ByTenantID_vault_tokens_providers
+      summary: List Token Vault providers
+      tags:
+        - Token Vault
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      description: Client secrets are never included in the response.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/tenants/{tenantID}/vault/tokens/providers/{provider}:
+    delete:
+      operationId: delete_v1_tenants_ByTenantID_vault_tokens_providers_ByProvider
+      summary: Delete a Token Vault provider
+      tags:
+        - Token Vault
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/vault/tokens:
+    get:
+      operationId: get_v1_vault_tokens
+      summary: List the caller's connected third-party accounts
+      tags:
+        - Token Vault
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      description: Non-secret metadata only (provider, external account id, scope, expiry) for the calling user's own connected accounts.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/vault/tokens/{provider}/connect:
+    get:
+      operationId: get_v1_vault_tokens_ByProvider_connect
+      summary: Begin connecting a third-party account
+      tags:
+        - Token Vault
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      description: Returns the authorize_url to redirect the user's browser to, starting a standard OAuth2 authorization-code ceremony against the tenant's registered provider config.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authorize_url:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/vault/tokens/callback:
+    get:
+      operationId: get_v1_vault_tokens_callback
+      summary: Token Vault OAuth2 redirect target
+      tags:
+        - Token Vault
+      security: []
+      description: The fixed, non-caller-supplied redirect_uri registered with the third-party provider. Completes the code exchange and renders a minimal HTML confirmation page — never redirects to a caller-supplied URL.
+      responses:
+        '200':
+          description: HTML confirmation page
+        '400':
+          description: HTML error page (invalid/expired state, or the provider returned an error)
+  /v1/vault/tokens/{provider}/access-token:
+    get:
+      operationId: get_v1_vault_tokens_ByProvider_access_token
+      summary: Get a live access token for a connected account
+      tags:
+        - Token Vault
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      description: The "agent-safe" fetch — transparently refreshes the token if it's expired (or about to be) and hands back only a short-lived access token, never the refresh token. Requires a vault:<provider> or vault:read scope; every access is audited. userID is resolved from the caller's own token subject, so an agent holding a token delegated (RFC 8693) from a user gets that user's connected account.
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/vault/tokens/{provider}:
+    delete:
+      operationId: delete_v1_vault_tokens_ByProvider
+      summary: Disconnect a third-party account
+      tags:
+        - Token Vault
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /v1/tenants/{tenantID}/webhooks:
     get:
       operationId: get_v1_tenants_ByTenantID_webhooks
@@ -883,8 +1299,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -911,8 +1327,8 @@ paths:
       tags:
         - Webhooks
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -953,8 +1369,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Webhook subscription
@@ -981,8 +1397,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '204':
@@ -1010,8 +1426,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Recent deliveries
@@ -1047,8 +1463,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Delivery re-queued
@@ -1071,8 +1487,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -1102,28 +1518,28 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: 'User or service JWT: `Authorization: Bearer <token>`.'
-    apiKeyAuth:
+    API-Key:
       type: apiKey
       in: header
       name: Authorization
       description: 'API key credential. Send `Authorization: ApiKey <key>` (note the `ApiKey ` prefix). Accepted on the same authenticated routes as bearerAuth.'
-    scimBearer:
+    Bearer-Token:
       type: http
       scheme: bearer
-      description: 'Per-tenant SCIM provisioning token presented by the IdP: `Authorization: Bearer <scim-token>`. Distinct from user JWTs; rotated via the SCIM admin endpoints.'
-    clientCredentials:
+      bearerFormat: JWT
+      description: 'User or service JWT: `Authorization: Bearer <token>`.'
+    OAuth2-Client-Credentials:
       type: oauth2
       description: OAuth 2.0 client credentials. Clients authenticate at the token endpoint via form params (`client_id`/`client_secret`) or HTTP Basic. Revocation/introspection use the same client auth.
       flows:
         clientCredentials:
           tokenUrl: /v1/oauth/token
           scopes: {}
-    ssoCookie:
+    SCIM-Token:
+      type: http
+      scheme: bearer
+      description: 'Per-tenant SCIM provisioning token presented by the IdP: `Authorization: Bearer <scim-token>`. Distinct from user JWTs; rotated via the SCIM admin endpoints.'
+    Session-Cookie:
       type: apiKey
       in: cookie
       name: qe_ls
@@ -1165,7 +1581,24 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Conflicting state (e.g. an invalid lifecycle transition)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
   schemas:
+    AgentStatus:
+      type: object
+      required:
+        - status
+      properties:
+        status:
+          type: string
+          enum:
+            - active
+            - suspended
+            - decommissioned
     Error:
       type: object
       required:

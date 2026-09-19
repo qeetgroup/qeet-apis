@@ -1,0 +1,60 @@
+---
+/**
+ * Breadcrumb trail. Emits BreadcrumbList JSON-LD alongside the visual trail so
+ * search results can show the hierarchy (§21).
+ *
+ * The last crumb is the current page: rendered as text with `aria-current`,
+ * not as a link to itself.
+ */
+import { SITE } from "../../config/site";
+
+export interface Crumb {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  items: Crumb[];
+  class?: string;
+}
+
+const { items, class: className } = Astro.props;
+
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  itemListElement: items.map((item, i) => ({
+    "@type": "ListItem",
+    position: i + 1,
+    name: item.label,
+    ...(item.href ? { item: new URL(item.href, SITE.url).href } : {}),
+  })),
+};
+---
+
+<nav class:list={["flex items-center gap-1.5", className]} aria-label="Breadcrumb">
+  <ol class="flex flex-wrap items-center gap-1.5 list-none">
+    {
+      items.map((item, i) => (
+        <li class="flex items-center gap-1.5">
+          {i > 0 && (
+            <span class="font-ui text-xs text-ink-faint" aria-hidden="true">
+              /
+            </span>
+          )}
+          {item.href && i < items.length - 1 ? (
+            <a href={item.href} class="font-ui text-xs text-ink-subtle transition-colors hover:text-ink">
+              {item.label}
+            </a>
+          ) : (
+            <span class="font-ui text-xs text-ink-muted" aria-current="page">
+              {item.label}
+            </span>
+          )}
+        </li>
+      ))
+    }
+  </ol>
+</nav>
+
+<script type="application/ld+json" is:inline set:html={JSON.stringify(jsonLd)} />

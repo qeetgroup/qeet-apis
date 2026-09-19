@@ -1,0 +1,125 @@
+---
+/**
+ * The developer workspace header — 64px, compact, task-oriented.
+ *
+ * Deliberately *not* the marketing header. A reader here is integrating, not
+ * evaluating, so Products / Pricing / Enterprise and the orange "Get Started"
+ * CTA stay on `/` (§8). What remains is what a developer needs: which product,
+ * where in the docs, search, theme, and a link back out to the console.
+ *
+ * `Status` renders only if LINKS.status is set, and `Sign in` only if
+ * LINKS.signIn is set — no control points at a destination that doesn't exist
+ * (O11).
+ */
+import { DEVELOPER_NAV, isActive } from "../../config/navigation";
+import { LINKS, SITE } from "../../config/site";
+import Logo from "../brand/Logo.astro";
+import ProductSwitcher from "../navigation/ProductSwitcher.astro";
+import SearchTrigger from "../navigation/SearchTrigger.astro";
+import ThemeToggle from "../navigation/ThemeToggle.astro";
+
+interface Props {
+  /** Selected product, when the page is product-scoped (e.g. /reference). */
+  productId?: string;
+  /** Shows the sidebar toggle on narrow viewports. */
+  hasSidebar?: boolean;
+}
+
+const { productId, hasSidebar = false } = Astro.props;
+const pathname = Astro.url.pathname;
+---
+
+<header
+  class="sticky top-0 z-header flex h-dev-header items-center gap-3 border-b border-rule bg-surface/92 px-4 backdrop-blur-md"
+>
+  {
+    hasSidebar && (
+      <button
+        type="button"
+        class="grid h-8 w-8 shrink-0 place-items-center rounded-md border border-rule text-ink-muted transition-colors hover:text-ink lg:hidden"
+        data-sidebar-toggle
+        aria-label="Show navigation"
+        aria-expanded="false"
+      >
+        <svg
+          class="h-4 w-4"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2"
+          stroke-linecap="round"
+          aria-hidden="true"
+        >
+          <path d="M3 6h18M3 12h18M3 18h18" />
+        </svg>
+      </button>
+    )
+  }
+
+  <Logo context="developers" size={24} />
+
+  <span class="hidden h-5 w-px shrink-0 bg-rule md:block" aria-hidden="true"></span>
+
+  <ProductSwitcher activeId={productId} class="hidden md:block" />
+
+  <nav class="ml-1 hidden items-center gap-0.5 lg:flex" aria-label="Developer">
+    {
+      DEVELOPER_NAV.map((item) => (
+        <a
+          href={item.href}
+          class:list={[
+            "rounded-md px-2.5 py-1.5 font-ui text-base transition-colors",
+            isActive(pathname, item)
+              ? "bg-surface-2 font-medium text-ink"
+              : "text-ink-muted hover:bg-surface-2 hover:text-ink",
+          ]}
+          aria-current={isActive(pathname, item) ? "page" : undefined}
+        >
+          {item.label}
+        </a>
+      ))
+    }
+  </nav>
+
+  <div class="ml-auto flex items-center gap-2">
+    <SearchTrigger class="w-auto md:min-w-[15rem]" />
+
+    {
+      LINKS.status && (
+        <a
+          href={LINKS.status}
+          class="hidden items-center gap-1.5 rounded-md px-2 py-1.5 font-ui text-base text-ink-muted transition-colors hover:text-ink lg:flex"
+        >
+          <span class="h-1.5 w-1.5 rounded-full bg-success" aria-hidden="true" />
+          Status
+        </a>
+      )
+    }
+
+    <a
+      href={LINKS.github}
+      class="hidden h-8 w-8 place-items-center rounded-md border border-rule text-ink-muted transition-colors hover:text-ink sm:grid"
+      aria-label={`${SITE.name} on GitHub`}
+      rel="noopener"
+    >
+      <svg class="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+        <path
+          d="M12 .3a12 12 0 0 0-3.8 23.4c.6.1.8-.3.8-.7v-2.6c-3.3.7-4-1.6-4-1.6-.6-1.4-1.4-1.8-1.4-1.8-1-.7 0-.7 0-.7 1.2 0 1.9 1.2 1.9 1.2 1 1.8 2.8 1.3 3.5 1 0-.8.4-1.3.7-1.6-2.7-.3-5.5-1.3-5.5-6 0-1.2.5-2.3 1.3-3.1-.2-.3-.6-1.6.1-3.2 0 0 1-.3 3.4 1.2a11.5 11.5 0 0 1 6 0C17.4 4.4 18.4 4.7 18.4 4.7c.7 1.6.3 2.9.1 3.2a4.5 4.5 0 0 1 1.3 3.1c0 4.7-2.9 5.7-5.6 6 .5.4.9 1.1.9 2.2v3.3c0 .4.2.8.8.7A12 12 0 0 0 12 .3Z"
+        ></path>
+      </svg>
+    </a>
+
+    <ThemeToggle />
+
+    {
+      LINKS.signIn && (
+        <a
+          href={LINKS.signIn}
+          class="hidden rounded-md px-2.5 py-1.5 font-ui text-base font-medium text-ink-muted transition-colors hover:text-ink sm:block"
+        >
+          Sign in
+        </a>
+      )
+    }
+  </div>
+</header>

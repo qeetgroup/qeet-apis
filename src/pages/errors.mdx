@@ -5,6 +5,8 @@ eyebrow: Core concepts
 description: The canonical Qeet error envelope, HTTP status codes, and how rate limiting works.
 ---
 
+import Callout from "../components/docs/Callout.astro";
+
 Every Qeet API returns a single, predictable error shape and standard HTTP
 status codes, so you can handle failures the same way across products.
 
@@ -31,8 +33,9 @@ Errors are returned as JSON under a top-level `error` object
 | `detail` | string | Optional extra context (may be omitted). |
 | `request_id` | string | Correlates with the `X-Request-Id` response header — quote it in support requests. |
 
-> Always switch on `error.code`, never on `message` — messages may be reworded,
-> codes are stable.
+<Callout variant="tip" title="Switch on the code, not the message">
+`error.code` is stable; `message` may be reworded at any time.
+</Callout>
 
 ## HTTP status codes
 

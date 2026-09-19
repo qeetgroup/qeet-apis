@@ -1,0 +1,93 @@
+---
+/**
+ * Admonition for the guide pages.
+ *
+ * The repo had no callout primitive at all — MDX used `>` blockquotes as a
+ * de-facto one, which gave every aside the same weight regardless of whether
+ * it was a tip or a security warning.
+ *
+ * State is never carried by colour alone (§19): each variant has a label and an
+ * icon as well as a tint.
+ */
+import type { LucideIconName } from "../../types/icon";
+import Icon from "../shared/Icon.astro";
+
+type Variant = "note" | "tip" | "warning" | "danger";
+
+interface Props {
+  variant?: Variant;
+  /** Overrides the default label, e.g. "Rate limits". */
+  title?: string;
+}
+
+const { variant = "note", title } = Astro.props;
+
+const VARIANTS: Record<
+  Variant,
+  { label: string; icon: LucideIconName; accent: string; tint: string }
+> = {
+  note: {
+    label: "Note",
+    icon: "book",
+    accent: "border-l-info text-info",
+    tint: "bg-info/5",
+  },
+  tip: {
+    label: "Tip",
+    icon: "sparkles",
+    accent: "border-l-success text-success",
+    tint: "bg-success/5",
+  },
+  warning: {
+    label: "Warning",
+    icon: "alert",
+    accent: "border-l-warning text-warning",
+    tint: "bg-warning/5",
+  },
+  danger: {
+    label: "Important",
+    icon: "shield",
+    accent: "border-l-danger text-danger",
+    tint: "bg-danger/5",
+  },
+};
+
+const { label, icon, accent, tint } = VARIANTS[variant];
+---
+
+<aside
+  class:list={[
+    "not-prose my-6 rounded-r-md border border-l-2 border-rule px-4 py-3.5",
+    accent,
+    tint,
+  ]}
+  role="note"
+  aria-label={title ?? label}
+>
+  <p class:list={["mb-1.5 flex items-center gap-1.5 font-ui text-xs font-semibold", accent]}>
+    <Icon name={icon} class="h-3.5 w-3.5" />
+    {title ?? label}
+  </p>
+  <div class="callout-body text-md leading-relaxed text-ink-muted">
+    <slot />
+  </div>
+</aside>
+
+<style>
+  /* MDX wraps callout content in <p>; strip the outer margins so the box hugs
+     its text, but keep spacing between multiple paragraphs. */
+  .callout-body :global(p) {
+    margin: 0;
+  }
+  .callout-body :global(p + p) {
+    margin-top: 0.65rem;
+  }
+  .callout-body :global(code) {
+    font-family: var(--font-mono);
+    font-size: 0.86em;
+    background: var(--surface-2);
+    border: 1px solid var(--rule);
+    padding: 0.1rem 0.36rem;
+    border-radius: var(--radius-xs);
+  }
+</style>

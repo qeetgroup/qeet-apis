@@ -5,8 +5,9 @@ eyebrow: Get started
 description: Go from zero to your first authenticated Qeet API call in under a minute.
 ---
 
-import CodeTabs from "../components/CodeTabs.astro";
-import EnvTable from "../components/EnvTable.astro";
+import CodeTabs from "../components/docs/CodeTabs.astro";
+import EnvTable from "../components/api/EnvTable.astro";
+import Callout from "../components/docs/Callout.astro";
 
 export const firstRequest = [
   { label: "cURL", lang: "bash", code: `curl https://api.id.qeet.in/v1/auth/me \\
@@ -60,16 +61,17 @@ API keys are issued per product from the **Qeet console**. Open the console,
 choose the product (Qeet ID, Qeet Notify, …), and create a key scoped to what
 your integration needs.
 
-> Keep secret keys server-side. Never embed a live key in client-side code, a
-> public repo, or a mobile app bundle.
+<Callout variant="danger" title="Keep secret keys server-side">
+Never embed a live key in client-side code, a public repo, or a mobile app bundle.
+</Callout>
 
 [Open the console →](https://id.qeet.in)
 
 ## 2. Pick an environment
 
-Every API runs in three environments. Use **Local** while developing against
-the Docker Compose stack, **Staging** to integrate, and **Production** to ship.
-Switch environments inside the reference's per-request **Servers** dropdown.
+Every product answers on one canonical production host. Pick the base URL for
+the product you are calling, and switch hosts in the reference's per-request
+**Servers** dropdown.
 
 <EnvTable />
 
