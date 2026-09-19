@@ -126,6 +126,13 @@ jobs:
           GH_TOKEN: ${{ secrets.REPO_ADMIN_TOKEN }}
         run: |
           set -euo pipefail
+
+          # Fail with a readable message rather than a raw 401 from gh.
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::error::REPO_ADMIN_TOKEN is not set. Add a fine-grained PAT with 'Administration: read and write' (GITHUB_TOKEN cannot change visibility). The repository was NOT made public and nothing was deployed."
+            exit 1
+          fi
+
           echo "opened_at=$(date -u +%s)" >> "$GITHUB_OUTPUT"
           gh api -X PATCH "repos/${GITHUB_REPOSITORY}" -F private=false >/dev/null
           echo "::warning::Repository is PUBLIC. Closing as soon as the deployment settles."
@@ -135,6 +142,10 @@ jobs:
           HOOK: ${{ secrets.VERCEL_DEPLOY_HOOK }}
         run: |
           set -euo pipefail
+          if [ -z "${HOOK:-}" ]; then
+            echo "::error::VERCEL_DEPLOY_HOOK is not set — cannot trigger a deployment."
+            exit 1
+          fi
           # Vercel clones from GitHub for a Git-integration deploy, which is the
           # only reason the repo needs to be public at all.
           code=$(curl -sS -o /tmp/hook.json -w '%{http_code}' -X POST "$HOOK")

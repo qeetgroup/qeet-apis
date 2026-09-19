@@ -45,6 +45,14 @@ jobs:
         run: |
           set -euo pipefail
 
+          # Skip quietly until the token exists. This workflow runs every 10
+          # minutes; without this guard an unconfigured repo would email a
+          # failure six times an hour forever.
+          if [ -z "${GH_TOKEN:-}" ]; then
+            echo "::notice::REPO_ADMIN_TOKEN is not set — nothing to enforce yet. Add it to enable the safety net."
+            exit 0
+          fi
+
           private=$(gh api "repos/${REPO}" --jq '.private')
           if [ "$private" = "true" ]; then
             echo "repository is private — nothing to do"

@@ -48,7 +48,12 @@ jobs:
           npm i -g agent-browser
           agent-browser install --with-deps
 
+      # Non-blocking for now: this is the first run on a GitHub runner and the
+      # headless-browser install has not been proven there. Flip it to blocking
+      # once it has passed a few times — a check that can never fail is only
+      # worth keeping if it is on a path to becoming real.
       - name: Browser smoke tests
+        continue-on-error: true
         run: |
           bun run preview &
           npx --yes wait-on http://localhost:3005/reference/ --timeout 60000
