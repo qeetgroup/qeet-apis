@@ -85,26 +85,41 @@ const SCALAR_VERSION = "1.69.1";
 export const SCALAR_CDN = `https://cdn.jsdelivr.net/npm/@scalar/api-reference@${SCALAR_VERSION}`;
 
 /**
- * Same-origin proxy for the API client's Send button — **on by default**.
+ * How the API client's Send button reaches an API — chosen automatically by
+ * where the portal is running, because the right answer genuinely differs.
  *
- * Needed because no Qeet service sends `Access-Control-Allow-Origin`, local
- * ones included. Verified: `http://localhost:4001/healthz` answers 200 to curl
- * and "Failed to fetch" to a browser on the same machine. Without the proxy,
- * Send cannot work at all.
+ *   local build  → `/api/proxy`   (server-side proxy; shares a machine with
+ *                                  your stack, so it can reach localhost and
+ *                                  needs no change to any service)
+ *   Vercel build → direct         (the proxy would resolve `localhost` to the
+ *                                  function's own loopback, which can never
+ *                                  work — so the browser calls your machine
+ *                                  itself)
  *
- * This is why the portal is meant to be **run locally** alongside your stack
- * (`bun run dev`): the proxy is server-side, so it shares a machine with your
- * API and can reach `localhost`. On a *deployed* instance the proxy runs
- * elsewhere and cannot see your machine — for Try It to work there, the local
- * service has to allow the portal's origin, which is the real fix regardless.
+ * The deployed/direct path needs the local service to allow the portal's
+ * origin. For the Go services that is one environment variable — they already
+ * run `go-chi/cors`:
  *
- * Set `PUBLIC_QEET_PROXY_URL=` (empty) to bypass it and call APIs directly —
- * useful once a service does send CORS headers, and to see the raw error.
+ *     ALLOWED_ORIGINS=https://api.qeet.in,http://localhost:3005
+ *
+ * Verified: a browser page calling a loopback API without CORS fails with
+ * "Failed to fetch" while curl gets 200; with those headers present it gets
+ * 200 too.
+ *
+ * Override with `PUBLIC_QEET_PROXY_URL`. You will want
+ * `PUBLIC_QEET_PROXY_URL=/api/proxy` on the deployed build if a *remote*
+ * environment is ever added to `envs()`, since the Qeet APIs send no CORS
+ * headers and the server can reach a remote host just fine.
  *
  * Deliberately never Scalar's hosted proxy (`proxy.scalar.com`): these
  * requests carry live API keys, which must not transit a third party.
  */
-const PROXY_URL = import.meta.env.PUBLIC_QEET_PROXY_URL ?? "/api/proxy";
+const BUILT_ON_VERCEL =
+  (typeof process !== "undefined" && process.env?.VERCEL === "1") ||
+  import.meta.env.VERCEL === "1";
+
+const PROXY_URL =
+  import.meta.env.PUBLIC_QEET_PROXY_URL ?? (BUILT_ON_VERCEL ? "" : "/api/proxy");
 
 const BASE_CONFIG = {
   cdn: SCALAR_CDN,
