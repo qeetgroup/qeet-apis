@@ -1,41 +1,30 @@
 name: deploy
 
-# Deploys the developer portal to Vercel through the Vercel CLI rather than
-# Vercel's Git integration.
+# Same shape as qeet-id-website / qeet-id-server / qeet-id-console: every merge
+# to main gates, deploys, then tags. The tag is pushed only after Vercel reports
+# success, so a tag always corresponds to a version that is actually live and a
+# failed deploy leaves no tag behind.
 #
-# ── Why the CLI, not the Git integration ───────────────────────────────────
-# Vercel's Hobby plan cannot connect to a private *organization* repository.
-# This workflow sidesteps that entirely: Vercel is never linked to GitHub. The
-# Action checks the code out, builds it, and uploads the finished output. The
-# repository stays private the whole time.
+# Tagging last also avoids a trap: GitHub raises no workflow events for anything
+# done with the default GITHUB_TOKEN, so a tag pushed by a workflow cannot
+# trigger a separate `on: push: tags` deploy — it would silently never run.
 #
-# That also means the repo must NOT be flipped public to deploy. Making a
-# public repo private again does not undo the exposure — GitHub splits existing
-# public forks into a separate network, so any fork taken during the window
-# stays public forever, and public push events are archived within seconds.
+# ── Required configuration ────────────────────────────────────────────────
+# Settings → Secrets and variables → Actions
 #
-# ── Required configuration ─────────────────────────────────────────────────
-# Repository → Settings → Secrets and variables → Actions
+#   Secret    VERCEL_TOKEN       Vercel → Account Settings → Tokens, scoped to
+#                                the "Qeet Group" team
+#   Variable  VERCEL_ORG_ID      from `vercel link` (.vercel/project.json)
+#   Variable  VERCEL_PROJECT_ID  same file
 #
-#   Secret    VERCEL_TOKEN        Account Settings → Tokens (scope it to the
-#                                 team that owns this project)
-#   Variable  VERCEL_ORG_ID       from .vercel/project.json after `vercel link`
-#   Variable  VERCEL_PROJECT_ID   same file
-#
-# Get the two ids once, locally:
-#   npx vercel link          # creates .vercel/project.json (gitignored)
-#   cat .vercel/project.json
-#
-# ── A note on plans ────────────────────────────────────────────────────────
-# Hobby is licensed for non-commercial use. This route is the right fix for the
-# private-repo restriction, but a company portal on a paid plan is the
-# straightforward answer if the account is ever reviewed.
+# The CLI builds here and uploads the finished output, so it never clones the
+# repository — which is why this works regardless of the repo's visibility, and
+# why the deployment is pinned to this exact commit rather than to whatever sits
+# at the head of a branch.
 
-# Manual only. `deploy-public-window.yml` is the workflow wired to `push`, by
-# choice — this one is kept as the alternative that never exposes the repo, so
-# both stay available without double-deploying. Swap the triggers to make this
-# the default.
 on:
+  push:
+    branches: [main] # every merge to main gates, deploys, then tags
   workflow_dispatch:
     inputs:
       bump:
@@ -49,11 +38,12 @@ concurrency:
   cancel-in-progress: false
 
 permissions:
-  contents: write # push the version tag and create the release after deploying
+  contents: write # push the version tag after a successful deploy
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 25
     environment:
       name: production
       url: https://api.qeet.in
@@ -63,7 +53,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0 # full history, so the latest v* tag is visible
+          fetch-depth: 0 # full history to find the latest tag
 
       - name: Determine next version
         id: version
@@ -72,6 +62,8 @@ jobs:
           # script body anyway so the run block never interpolates input.
           BUMP: ${{ inputs.bump || 'patch' }}
         run: |
+          # --sort=-version:refname orders numerically, so v0.0.10 comes after
+          # v0.0.9 rather than sorting before it.
           latest=$(git tag --list 'v*' --sort=-version:refname | head -1)
           latest=${latest:-v0.0.0}
           IFS='.' read -r major minor patch <<< "${latest#v}"
@@ -90,15 +82,17 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      # Gate the deploy on the same checks CI runs. Structural spec errors fail
-      # here; documentation-quality gaps only report (see scripts/validate-specs.mjs).
+      # Fast gate: don't ship code that fails spec validation, typecheck, lint
+      # or unit tests. Structural spec errors fail here; documentation-quality
+      # gaps only report (see scripts/validate-specs.mjs — Qeet Pay's missing
+      # prose is upstream debt tracked in qeet-pay-server).
       - name: Validate OpenAPI specs
         run: bun run validate:specs
 
       - name: Typecheck
         run: bun run typecheck
 
-      - name: Lint
+      - name: Lint (Biome)
         run: bun run lint
 
       - name: Unit tests
@@ -110,24 +104,23 @@ jobs:
       - name: Pull production environment
         run: vercel pull --yes --environment=production --token="${{ secrets.VERCEL_TOKEN }}"
 
-      # Runs `buildCommand` from vercel.json (`bun run build`), which emits the
-      # Build Output API to .vercel/output via @astrojs/vercel. `VERCEL=1` is
-      # set by the CLI, which is what makes the built portal call APIs directly
+      # Runs `installCommand` + `buildCommand` from vercel.json (both bun), and
+      # @astrojs/vercel emits the Build Output API to .vercel/output. The CLI
+      # sets VERCEL=1, which is what makes the built portal call APIs directly
       # instead of through its server-side proxy — see src/config/scalar.ts.
       - name: Build
         run: vercel build --prod --token="${{ secrets.VERCEL_TOKEN }}"
 
-      - name: Deploy
+      - name: Deploy to Vercel
         run: vercel deploy --prebuilt --prod --token="${{ secrets.VERCEL_TOKEN }}"
 
-      # Tag + release only after a successful deploy, so every tag corresponds
-      # to a live deployed version. Same convention as the other Qeet repos.
+      # Tag + release AFTER a successful deploy so every tag == a live deployed
+      # version. Matches qeet-id-website / qeet-id-server deploy.yml.
       - name: Push version tag and create GitHub release
         env:
           VERSION: ${{ steps.version.outputs.tag }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          set -euo pipefail
           git config user.name  "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git tag "$VERSION"
@@ -135,5 +128,4 @@ jobs:
           gh release create "$VERSION" \
             --title "$VERSION" \
             --generate-notes \
-            --repo "${GITHUB_REPOSITORY}"
-          echo "released $VERSION"
+            --repo "${{ github.repository }}"
