@@ -1,0 +1,54 @@
+---
+/**
+ * The developer workspace shell: compact 64px header, content, slim footer.
+ *
+ * Everything under `/reference`, `/quickstart`, `/authentication`, `/errors`,
+ * `/sdks` and `/changelog` sits inside this. DocsLayout and ReferenceLayout
+ * both wrap it rather than re-implementing the chrome.
+ */
+import BaseLayout from "./BaseLayout.astro";
+import DeveloperFooter from "../components/layout/DeveloperFooter.astro";
+import DeveloperHeader from "../components/layout/DeveloperHeader.astro";
+import CommandPalette from "../components/navigation/CommandPalette.astro";
+
+interface Props {
+  title?: string;
+  section?: string;
+  description?: string;
+  ogImage?: string;
+  type?: "website" | "article";
+  /** Product scope for the switcher, e.g. "qeet-id". */
+  productId?: string;
+  /** The page owns a left sidebar, so the header shows its mobile toggle. */
+  hasSidebar?: boolean;
+  /** Reference runs full-height and renders no footer. */
+  showFooter?: boolean;
+  bodyClass?: string;
+}
+
+const {
+  title,
+  section,
+  description,
+  ogImage,
+  type,
+  productId,
+  hasSidebar = false,
+  showFooter = true,
+  bodyClass,
+} = Astro.props;
+---
+
+<BaseLayout
+  title={title}
+  section={section}
+  description={description}
+  ogImage={ogImage}
+  type={type}
+  bodyClass={bodyClass}
+>
+  <DeveloperHeader productId={productId} hasSidebar={hasSidebar} />
+  <slot />
+  {showFooter && <DeveloperFooter />}
+  <CommandPalette />
+</BaseLayout>

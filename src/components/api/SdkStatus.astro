@@ -1,0 +1,68 @@
+---
+/**
+ * SDK availability, straight from the typed product config.
+ *
+ * `published` is verified against the registry, not assumed from the repo
+ * existing: as of 2026-09-19 every Qeet SDK package returns 404 from
+ * registry.npmjs.org. So this renders a repository link and an explicit status
+ * instead of an install command — a copy-pasteable `npm i` that 404s is worse
+ * than no SDK section at all, and it is the same mistake as documenting an SDK
+ * that was never built.
+ *
+ * Flip `published: true` in src/config/products.ts once a package ships and an
+ * install command appears automatically.
+ */
+import { PRODUCTS } from "../../config/products";
+
+const rows = PRODUCTS.flatMap((product) =>
+  (product.sdk ?? []).map((sdk) => ({ product: product.name, ...sdk })),
+);
+
+const th =
+  "border-b border-rule bg-surface-2 px-4 py-2.5 text-left font-ui text-xs font-semibold uppercase tracking-wider text-ink-faint";
+const td = "px-4 py-2.5 align-top";
+---
+
+<div class="not-prose overflow-x-auto rounded-md border border-rule">
+  <table class="w-full border-collapse text-base">
+    <thead>
+      <tr>
+        <th class={th}>Product</th>
+        <th class={th}>Package</th>
+        <th class={th}>Platform</th>
+        <th class={th}>Status</th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-rule">
+      {
+        rows.map((row) => (
+          <tr>
+            <td class={`${td} font-ui text-ink`}>{row.product}</td>
+            <td class={td}>
+              <code class="font-mono text-sm text-brand-deep">{row.packageName}</code>
+            </td>
+            <td class={`${td} font-ui text-ink-muted`}>{row.platform}</td>
+            <td class={td}>
+              {row.published ? (
+                <code class="font-mono text-sm text-ink-muted">{row.install}</code>
+              ) : (
+                <span class="flex items-center gap-2 font-ui text-base text-ink-subtle">
+                  <span
+                    class="h-1.5 w-1.5 rounded-full bg-warning"
+                    aria-hidden="true"
+                  />
+                  In development
+                  {row.repo && (
+                    <a href={row.repo} rel="noopener" class="text-brand-deep hover:underline">
+                      source
+                    </a>
+                  )}
+                </span>
+              )}
+            </td>
+          </tr>
+        ))
+      }
+    </tbody>
+  </table>
+</div>

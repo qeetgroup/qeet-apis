@@ -1,0 +1,150 @@
+---
+// Thin wrapper that maps a `name` prop to a @lucide/astro component.
+// GitHub is kept as a custom inline SVG (Lucide doesn't include brand icons).
+import { siGithub } from "simple-icons";
+import type { IconName, LucideIconName } from "../../types/icon";
+import Activity from "@lucide/astro/icons/activity";
+import AlertTriangle from "@lucide/astro/icons/triangle-alert";
+import ArrowRight from "@lucide/astro/icons/arrow-right";
+import ArrowUpRight from "@lucide/astro/icons/arrow-up-right";
+import Bell from "@lucide/astro/icons/bell";
+import Book from "@lucide/astro/icons/book";
+import Bolt from "@lucide/astro/icons/bolt";
+import Check from "@lucide/astro/icons/check";
+import ChevronDown from "@lucide/astro/icons/chevron-down";
+import Code from "@lucide/astro/icons/code";
+import Copy from "@lucide/astro/icons/copy";
+import CreditCard from "@lucide/astro/icons/credit-card";
+import ExternalLink from "@lucide/astro/icons/external-link";
+import Fingerprint from "@lucide/astro/icons/fingerprint-pattern";
+import Gauge from "@lucide/astro/icons/gauge";
+import Globe from "@lucide/astro/icons/globe";
+import History from "@lucide/astro/icons/history";
+import Key from "@lucide/astro/icons/key";
+import Layers from "@lucide/astro/icons/layers";
+import Lock from "@lucide/astro/icons/lock";
+import Menu from "@lucide/astro/icons/menu";
+import Moon from "@lucide/astro/icons/moon";
+import Newspaper from "@lucide/astro/icons/newspaper";
+import Search from "@lucide/astro/icons/search";
+import Shield from "@lucide/astro/icons/shield";
+import Sparkles from "@lucide/astro/icons/sparkles";
+import Sun from "@lucide/astro/icons/sun";
+import Terminal from "@lucide/astro/icons/terminal";
+import Users from "@lucide/astro/icons/users";
+import Webhook from "@lucide/astro/icons/webhook";
+import X from "@lucide/astro/icons/x";
+import Zap from "@lucide/astro/icons/zap";
+// Added for the platform capability sections on the homepage.
+import GitBranch from "@lucide/astro/icons/git-branch";
+import ChartColumn from "@lucide/astro/icons/chart-column";
+import TrendingUp from "@lucide/astro/icons/trending-up";
+import Download from "@lucide/astro/icons/download";
+import Server from "@lucide/astro/icons/server";
+import Clock from "@lucide/astro/icons/clock";
+import RefreshCw from "@lucide/astro/icons/refresh-cw";
+import Command from "@lucide/astro/icons/command";
+import Play from "@lucide/astro/icons/play";
+import CircleCheck from "@lucide/astro/icons/circle-check";
+import Plus from "@lucide/astro/icons/plus";
+import Package from "@lucide/astro/icons/package";
+import Send from "@lucide/astro/icons/send";
+import Rocket from "@lucide/astro/icons/rocket";
+import Braces from "@lucide/astro/icons/braces";
+import UserPlus from "@lucide/astro/icons/user-plus";
+import Workflow from "@lucide/astro/icons/workflow";
+import Radio from "@lucide/astro/icons/radio";
+import Building2 from "@lucide/astro/icons/building-2";
+import Scale from "@lucide/astro/icons/scale";
+import Waypoints from "@lucide/astro/icons/waypoints";
+import MessageSquare from "@lucide/astro/icons/message-square";
+import Cpu from "@lucide/astro/icons/cpu";
+import Database from "@lucide/astro/icons/database";
+import Blocks from "@lucide/astro/icons/blocks";
+
+const ICONS = {
+  "activity": Activity,
+  "alert": AlertTriangle,
+  "arrow-right": ArrowRight,
+  "arrow-up-right": ArrowUpRight,
+  "bell": Bell,
+  "bolt": Bolt,
+  "book": Book,
+  "check": Check,
+  "chevron-down": ChevronDown,
+  "code": Code,
+  "copy": Copy,
+  "credit-card": CreditCard,
+  "external-link": ExternalLink,
+  "fingerprint": Fingerprint,
+  "gauge": Gauge,
+  "globe": Globe,
+  "history": History,
+  "key": Key,
+  "layers": Layers,
+  "lock": Lock,
+  "menu": Menu,
+  "moon": Moon,
+  "newspaper": Newspaper,
+  "search": Search,
+  "shield": Shield,
+  "sparkles": Sparkles,
+  "sun": Sun,
+  "terminal": Terminal,
+  "users": Users,
+  "webhook": Webhook,
+  "x": X,
+  "zap": Zap,
+  "git-branch": GitBranch,
+  "chart-column": ChartColumn,
+  "trending-up": TrendingUp,
+  "download": Download,
+  "server": Server,
+  "clock": Clock,
+  "refresh-cw": RefreshCw,
+  "command": Command,
+  "play": Play,
+  "circle-check": CircleCheck,
+  "plus": Plus,
+  "package": Package,
+  "send": Send,
+  "rocket": Rocket,
+  "braces": Braces,
+  "user-plus": UserPlus,
+  "workflow": Workflow,
+  "radio": Radio,
+  "building-2": Building2,
+  "scale": Scale,
+  "waypoints": Waypoints,
+  "message-square": MessageSquare,
+  "cpu": Cpu,
+  "database": Database,
+  "blocks": Blocks,
+} as const satisfies Record<LucideIconName, unknown>;
+
+interface Props {
+  name: IconName;
+  class?: string;
+  id?: string;
+}
+
+const { name, class: className, id, ...rest } = Astro.props;
+---
+
+{name === "github" ? (
+  <svg
+    class={className}
+    id={id}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    {...rest}
+  >
+    <path d={siGithub.path} />
+  </svg>
+) : (
+  (() => {
+    const Component = ICONS[name as keyof typeof ICONS];
+    return <Component class={className} id={id} aria-hidden="true" {...rest} />;
+  })()
+)}

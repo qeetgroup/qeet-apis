@@ -1,0 +1,1586 @@
+openapi: 3.1.0
+info:
+  title: Qeet Notify — Operations API
+  version: 1.0.0
+  description: |-
+    Qeet Notify — multi-channel transactional notification platform.
+
+    Authentication: pass your API key in the `X-Qeet-Api-Key` header (scopes: `full` all · `read` GET-only · `send` POST /v1/events only).
+
+    Delivery analytics, audit log, API keys, and health.
+servers:
+  - url: https://api.notify.qeet.in
+    description: Production
+  - url: https://api.notify.staging.qeet.in
+    description: Staging
+  - url: http://localhost:8080
+    description: Local
+security:
+  - API-Key: []
+tags:
+  - name: Analytics
+    description: Per-tenant delivery funnel metrics.
+  - name: Audit
+    description: Append-only audit log query.
+  - name: APIKeys
+    description: Scoped API key lifecycle.
+  - name: Batching
+    description: Batching, digest & throttling rules (Module 16).
+  - name: Billing
+    description: Usage metering, plans & quotas (Module 43).
+  - name: Broadcasts
+    description: Bulk & broadcast sending to a list or segment (Module 19).
+  - name: Environments
+    description: Environments & change management — promotion + history (Module 44).
+  - name: Health
+    description: Liveness and readiness.
+paths:
+  /healthz:
+    get:
+      summary: Liveness
+      operationId: get_healthz
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Alive
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /readyz:
+    get:
+      summary: Readiness
+      operationId: get_readyz
+      tags:
+        - Health
+      security: []
+      responses:
+        '200':
+          description: Ready
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthStatus'
+  /v1/analytics/delivery:
+    get:
+      summary: Delivery analytics (funnel totals)
+      description: Aggregate delivery funnel totals for the authenticated tenant, counted from delivery_events by event type. Takes no query parameters.
+      operationId: get_v1_analytics_delivery
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Aggregate delivery funnel totals
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AnalyticsFunnel'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/api-keys:
+    get:
+      summary: List API keys
+      operationId: get_v1_api_keys
+      tags:
+        - APIKeys
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: API key list (hashed values only — raw key shown once on creation)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - api_keys
+                properties:
+                  api_keys:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ApiKey'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create API key
+      operationId: post_v1_api_keys
+      tags:
+        - APIKeys
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+              properties:
+                name:
+                  type: string
+                scope:
+                  type: string
+                  enum:
+                    - full
+                    - read
+                    - send
+                  default: full
+                  description: |
+                    full = all endpoints; read = GET only; send = POST /v1/events only. Defaults to full when omitted.
+      responses:
+        '201':
+          description: Created — raw key returned ONCE; store it securely
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiKeyCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/api-keys/{id}:
+    delete:
+      summary: Revoke API key
+      operationId: delete_v1_api_keys_ById
+      tags:
+        - APIKeys
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/audit-logs:
+    get:
+      summary: List audit log entries
+      description: Paginated, newest-first audit trail for the authenticated tenant. Filterable by action, resource_type, actor_id, and a from/to time range.
+      operationId: get_v1_audit_logs
+      tags:
+        - Audit
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: action
+          schema:
+            type: string
+        - in: query
+          name: resource_type
+          schema:
+            type: string
+        - in: query
+          name: actor_id
+          schema:
+            type: string
+        - in: query
+          name: from
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: to
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Paginated audit log
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - logs
+                  - total
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLog'
+                  total:
+                    type: integer
+                    format: int64
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analytics/engagement:
+    get:
+      summary: Per-channel engagement rates & scores
+      description: Open/click/delivery rates and a 0–100 engagement score per channel (Module 28.1/28.2), derived from delivery_events. Optional ?since filter.
+      operationId: get_v1_analytics_engagement
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Per-channel engagement
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - channels
+                properties:
+                  channels:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EngagementRow'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analytics/engagement/subscribers/{subscriberID}:
+    get:
+      summary: Per-subscriber engagement score
+      operationId: get_v1_analytics_engagement_subscriber
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Per-channel engagement scores for the subscriber
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - subscriber_id
+                  - channels
+                properties:
+                  subscriber_id:
+                    type: string
+                    format: uuid
+                  channels:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        channel:
+                          type: string
+                        engagement_score:
+                          type: integer
+                        opened:
+                          type: integer
+                        clicked:
+                          type: integer
+                        sent:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/analytics/quality:
+    get:
+      summary: Per-template quality score
+      description: A 0–100 composite per template blending open/click rates against spam-complaint and bounce penalties (Module 28.4).
+      operationId: get_v1_analytics_quality
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Per-template quality scores
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - templates
+                properties:
+                  templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/TemplateQuality'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/usage:
+    get:
+      summary: Current usage & quota
+      description: Current calendar-month usage (billable messages by channel, plus per-workflow-run count), the tenant's plan, and the quota assessment (Module 43.1/43.2). Metering is derived from stored notifications/runs, so it is idempotent.
+      operationId: get_v1_usage
+      tags:
+        - Billing
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Usage snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UsageSummary'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/usage/daily:
+    get:
+      summary: Export daily usage records
+      operationId: get_v1_usage_daily
+      tags:
+        - Billing
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: until
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Per-day, per-channel billable counts
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - records
+                properties:
+                  records:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        day:
+                          type: string
+                          example: '2026-07-16'
+                        channel:
+                          type: string
+                        count:
+                          type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/billing/plan:
+    get:
+      summary: Get the tenant's plan
+      operationId: get_v1_billing_plan
+      tags:
+        - Billing
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Effective plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingPlan'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      summary: Set the tenant's plan
+      operationId: put_v1_billing_plan
+      tags:
+        - Billing
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - plan
+              properties:
+                plan:
+                  type: string
+                  enum:
+                    - free
+                    - starter
+                    - growth
+                    - scale
+                    - enterprise
+                monthly_quota:
+                  type: integer
+                  nullable: true
+                  description: Override the tier default (0 = unlimited).
+                overage_allowed:
+                  type: boolean
+                  nullable: true
+      responses:
+        '200':
+          description: Updated plan
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BillingPlan'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/environments:
+    get:
+      summary: List environments
+      operationId: get_v1_environments
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Environment registry
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - environments
+                properties:
+                  environments:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Environment'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create/register an environment
+      operationId: post_v1_environments
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - slug
+              properties:
+                slug:
+                  type: string
+                  example: staging
+                  description: Lowercase alphanumeric/hyphen, 1–40 chars.
+                name:
+                  type: string
+                  description: Defaults to the slug when omitted.
+                is_default:
+                  type: boolean
+      responses:
+        '201':
+          description: Created (idempotent upsert on slug)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - slug
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  slug:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/environments/changes:
+    get:
+      summary: Promotion / change history
+      operationId: get_v1_environments_changes
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: environment
+          schema:
+            type: string
+          description: Filter to promotions targeting this environment.
+      responses:
+        '200':
+          description: Change history (newest first, max 200)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - changes
+                properties:
+                  changes:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/EnvironmentChange'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/environments/promote:
+    post:
+      summary: Promote a template or workflow between environments
+      description: Copies the resource into the target environment (upsert) and records a change-history entry. Only the production environment executes at runtime, so promoting into production makes a change live.
+      operationId: post_v1_environments_promote
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - resource_type
+                - resource_id
+                - to_environment
+              properties:
+                resource_type:
+                  type: string
+                  enum:
+                    - template
+                    - workflow
+                resource_id:
+                  type: string
+                  format: uuid
+                to_environment:
+                  type: string
+                  example: production
+      responses:
+        '200':
+          description: Promoted
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - resource_type
+                  - resource_id
+                  - to_environment
+                properties:
+                  resource_type:
+                    type: string
+                    enum:
+                      - template
+                      - workflow
+                  resource_id:
+                    type: string
+                    format: uuid
+                    description: The id of the resource copy created in the target environment.
+                  from_environment:
+                    type: string
+                  to_environment:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/environments/{slug}:
+    delete:
+      summary: Delete an environment from the registry
+      operationId: delete_v1_environments_BySlug
+      tags:
+        - Environments
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: slug
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/broadcasts:
+    get:
+      summary: List broadcasts
+      operationId: get_v1_broadcasts
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Broadcast list (with progress)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - broadcasts
+                properties:
+                  broadcasts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Broadcast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a draft broadcast
+      operationId: post_v1_broadcasts
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastRequest'
+      responses:
+        '201':
+          description: Created (draft)
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: draft
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/broadcasts/preview:
+    post:
+      summary: Dry-run recipient count
+      description: Counts recipients for an audience and how many have globally opted out. Channel-specific suppression and NDNC are enforced per send.
+      operationId: post_v1_broadcasts_preview
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                audience:
+                  $ref: '#/components/schemas/BroadcastAudience'
+      responses:
+        '200':
+          description: Recipient counts
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - recipients
+                  - opted_out
+                  - deliverable
+                properties:
+                  recipients:
+                    type: integer
+                  opted_out:
+                    type: integer
+                  deliverable:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/broadcasts/{id}:
+    get:
+      summary: Get a broadcast (with progress)
+      operationId: get_v1_broadcasts_ById
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Broadcast
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Broadcast'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/broadcasts/{id}/send:
+    post:
+      summary: Queue a broadcast for fan-out
+      operationId: post_v1_broadcasts_ById_send
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Queued
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - status
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: queued
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/broadcasts/{id}/recipients:
+    post:
+      summary: Upload a recipient list (CSV)
+      description: Uploads a CSV / newline list of subscriber external IDs for a draft broadcast; the fan-out then targets those recipients instead of the audience filter. Body is raw text/csv or text/plain (optional `external_id` header row); blanks and duplicates are ignored. Body is capped at ~5 MB.
+      operationId: post_v1_broadcasts_ById_recipients
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema:
+              type: string
+              example: |
+                external_id
+                usr_001
+                usr_002
+      responses:
+        '200':
+          description: Recipients added
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - broadcast_id
+                  - recipients_added
+                properties:
+                  broadcast_id:
+                    type: string
+                    format: uuid
+                  recipients_added:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/broadcasts/{id}/cancel:
+    post:
+      summary: Cancel a broadcast
+      operationId: post_v1_broadcasts_ById_cancel
+      tags:
+        - Broadcasts
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Cancelled
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /v1/delivery-events:
+    get:
+      summary: Export delivery events
+      description: Unified, ordered per-tenant delivery lifecycle events (Module 26.3) for warehouse sync and auditing. Filterable by notification, event type, and time range.
+      operationId: get_v1_delivery_events
+      tags:
+        - Analytics
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: notification_id
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: event_type
+          schema:
+            type: string
+            example: delivered
+        - in: query
+          name: since
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: until
+          schema:
+            type: string
+            format: date-time
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            maximum: 1000
+        - in: query
+          name: offset
+          schema:
+            type: integer
+            default: 0
+      responses:
+        '200':
+          description: Delivery events
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - events
+                  - limit
+                  - offset
+                properties:
+                  events:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DeliveryEvent'
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/batching/rules:
+    get:
+      summary: List batching rules
+      operationId: get_v1_batching_rules
+      tags:
+        - Batching
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Batching rules
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - rules
+                properties:
+                  rules:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/BatchingRule'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create or upsert a batching rule
+      description: Idempotent on the (channel, category) pair — re-posting the same pair replaces the rule.
+      operationId: post_v1_batching_rules
+      tags:
+        - Batching
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchingRule'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                  - channel
+                  - category
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  channel:
+                    type: string
+                  category:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/batching/rules/{id}:
+    put:
+      summary: Update a batching rule
+      operationId: put_v1_batching_rules_ById
+      tags:
+        - Batching
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BatchingRule'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+    delete:
+      summary: Delete a batching rule
+      operationId: delete_v1_batching_rules_ById
+      tags:
+        - Batching
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    API-Key:
+      type: apiKey
+      in: header
+      name: X-Qeet-Api-Key
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required:
+        - error
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+          example: ok
+      required:
+        - status
+    PaginatedMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    AnalyticsFunnel:
+      type: object
+      description: Aggregate delivery funnel totals for the tenant, counted by delivery-event type.
+      properties:
+        queued:
+          type: integer
+          format: int64
+        sent:
+          type: integer
+          format: int64
+        delivered:
+          type: integer
+          format: int64
+        failed:
+          type: integer
+          format: int64
+        opened:
+          type: integer
+          format: int64
+    ApiKey:
+      type: object
+      description: A stored API key. The raw secret is never returned after creation.
+      required:
+        - id
+        - name
+        - prefix
+        - scope
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        prefix:
+          type: string
+          description: First 16 chars of the raw key ("qn_live_" + 8 hex) — safe to display.
+        scope:
+          type: string
+          enum:
+            - full
+            - read
+            - send
+        created_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+    ApiKeyCreated:
+      type: object
+      description: Returned once on creation — the raw key is stored only as a SHA-256 hash and is never retrievable again.
+      required:
+        - id
+        - key
+      properties:
+        id:
+          type: string
+          format: uuid
+        key:
+          type: string
+          description: Raw API key — shown ONCE. Store it securely; it cannot be recovered.
+        prefix:
+          type: string
+        scope:
+          type: string
+          enum:
+            - full
+            - read
+            - send
+        warning:
+          type: string
+    AuditLog:
+      type: object
+      required:
+        - id
+        - actor_type
+        - actor_id
+        - action
+        - resource_type
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        actor_type:
+          type: string
+          description: e.g. api_key or system.
+        actor_id:
+          type: string
+          description: Actor identifier (e.g. apikey:<fingerprint>).
+        action:
+          type: string
+        resource_type:
+          type: string
+        resource_id:
+          type: string
+          nullable: true
+        old_value:
+          type: object
+          additionalProperties: true
+          nullable: true
+        new_value:
+          type: object
+          additionalProperties: true
+          nullable: true
+        ip_address:
+          type: string
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+    Environment:
+      type: object
+      required:
+        - id
+        - slug
+        - name
+        - is_default
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        name:
+          type: string
+        is_default:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+    EnvironmentChange:
+      type: object
+      description: A promotion/change-history entry recorded when a resource is promoted.
+      required:
+        - id
+        - resource_type
+        - resource_id
+        - to_environment
+        - action
+        - created_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        resource_type:
+          type: string
+          enum:
+            - template
+            - workflow
+        resource_id:
+          type: string
+          format: uuid
+          description: The id of the resource copy created in the target environment.
+        source_resource_id:
+          type: string
+          format: uuid
+          nullable: true
+        from_environment:
+          type: string
+          nullable: true
+        to_environment:
+          type: string
+        action:
+          type: string
+        actor:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    BroadcastAudience:
+      type: object
+      description: Recipient selector. Empty = all active subscribers; external_ids targets a list; metadata targets a segment.
+      properties:
+        external_ids:
+          type: array
+          items:
+            type: string
+        metadata:
+          type: object
+          properties:
+            key:
+              type: string
+            value:
+              type: string
+    BroadcastRequest:
+      type: object
+      required:
+        - name
+        - event
+      properties:
+        name:
+          type: string
+        event:
+          type: string
+          description: Trigger event fired for each recipient (matched against workflows).
+        audience:
+          $ref: '#/components/schemas/BroadcastAudience'
+        payload:
+          type: object
+          additionalProperties: true
+    Broadcast:
+      type: object
+      required:
+        - id
+        - name
+        - event
+        - status
+        - sent_count
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        event:
+          type: string
+        audience:
+          $ref: '#/components/schemas/BroadcastAudience'
+        payload:
+          type: object
+          additionalProperties: true
+        status:
+          type: string
+          enum:
+            - draft
+            - queued
+            - running
+            - completed
+            - cancelled
+        total_recipients:
+          type: integer
+          nullable: true
+        sent_count:
+          type: integer
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    EngagementRow:
+      type: object
+      description: Per-channel engagement rates and a 0–100 score (Module 28.1/28.2).
+      properties:
+        channel:
+          type: string
+        sent:
+          type: integer
+        delivered:
+          type: integer
+        opened:
+          type: integer
+        clicked:
+          type: integer
+        delivery_rate:
+          type: number
+          format: float
+        open_rate:
+          type: number
+          format: float
+        click_rate:
+          type: number
+          format: float
+        engagement_score:
+          type: integer
+          description: 0–100 composite weighting clicks above opens.
+    TemplateQuality:
+      type: object
+      description: Per-template composite quality score (Module 28.4).
+      properties:
+        template_id:
+          type: string
+          format: uuid
+        sent:
+          type: integer
+        open_rate:
+          type: number
+          format: float
+        click_rate:
+          type: number
+          format: float
+        complaint_rate:
+          type: number
+          format: float
+        quality_score:
+          type: integer
+          description: 0–100; 50 baseline plus open/click bonuses minus complaint/bounce penalties.
+    DeliveryEvent:
+      type: object
+      description: A normalized delivery lifecycle event (Module 26.3).
+      required:
+        - id
+        - notification_id
+        - event_type
+        - occurred_at
+      properties:
+        id:
+          type: string
+          format: uuid
+        notification_id:
+          type: string
+          format: uuid
+        event_type:
+          type: string
+        provider:
+          type: string
+          nullable: true
+        occurred_at:
+          type: string
+          format: date-time
+    UsageSummary:
+      type: object
+      description: Current calendar-month usage, plan, and quota assessment (Module 43.1/43.2).
+      properties:
+        period:
+          type: object
+          properties:
+            start:
+              type: string
+              format: date-time
+            label:
+              type: string
+              description: Calendar month, e.g. "2026-07".
+        plan:
+          $ref: '#/components/schemas/BillingPlan'
+        usage:
+          type: object
+          properties:
+            messages_total:
+              type: integer
+            workflow_runs:
+              type: integer
+            by_channel:
+              type: object
+              additionalProperties:
+                type: integer
+        quota:
+          type: object
+          properties:
+            used:
+              type: integer
+            monthly_quota:
+              type: integer
+            status:
+              type: string
+              enum:
+                - within
+                - approaching
+                - exceeded
+            blocked:
+              type: boolean
+    BillingPlan:
+      type: object
+      properties:
+        tier:
+          type: string
+          enum:
+            - free
+            - starter
+            - growth
+            - scale
+            - enterprise
+        monthly_quota:
+          type: integer
+          description: Billable messages included per month; 0 = unlimited.
+        overage_allowed:
+          type: boolean
+    BatchingRule:
+      type: object
+      description: 'Send-pacing policy resolved most-specific-first: (channel, category) → (channel, all) → (all, category) → (all, all). Transactional/security sends bypass it.'
+      required:
+        - channel
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        channel:
+          type: string
+          enum:
+            - email
+            - sms
+            - whatsapp
+            - push
+            - inapp
+            - webhook
+            - rcs
+            - chatops
+            - all
+        category:
+          type: string
+          default: all
+        max_per_period:
+          type: integer
+          nullable: true
+          description: Frequency cap — max sends per subscriber per period (16.2).
+        period_seconds:
+          type: integer
+          nullable: true
+        cap_mode:
+          type: string
+          enum:
+            - hard
+            - soft
+          default: hard
+          description: hard = skip over-cap sends; soft = allow and log.
+        throttle_per_second:
+          type: integer
+          nullable: true
+          description: Per-tenant/channel send-rate ceiling; over-rate sends defer, never drop (16.3).
+        digest_enabled:
+          type: boolean
+          default: false
+        digest_window_secs:
+          type: integer
+          nullable: true
+          description: Required when digest_enabled — the time window before a digest closes (16.1).
+        digest_max_count:
+          type: integer
+          nullable: true
+          description: Close the digest early once this many sends accumulate.
+        digest_template_id:
+          type: string
+          format: uuid
+          nullable: true
+        is_active:
+          type: boolean
+          default: true
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+  responses:
+    BadRequest:
+      description: Malformed request (e.g. invalid JSON body)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Resource is in a state that conflicts with the request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

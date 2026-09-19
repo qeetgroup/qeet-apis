@@ -1,0 +1,53 @@
+---
+/**
+ * An HTTP method chip.
+ *
+ * Colours come from the bridged `--m-*` tokens, which is why components no
+ * longer hand-type `text-[#1c6b4a] dark:text-[#5bbd7a]`. The method name is
+ * always spelled out, so the chip never relies on colour alone (§19).
+ */
+interface Props {
+  method: string;
+  class?: string;
+}
+
+const { method, class: className } = Astro.props;
+const key = method.toLowerCase();
+---
+
+<span
+  class:list={[
+    "method-chip inline-flex items-center rounded-xs px-1.5 py-0.5 font-ui text-2xs font-semibold uppercase tracking-wide tabular-nums",
+    className,
+  ]}
+  data-method={key}>{method.toUpperCase()}</span
+>
+
+<style>
+  .method-chip[data-method="get"] {
+    color: var(--m-get);
+    background: color-mix(in oklab, var(--m-get) 12%, transparent);
+  }
+  .method-chip[data-method="post"] {
+    color: var(--m-post);
+    background: color-mix(in oklab, var(--m-post) 12%, transparent);
+  }
+  .method-chip[data-method="put"] {
+    color: var(--m-put);
+    background: color-mix(in oklab, var(--m-put) 12%, transparent);
+  }
+  .method-chip[data-method="patch"] {
+    color: var(--m-patch);
+    background: color-mix(in oklab, var(--m-patch) 12%, transparent);
+  }
+  .method-chip[data-method="delete"] {
+    color: var(--m-delete);
+    background: color-mix(in oklab, var(--m-delete) 12%, transparent);
+  }
+  .method-chip[data-method="head"],
+  .method-chip[data-method="options"],
+  .method-chip[data-method="trace"] {
+    color: var(--ink-subtle);
+    background: var(--surface-2);
+  }
+</style>

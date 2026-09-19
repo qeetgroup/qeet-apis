@@ -8,6 +8,9 @@
 # astro generated types
 .astro
 
+# generated at build time from public/specs + src/pages (scripts/build-catalog.mjs)
+/public/search-index.json
+
 # misc
 .DS_Store
 *.log

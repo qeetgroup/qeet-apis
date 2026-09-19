@@ -3,20 +3,39 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
-  "description": "Qeet Group developer portal — every product's API, rendered with Scalar on Astro, at apis.qeet.in",
+  "packageManager": "bun@1.3.14",
+  "engines": {
+    "bun": ">=1.3.0",
+    "node": ">=20.19.0"
+  },
+  "description": "Qeet Group developer portal — every product's API, rendered with Scalar on Astro, at api.qeet.in",
   "scripts": {
-    "dev": "astro dev --port 3005",
-    "build": "astro build",
+    "dev": "bun run catalog && astro dev --port 3005",
+    "build": "bun run catalog && astro build",
     "preview": "astro preview --port 3005",
-    "sync": "node scripts/sync-specs.mjs",
+    "sync": "bun scripts/sync-specs.mjs",
+    "catalog": "bun scripts/build-catalog.mjs",
+    "validate:specs": "bun scripts/validate-specs.mjs",
+    "typecheck": "astro check",
+    "lint": "biome lint --diagnostic-level=error .",
+    "format": "biome format --write .",
+    "check": "biome check --diagnostic-level=error .",
+    "test": "bun test",
+    "test:browser": "bun scripts/smoke.mjs",
     "astro": "astro"
   },
   "devDependencies": {
-    "js-yaml": "^4.1.0"
+    "@astrojs/check": "^0.9.10",
+    "@biomejs/biome": "^2.5.14",
+    "@types/bun": "^1.4.2",
+    "@types/js-yaml": "^4.0.9",
+    "js-yaml": "^4.1.0",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.0",
     "@astrojs/sitemap": "^3.7.3",
+    "@astrojs/vercel": "^11.0.10",
     "@iconify-json/simple-icons": "^1.2.88",
     "@lucide/astro": "^1.23.0",
     "@scalar/astro": "^0.4.6",
@@ -26,5 +45,9 @@
     "astro-icon": "^1.1.5",
     "simple-icons": "^16.24.1",
     "tailwindcss": "^4.3.2"
-  }
+  },
+  "trustedDependencies": [
+    "esbuild",
+    "sharp"
+  ]
 }

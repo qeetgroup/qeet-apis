@@ -1,0 +1,55 @@
+name: ci
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: 1.3.14
+
+      - name: Install
+        run: bun install --frozen-lockfile
+
+      # Structural spec errors fail here; documentation-quality gaps only report
+      # (see scripts/validate-specs.mjs — Qeet Pay's missing prose is upstream
+      # debt tracked in qeet-pay-server, not a reason to block this build).
+      - name: Validate OpenAPI specs
+        run: bun run validate:specs
+
+      - name: Typecheck
+        run: bun run typecheck
+
+      - name: Lint
+        run: bun run lint
+
+      - name: Unit tests
+        run: bun test
+
+      - name: Build
+        run: bun run build
+
+      # Six critical-path browser checks (see scripts/smoke.mjs). Kept small on
+      # purpose; this is not an E2E suite.
+      - name: Install browser
+        run: |
+          npm i -g agent-browser
+          agent-browser install --with-deps
+
+      - name: Browser smoke tests
+        run: |
+          bun run preview &
+          npx --yes wait-on http://localhost:3005/reference/ --timeout 60000
+          bun run test:browser http://localhost:3005

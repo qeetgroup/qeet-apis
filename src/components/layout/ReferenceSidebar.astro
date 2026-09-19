@@ -1,0 +1,144 @@
+---
+/**
+ * Qeet-owned API navigation for /reference.
+ *
+ * Every entry is derived at build time from the product's `x-tagGroups` → tags
+ * → operations (src/lib/api/navigation.ts), so it is exactly the API surface —
+ * nothing hand-maintained, nothing invented. Scalar's own sidebar is off
+ * (`layout: "classic"`), which is what makes this the single navigation rather
+ * than a competing second one.
+ *
+ * Only the active product's tree is rendered visible; the others are present
+ * but hidden, so switching documents is instant and needs no refetch.
+ *
+ * Active-state synchronisation (O4) lives in the layout's script: sidebar →
+ * Scalar, scroll → sidebar, auto-expand, hash, back/forward and deep links.
+ */
+import { buildAllNavigation } from "../../lib/api/navigation";
+import { PRODUCTS } from "../../config/products";
+import Icon from "../shared/Icon.astro";
+
+interface Props {
+  activeProductId: string;
+}
+
+const { activeProductId } = Astro.props;
+const navigation = buildAllNavigation();
+
+/** Qeet Pay's `info.version` is literally "v1", so don't prefix another "v". */
+const displayVersion = (v: string) => (/^v/i.test(v) ? v : `v${v}`);
+---
+
+<nav class="reference-nav" aria-label="API reference" data-reference-nav>
+  {
+    navigation.map((product) => {
+      const config = PRODUCTS.find((p) => p.id === product.productId);
+      const isActive = product.productId === activeProductId;
+      return (
+        <div
+          data-product-nav={product.productId}
+          hidden={!isActive}
+          aria-hidden={isActive ? undefined : "true"}
+        >
+          {/* Product summary — real spec metadata only (§11). */}
+          <div class="border-b border-rule px-4 py-3.5">
+            <div class="flex items-center gap-2">
+              <Icon name={config?.icon ?? "layers"} class="h-4 w-4 text-brand-deep" />
+              <span class="font-ui text-base font-medium text-ink">{product.productName}</span>
+              {config?.lifecycle === "development" && (
+                <span class="rounded-xs bg-surface-3 px-1.5 py-0.5 font-ui text-2xs font-semibold uppercase tracking-wide text-ink-subtle">
+                  In development
+                </span>
+              )}
+            </div>
+            <p class="mt-1.5 font-ui text-2xs tabular-nums text-ink-faint">
+              {displayVersion(product.version)} · {product.operationCount} operations ·{" "}
+              {product.tagCount} areas
+            </p>
+          </div>
+
+          <div class="pb-8">
+            {product.groups.map((group, groupIndex) => (
+              <section class="ref-group py-3">
+                <h2 class="ref-group-label px-4 pb-1.5">{group.name}</h2>
+                <ul class="list-none">
+                  {group.tags.map((tag, tagIndex) => {
+                    const panelId = `nav-${product.productId}-${tag.slug}`;
+                    // First tag of the first group starts open, so the sidebar
+                    // never greets a reader as a wall of collapsed rows.
+                    const open = groupIndex === 0 && tagIndex === 0;
+                    return (
+                      <li>
+                        <button
+                          type="button"
+                          class="ref-tag-toggle"
+                          aria-expanded={open ? "true" : "false"}
+                          aria-controls={panelId}
+                          data-tag-toggle={tag.slug}
+                        >
+                          <svg
+                            class="ref-tag-chevron h-3 w-3"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.5"
+                            stroke-linecap="round"
+                            aria-hidden="true"
+                          >
+                            <path d="m9 18 6-6-6-6" />
+                          </svg>
+                          <span class="min-w-0 flex-1 truncate">{tag.name}</span>
+                          <span class="font-ui text-2xs tabular-nums text-ink-faint">
+                            {tag.operations.length}
+                          </span>
+                        </button>
+
+                        <ul class="list-none" id={panelId} hidden={!open}>
+                          {tag.operations.map((op) => (
+                            <li>
+                              <a
+                                class="ref-op"
+                                href={`#${op.slug}`}
+                                data-op-slug={op.slug}
+                                data-op-tag={tag.slug}
+                                title={op.summary ? `${op.summary} — ${op.path}` : op.path}
+                              >
+                                <span class="ref-op-method" data-method={op.method.toLowerCase()}>
+                                  {op.method}
+                                </span>
+                                <span class="ref-op-path min-w-0 flex-1">
+                                  {op.summary ?? op.path}
+                                </span>
+                                {op.requiresAuth && (
+                                  <svg
+                                    class="mt-0.5 h-2.5 w-2.5 shrink-0 text-ink-faint"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    stroke-width="2.5"
+                                    aria-label="Requires authentication"
+                                    role="img"
+                                  >
+                                    <rect x="4" y="11" width="16" height="10" rx="2" />
+                                    <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                                  </svg>
+                                )}
+                                {op.deprecated && (
+                                  <span class="font-ui text-2xs uppercase text-warning">dep</span>
+                                )}
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
+        </div>
+      );
+    })
+  }
+</nav>

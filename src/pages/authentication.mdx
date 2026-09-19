@@ -5,8 +5,9 @@ eyebrow: Core concepts
 description: How to authenticate to the Qeet APIs with API keys and OAuth 2.0 / OIDC tokens.
 ---
 
-import CodeTabs from "../components/CodeTabs.astro";
-import EnvTable from "../components/EnvTable.astro";
+import CodeTabs from "../components/docs/CodeTabs.astro";
+import EnvTable from "../components/api/EnvTable.astro";
+import Callout from "../components/docs/Callout.astro";
 
 export const apiKeyId = [
   { label: "cURL", lang: "bash", code: `curl https://api.id.qeet.in/v1/auth/me \\
@@ -52,8 +53,10 @@ API keys identify a machine principal. Create them per product in the
 
 <CodeTabs tabs={apiKeyNotify} />
 
-> Treat keys like passwords: store them in a secret manager, scope them
-> narrowly, rotate them regularly, and revoke any key that may have leaked.
+<Callout variant="danger" title="Treat keys like passwords">
+Store them in a secret manager, scope them narrowly, rotate them regularly, and
+revoke any key that may have leaked.
+</Callout>
 
 ## OAuth 2.0 / OIDC bearer tokens
 

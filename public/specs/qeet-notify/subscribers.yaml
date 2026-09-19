@@ -1,0 +1,779 @@
+openapi: 3.1.0
+info:
+  title: Qeet Notify — Subscribers API
+  version: 1.0.0
+  description: |-
+    Qeet Notify — multi-channel transactional notification platform.
+
+    Authentication: pass your API key in the `X-Qeet-Api-Key` header (scopes: `full` all · `read` GET-only · `send` POST /v1/events only).
+
+    Audience management: subscribers, channel preferences, device tokens, DPDP consent, and data export.
+servers:
+  - url: https://api.notify.qeet.in
+    description: Production
+  - url: https://api.notify.staging.qeet.in
+    description: Staging
+  - url: http://localhost:8080
+    description: Local
+security:
+  - API-Key: []
+tags:
+  - name: Subscribers
+    description: Recipients; PII encrypted at rest, DPDP erasure on delete.
+  - name: Devices
+    description: Push device-token registration.
+  - name: Consent
+    description: Append-only DPDP consent ledger.
+  - name: Public
+    description: Unauthenticated one-click unsubscribe.
+paths:
+  /v1/subscribers:
+    get:
+      summary: List subscribers
+      operationId: get_v1_subscribers
+      tags:
+        - Subscribers
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: limit
+          description: Max subscribers to return (1–200).
+          schema:
+            type: integer
+            default: 50
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: offset
+          description: Number of subscribers to skip.
+          schema:
+            type: integer
+            default: 0
+            minimum: 0
+      responses:
+        '200':
+          description: Paginated subscriber list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscribers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Subscriber'
+                  total:
+                    type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create a subscriber
+      operationId: post_v1_subscribers
+      tags:
+        - Subscribers
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - external_id
+              properties:
+                external_id:
+                  type: string
+                  description: Your stable identifier for this recipient.
+                email:
+                  type: string
+                  format: email
+                phone:
+                  type: string
+                  format: phone
+                  description: E.164 format e.g. +919876543210
+                whatsapp_id:
+                  type: string
+                  description: WhatsApp contact ID, if different from phone.
+                locale:
+                  type: string
+                  description: BCP-47 locale; defaults to en.
+                  default: en
+                timezone:
+                  type: string
+                  description: IANA timezone; defaults to UTC.
+                  default: UTC
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Subscriber created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriberIDResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/subscribers/{subscriberID}:
+    get:
+      summary: Get subscriber
+      operationId: get_v1_subscribers_BySubscriberID
+      tags:
+        - Subscribers
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Subscriber record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subscriber'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      summary: Update subscriber
+      operationId: put_v1_subscribers_BySubscriberID
+      tags:
+        - Subscribers
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Only locale, timezone, and metadata are mutable; metadata is merged key-by-key.
+              properties:
+                locale:
+                  type: string
+                timezone:
+                  type: string
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriberIDResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete subscriber
+      operationId: delete_v1_subscribers_BySubscriberID
+      tags:
+        - Subscribers
+      description: DPDP right-to-erasure — nulls all PII, empties push tokens/metadata, and marks the subscriber deleted.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/subscribers/{subscriberID}/consent:
+    get:
+      summary: Get consent history
+      operationId: get_v1_subscribers_BySubscriberID_consent
+      tags:
+        - Consent
+      description: Returns a subscriber's append-only DPDP consent trail, newest first — used for Data-Subject-Rights access / export requests.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Consent ledger entries
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  consent:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ConsentEntry'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Record a consent change
+      operationId: post_v1_subscribers_BySubscriberID_consent
+      tags:
+        - Consent
+      description: Appends a consent change to the immutable ledger and mirrors it into the mutable preferences matrix (same transaction), so the opt-in/out takes effect on the next send. Actor and IP are captured from the request.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - channel
+                - opted_in
+              properties:
+                channel:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - whatsapp
+                    - push
+                    - inapp
+                    - webhook
+                    - rcs
+                    - chatops
+                    - all
+                category:
+                  type: string
+                  default: all
+                opted_in:
+                  type: boolean
+                source:
+                  type: string
+                  enum:
+                    - api
+                    - preference_center
+                    - import
+                    - unsubscribe_link
+                    - system
+                  default: api
+                purpose:
+                  type: string
+                version:
+                  type: string
+                  description: Consent-policy version, if known
+      responses:
+        '201':
+          description: Consent recorded and preferences updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscriber_id:
+                    type: string
+                    format: uuid
+                  channel:
+                    type: string
+                  category:
+                    type: string
+                  opted_in:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/subscribers/{subscriberID}/data:
+    get:
+      summary: Export subscriber PII data (DPDP DSR)
+      operationId: get_v1_subscribers_BySubscriberID_data
+      tags:
+        - Subscribers
+      description: 'DPDP Data-Subject-Rights export: all personal data held for one subscriber — decrypted profile PII, the current preference matrix, and the full consent history.'
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Full subscriber data export including consent ledger
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DataExport'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/subscribers/{subscriberID}/devices:
+    get:
+      summary: List device tokens
+      operationId: get_v1_subscribers_BySubscriberID_devices
+      tags:
+        - Devices
+      description: Returns a subscriber's registered push tokens.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Registered device tokens
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  devices:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Device'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      summary: Register a device token
+      operationId: post_v1_subscribers_BySubscriberID_devices
+      tags:
+        - Devices
+      description: |
+        Registers (or refreshes) a push token on a subscriber. The token is
+        de-duplicated by value, so re-registration updates the provider/platform
+        rather than creating a duplicate. For provider "webpush", token is the
+        browser subscription's endpoint URL and p256dh/auth (both required)
+        carry the subscription's client keys.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                provider:
+                  type: string
+                  enum:
+                    - fcm
+                    - apns
+                    - webpush
+                token:
+                  type: string
+                  description: FCM/APNs device token, or (webpush) the subscription endpoint URL.
+                platform:
+                  type: string
+                  enum:
+                    - android
+                    - ios
+                    - web
+                p256dh:
+                  type: string
+                  description: 'Required when provider is webpush: subscription client public key (base64url).'
+                auth:
+                  type: string
+                  description: 'Required when provider is webpush: subscription client auth secret (base64url).'
+      responses:
+        '201':
+          description: Device registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  subscriber_id:
+                    type: string
+                    format: uuid
+                  provider:
+                    type: string
+                  platform:
+                    type: string
+                  registered:
+                    type: boolean
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/subscribers/{subscriberID}/devices/{token}:
+    delete:
+      summary: Unregister a device token
+      operationId: delete_v1_subscribers_BySubscriberID_devices_ByToken
+      tags:
+        - Devices
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - in: path
+          name: token
+          required: true
+          schema:
+            type: string
+          description: The push token value to remove.
+      responses:
+        '204':
+          description: Unregistered
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/subscribers/{subscriberID}/preferences:
+    get:
+      summary: Get notification preferences
+      operationId: get_v1_subscribers_BySubscriberID_preferences
+      tags:
+        - Subscribers
+      description: Returns the subscriber's channel+category opt-in matrix.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Preference matrix
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreferenceMatrix'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    put:
+      summary: Update notification preferences
+      operationId: put_v1_subscribers_BySubscriberID_preferences
+      tags:
+        - Subscribers
+      description: Upserts one or more channel+category opt-in states; each change is also appended to the consent ledger. Items with an empty channel are skipped.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: subscriberID
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PreferenceMatrix'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/unsubscribe:
+    get:
+      operationId: get_v1_unsubscribe
+      summary: One-click unsubscribe
+      tags:
+        - Public
+      description: Unauthenticated opt-out used by List-Unsubscribe headers and hosted preference-page links. Records an opt-out (and a consent-ledger entry) for the given channel, defaulting to all channels.
+      security: []
+      parameters:
+        - in: query
+          name: tenant_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Tenant that owns the subscriber.
+        - in: query
+          name: subscriber_id
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Subscriber to opt out.
+        - in: query
+          name: channel
+          required: false
+          schema:
+            type: string
+            default: all
+          description: Channel to opt out of; defaults to all channels.
+      responses:
+        '200':
+          description: Unsubscribe recorded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+components:
+  securitySchemes:
+    API-Key:
+      type: apiKey
+      in: header
+      name: X-Qeet-Api-Key
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required:
+        - error
+    PaginatedMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    Subscriber:
+      type: object
+      description: A notification recipient. PII (email/phone/whatsapp_id) is encrypted at rest and is not returned by list/get; use the data-export endpoint for decrypted PII.
+      properties:
+        id:
+          type: string
+          format: uuid
+        external_id:
+          type: string
+        locale:
+          type: string
+        timezone:
+          type: string
+        metadata:
+          type: object
+          additionalProperties: true
+        is_deleted:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    SubscriberIDResponse:
+      type: object
+      description: Identifier of the affected subscriber.
+      properties:
+        id:
+          type: string
+          format: uuid
+      required:
+        - id
+    Preference:
+      type: object
+      description: A single channel+category opt-in state.
+      properties:
+        channel:
+          type: string
+        category:
+          type: string
+        is_opted_in:
+          type: boolean
+    PreferenceMatrix:
+      type: object
+      properties:
+        preferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/Preference'
+    ConsentEntry:
+      type: object
+      description: One append-only DPDP consent-ledger record.
+      properties:
+        channel:
+          type: string
+        category:
+          type: string
+        opted_in:
+          type: boolean
+        source:
+          type: string
+        purpose:
+          type: string
+          nullable: true
+        version:
+          type: string
+          nullable: true
+        actor:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    Device:
+      type: object
+      description: A registered push token (element of the subscriber's push_tokens array).
+      properties:
+        provider:
+          type: string
+          enum:
+            - fcm
+            - apns
+            - webpush
+        token:
+          type: string
+          description: FCM/APNs device token, or (webpush) the subscription endpoint URL.
+        platform:
+          type: string
+          enum:
+            - android
+            - ios
+            - web
+        p256dh:
+          type: string
+          nullable: true
+          description: 'webpush only: subscription client public key (base64url).'
+        auth:
+          type: string
+          nullable: true
+          description: 'webpush only: subscription client auth secret (base64url).'
+    DataExport:
+      type: object
+      description: Full DPDP data-subject-rights export for one subscriber — decrypted profile PII, current preference matrix, and full consent history.
+      properties:
+        subscriber:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            external_id:
+              type: string
+            email:
+              type: string
+              format: email
+              nullable: true
+            phone:
+              type: string
+              format: phone
+              nullable: true
+            whatsapp_id:
+              type: string
+              nullable: true
+            locale:
+              type: string
+            timezone:
+              type: string
+            metadata:
+              type: object
+              additionalProperties: true
+            is_deleted:
+              type: boolean
+            created_at:
+              type: string
+              format: date-time
+        preferences:
+          type: array
+          items:
+            $ref: '#/components/schemas/Preference'
+        consent_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/ConsentEntry'
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Malformed request (invalid JSON body or missing required query parameters)
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

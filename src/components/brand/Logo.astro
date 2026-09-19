@@ -1,0 +1,49 @@
+---
+/**
+ * The Qeet wordmark. One component so the marketing header, developer header
+ * and footer can never drift apart.
+ *
+ * `context` changes only the suffix chip: "APIs" on marketing, "Developers"
+ * inside the workspace. The mark and wordmark are identical everywhere.
+ */
+interface Props {
+  context?: "apis" | "developers";
+  /** Mark size in px. 26 in the compact developer bar, 30 on marketing. */
+  size?: number;
+  class?: string;
+}
+
+const { context = "apis", size = 26, class: className } = Astro.props;
+const suffix = context === "developers" ? "Developers" : "APIs";
+---
+
+<a
+  href="/"
+  class:list={[
+    "flex shrink-0 items-center gap-2.5 font-display font-semibold leading-none text-ink",
+    className,
+  ]}
+  aria-label={`Qeet ${suffix} — home`}
+>
+  <img
+    src="/brand/logo-light.svg"
+    alt=""
+    width={size}
+    height={size}
+    class="block dark:hidden"
+    style={`width:${size}px;height:${size}px`}
+  />
+  <img
+    src="/brand/logo-dark.svg"
+    alt=""
+    width={size}
+    height={size}
+    class="hidden dark:block"
+    style={`width:${size}px;height:${size}px`}
+  />
+  <span class="text-lg leading-none tracking-tight">Q.E.E.T</span>
+  <span
+    class="inline-flex items-center rounded-xs bg-brand-soft px-1.5 py-1 font-mono text-2xs font-medium leading-none text-brand-deep max-sm:hidden"
+    >{suffix}</span
+  >
+</a>

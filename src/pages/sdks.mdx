@@ -5,8 +5,10 @@ eyebrow: Tooling
 description: Official SDKs, calling the REST API directly, and generating a typed client from the OpenAPI specs.
 ---
 
-import CodeTabs from "../components/CodeTabs.astro";
+import CodeTabs from "../components/docs/CodeTabs.astro";
 import { SPECS, LINKS } from "../data/catalog";
+import Callout from "../components/docs/Callout.astro";
+import SdkStatus from "../components/api/SdkStatus.astro";
 
 export const restClient = [
   { label: "JavaScript", lang: "js", code: `const qeet = (apiKey) => ({
@@ -49,11 +51,11 @@ me = Qeet("qk_live_...").get("/v1/auth/me")` },
 export const generate = [
   { label: "openapi-typescript", lang: "bash", code: `# Typed TypeScript types straight from the spec
 npx openapi-typescript \\
-  https://apis.qeet.in/specs/qeet-id/auth.yaml \\
+  https://api.qeet.in/specs/qeet-id/auth.yaml \\
   -o ./qeet-id-auth.d.ts` },
   { label: "openapi-generator", lang: "bash", code: `# A full client in your language of choice
 openapi-generator-cli generate \\
-  -i https://apis.qeet.in/specs/qeet-id/auth.yaml \\
+  -i https://api.qeet.in/specs/qeet-id/auth.yaml \\
   -g typescript-fetch \\
   -o ./qeet-id-sdk` },
 ];
@@ -63,14 +65,19 @@ directly, or a client you generate from our OpenAPI specs.
 
 ## Official SDKs
 
-The **Qeet ID JavaScript/React SDK** (`@qeet-id/react`) ships drop-in
-authentication components and a typed client for the browser — including an
-embeddable `<UserButton />` and hooks for sessions and organizations. It's the
-fastest way to add Qeet sign-in and account management to a React app.
+Each product has Node.js and React SDK repositories in development —
+`@qeet-id/node` and `@qeet-id/react`, and the equivalents for Qeet Notify and
+Qeet Pay. The Qeet ID React SDK is the furthest along: drop-in authentication
+components and a typed browser client, including an embeddable `<UserButton />`
+and hooks for sessions and organizations.
 
-> Additional language SDKs are rolling out per product. Until an official SDK
-> exists for your stack, call the REST API directly or generate a typed client
-> from the specs below — both are fully supported.
+<SdkStatus />
+
+<Callout variant="note" title="SDKs are not published yet">
+The SDK source repositories exist, but none of the packages is published to npm
+today — so there is no install command to copy. Call the REST API directly or
+generate a typed client from the specs below; both are fully supported.
+</Callout>
 
 ## Call the REST API directly
 

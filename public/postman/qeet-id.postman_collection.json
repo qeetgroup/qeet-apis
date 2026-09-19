@@ -1,8 +1,8 @@
 {
   "info": {
-    "name": "Qeet Id - API",
+    "name": "Qeet ID - API",
     "_postman_id": "8f3b6e10-7a3f-4d9c-9a55-qeetid000001",
-    "description": "Complete request collection for the qeet-id backend (Go monolith).\n\n## Setup\n\n1. Start the backend: `cd backend && make run` (defaults to `http://localhost:4000`).\n2. Import this collection AND the companion environment (`qeet-id.postman_environment.json`).\n3. Select the **qeet-id (local)** environment in the Postman environment dropdown.\n4. **First time / fresh DB:** run **Auth \u2192 Signup**. It creates a new tenant + user + owner role in one shot and auto-populates `{{tenantId}}`, `{{userId}}`, `{{accessToken}}`, `{{refreshToken}}`. The signup user becomes the tenant admin.\n5. **Returning users:** run **Auth \u2192 Login** with the saved tenant_id + email + password.\n\n## Conventions\n\n- All authed requests inherit a `Bearer {{accessToken}}` header from the collection root.\n- IDs (`{{tenantId}}`, `{{userId}}`, `{{roleId}}`, \u2026) are written back to collection variables by the corresponding `Create` / `Signup` requests, so you can chain them.\n- Routes prefixed `/v1/...` are versioned API surface. Discovery / JWKS live at root (`/.well-known/...`) per the OIDC spec.\n",
+    "description": "Complete request collection for the qeet-id backend (Go monolith).\n\n## Setup\n\n1. Start the backend: `cd backend && make run` (defaults to `http://localhost:4001`).\n2. Import this collection AND the companion environment (`qeet-id.postman_environment.json`).\n3. Select the **qeet-id (local)** environment in the Postman environment dropdown.\n4. **First time / fresh DB:** run **Auth → Signup**. It creates a new tenant + user + owner role in one shot and auto-populates `{{tenantId}}`, `{{userId}}`, `{{accessToken}}`, `{{refreshToken}}`. The signup user becomes the tenant admin.\n5. **Returning users:** run **Auth → Login** with the saved tenant_id + email + password.\n\n## Conventions\n\n- All authed requests inherit a `Bearer {{accessToken}}` header from the collection root.\n- IDs (`{{tenantId}}`, `{{userId}}`, `{{roleId}}`, …) are written back to collection variables by the corresponding `Create` / `Signup` requests, so you can chain them.\n- Routes prefixed `/v1/...` are versioned API surface. Discovery / JWKS live at root (`/.well-known/...`) per the OIDC spec.\n",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "auth": {
@@ -29,7 +29,7 @@
           "// The backend CSRF middleware (httpx/csrf.go) requires non-Bearer mutation",
           "// requests to carry (a) an allow-listed Origin/Referer and (b) a double-",
           "// submit cookie pair (qe_csrf + X-CSRF-Token). Bearer-token traffic skips",
-          "// entirely. Postman is not a browser so it sends neither header \u2014 handle",
+          "// entirely. Postman is not a browser so it sends neither header — handle",
           "// it transparently here so the public auth routes (signup/login/recovery/",
           "// invite-accept/oauth-token) work out of the box.",
           "(function () {",
@@ -95,7 +95,7 @@
           "      if (body && body.refresh_token) pm.collectionVariables.set('refreshToken', body.refresh_token);",
           "    }",
           "  }",
-          "} catch (e) { /* non-JSON or empty body \u2014 ignore */ }"
+          "} catch (e) { /* non-JSON or empty body — ignore */ }"
         ]
       }
     }
@@ -103,7 +103,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:4000",
+      "value": "https://api.id.qeet.in",
       "type": "string"
     },
     {
@@ -355,6 +355,76 @@
       "key": "exchangedToken",
       "value": "",
       "type": "string"
+    },
+    {
+      "key": "abacPolicyId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "passkeySignupSessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "passkeyRegisterSessionId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cibaAuthReqId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "cibaRequestId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "signingKeyKid",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "vaultProvider",
+      "value": "google",
+      "type": "string"
+    },
+    {
+      "key": "qeetaiConversationId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "evidenceId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "complianceFramework",
+      "value": "soc2",
+      "type": "string"
+    },
+    {
+      "key": "portalToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "portalLinkId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "portalSamlConnId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "checkoutRef",
+      "value": "",
+      "type": "string"
     }
   ],
   "item": [
@@ -362,7 +432,7 @@
       "name": "Health",
       "item": [
         {
-          "name": "Liveness \u2014 GET /healthz",
+          "name": "Liveness",
           "request": {
             "auth": {
               "type": "noauth"
@@ -381,7 +451,7 @@
           }
         },
         {
-          "name": "Readiness \u2014 GET /readyz",
+          "name": "Readiness",
           "request": {
             "auth": {
               "type": "noauth"
@@ -400,7 +470,7 @@
           }
         },
         {
-          "name": "Metrics (Prometheus) \u2014 GET /metrics",
+          "name": "Metrics (Prometheus)",
           "request": {
             "method": "GET",
             "header": [],
@@ -425,7 +495,7 @@
       "name": "OIDC Discovery (public)",
       "item": [
         {
-          "name": "OpenID configuration \u2014 GET /.well-known/openid-configuration",
+          "name": "OpenID configuration",
           "request": {
             "auth": {
               "type": "noauth"
@@ -445,7 +515,7 @@
           }
         },
         {
-          "name": "JWKS \u2014 GET /.well-known/jwks.json",
+          "name": "JWKS",
           "request": {
             "auth": {
               "type": "noauth"
@@ -470,7 +540,7 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Signup \u2014 POST /v1/auth/signup",
+          "name": "Signup",
           "event": [
             {
               "listen": "test",
@@ -483,7 +553,7 @@
                   "if (body.tenant_id)            pm.collectionVariables.set('tenantId',     body.tenant_id);",
                   "if (body.access_token)         pm.collectionVariables.set('accessToken',  body.access_token);",
                   "if (body.refresh_token)        pm.collectionVariables.set('refreshToken', body.refresh_token);",
-                  "console.log('Signed up \u2014 you are now owner of tenant', body.tenant_id);",
+                  "console.log('Signed up — you are now owner of tenant', body.tenant_id);",
                   "// Persist the email/password actually sent so Login can re-use them.",
                   "try {",
                   "  const reqBody = JSON.parse(pm.request.body && pm.request.body.raw || '{}');",
@@ -520,11 +590,11 @@
                 "signup"
               ]
             },
-            "description": "Public self-service signup. Takes only `{email, password, display_name?}`. In ONE transaction the backend:\n\n1. Generates a personal tenant for the new user (slug like `personal-<12hex>`, name like `\"Jane's workspace\"`).\n2. Creates the user with a password credential.\n3. Creates a system `owner` role for the personal tenant and grants it every platform permission.\n4. Assigns the user to that owner role.\n5. Issues an access + refresh token pair (auto-login).\n\nThe user can rename their workspace or create more from `Tenants \u2192 New tenant`.\n\n**Email is globally unique** \u2014 same address can't sign up twice across the platform.\n\n**Errors:**\n- 409 \u2014 email already in use\n- 422 \u2014 validation failed (password < 8 chars, invalid email, \u2026)"
+            "description": "Public self-service signup. Takes only `{email, password, display_name?}`. In ONE transaction the backend:\n\n1. Generates a personal tenant for the new user (slug like `personal-<12hex>`, name like `\"Jane's workspace\"`).\n2. Creates the user with a password credential.\n3. Creates a system `owner` role for the personal tenant and grants it every platform permission.\n4. Assigns the user to that owner role.\n5. Issues an access + refresh token pair (auto-login).\n\nThe user can rename their workspace or create more from `Tenants → New tenant`.\n\n**Email is globally unique** — same address can't sign up twice across the platform.\n\n**Errors:**\n- 409 — email already in use\n- 422 — validation failed (password < 8 chars, invalid email, …)"
           }
         },
         {
-          "name": "Login \u2014 POST /v1/auth/login",
+          "name": "Login",
           "event": [
             {
               "listen": "test",
@@ -569,7 +639,7 @@
           }
         },
         {
-          "name": "Complete MFA login \u2014 POST /v1/auth/mfa",
+          "name": "Complete MFA login",
           "event": [
             {
               "listen": "test",
@@ -613,7 +683,7 @@
           }
         },
         {
-          "name": "Refresh \u2014 POST /v1/auth/refresh",
+          "name": "Refresh",
           "event": [
             {
               "listen": "test",
@@ -657,7 +727,7 @@
           }
         },
         {
-          "name": "Me \u2014 GET /v1/auth/me",
+          "name": "Me",
           "request": {
             "method": "GET",
             "header": [],
@@ -675,7 +745,7 @@
           }
         },
         {
-          "name": "List sessions \u2014 GET /v1/auth/sessions",
+          "name": "List sessions",
           "request": {
             "method": "GET",
             "header": [],
@@ -713,7 +783,7 @@
           ]
         },
         {
-          "name": "Revoke session \u2014 DELETE /v1/auth/sessions/{id}",
+          "name": "Revoke session",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -732,7 +802,7 @@
           }
         },
         {
-          "name": "Logout \u2014 POST /v1/auth/logout",
+          "name": "Logout",
           "request": {
             "method": "POST",
             "header": [],
@@ -750,7 +820,7 @@
           }
         },
         {
-          "name": "Switch tenant \u2014 POST /v1/auth/switch-tenant",
+          "name": "Switch tenant",
           "event": [
             {
               "listen": "test",
@@ -792,7 +862,7 @@
           }
         },
         {
-          "name": "Register (hosted, B2C) \u2014 POST /v1/auth/register",
+          "name": "Register (hosted, B2C)",
           "request": {
             "method": "POST",
             "header": [
@@ -836,7 +906,7 @@
           ]
         },
         {
-          "name": "Create SSO session \u2014 POST /v1/auth/session",
+          "name": "Create SSO session",
           "request": {
             "method": "POST",
             "header": [
@@ -867,7 +937,7 @@
           }
         },
         {
-          "name": "Complete SSO session MFA \u2014 POST /v1/auth/session/mfa",
+          "name": "Complete SSO session MFA",
           "request": {
             "method": "POST",
             "header": [
@@ -899,7 +969,7 @@
           }
         },
         {
-          "name": "Destroy SSO session (logout) \u2014 DELETE /v1/auth/session",
+          "name": "Destroy SSO session (logout)",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -926,7 +996,7 @@
       "name": "Recovery (public)",
       "item": [
         {
-          "name": "Forgot password \u2014 POST /v1/auth/forgot-password",
+          "name": "Forgot password",
           "request": {
             "auth": {
               "type": "noauth"
@@ -956,7 +1026,7 @@
           }
         },
         {
-          "name": "Reset password \u2014 POST /v1/auth/reset-password",
+          "name": "Reset password",
           "request": {
             "auth": {
               "type": "noauth"
@@ -986,7 +1056,7 @@
           }
         },
         {
-          "name": "Magic link start \u2014 POST /v1/auth/magic-link/start",
+          "name": "Magic link start",
           "request": {
             "auth": {
               "type": "noauth"
@@ -1017,7 +1087,7 @@
           }
         },
         {
-          "name": "Magic link consume \u2014 POST /v1/auth/magic-link/consume",
+          "name": "Magic link consume",
           "request": {
             "auth": {
               "type": "noauth"
@@ -1053,7 +1123,7 @@
       "name": "Tenants",
       "item": [
         {
-          "name": "List tenants \u2014 GET /v1/tenants",
+          "name": "List tenants",
           "request": {
             "method": "GET",
             "header": [],
@@ -1090,7 +1160,7 @@
           ]
         },
         {
-          "name": "Create tenant \u2014 POST /v1/tenants",
+          "name": "Create tenant",
           "event": [
             {
               "listen": "test",
@@ -1128,7 +1198,7 @@
           }
         },
         {
-          "name": "Get tenant \u2014 GET /v1/tenants/{id}",
+          "name": "Get tenant",
           "request": {
             "method": "GET",
             "header": [],
@@ -1146,7 +1216,7 @@
           }
         },
         {
-          "name": "Update tenant \u2014 PATCH /v1/tenants/{id}",
+          "name": "Update tenant",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1173,7 +1243,7 @@
           }
         },
         {
-          "name": "Delete tenant \u2014 DELETE /v1/tenants/{id}",
+          "name": "Delete tenant",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1196,7 +1266,7 @@
       "name": "Users",
       "item": [
         {
-          "name": "List users \u2014 GET /v1/users",
+          "name": "List users",
           "request": {
             "method": "GET",
             "header": [],
@@ -1233,7 +1303,7 @@
           ]
         },
         {
-          "name": "Create user \u2014 POST /v1/users",
+          "name": "Create user",
           "event": [
             {
               "listen": "test",
@@ -1271,7 +1341,7 @@
           }
         },
         {
-          "name": "Get user \u2014 GET /v1/users/{id}",
+          "name": "Get user",
           "request": {
             "method": "GET",
             "header": [],
@@ -1289,7 +1359,7 @@
           }
         },
         {
-          "name": "Update user \u2014 PATCH /v1/users/{id}",
+          "name": "Update user",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1316,7 +1386,7 @@
           }
         },
         {
-          "name": "Delete user \u2014 DELETE /v1/users/{id}",
+          "name": "Delete user",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1334,7 +1404,7 @@
           }
         },
         {
-          "name": "Set password \u2014 POST /v1/users/{id}/password",
+          "name": "Set password",
           "request": {
             "method": "POST",
             "header": [
@@ -1362,7 +1432,7 @@
           }
         },
         {
-          "name": "Admin reset user MFA \u2014 DELETE /v1/users/{id}/mfa",
+          "name": "Admin reset user MFA",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1380,6 +1450,92 @@
             },
             "description": "Admin clears a user's MFA (TOTP/recovery/OTP). Requires user.write; audited as mfa.admin_reset."
           }
+        },
+        {
+          "name": "Bulk-create users",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"users\": [\n    { \"email\": \"bulk1-{{$timestamp}}@example.com\", \"display_name\": \"Bulk One\", \"password\": \"S3curePass!23\" },\n    { \"email\": \"bulk2-{{$timestamp}}@example.com\", \"display_name\": \"Bulk Two\", \"phone\": \"+14155550142\" }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/users/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "users",
+                "bulk"
+              ]
+            },
+            "description": "Create many users in one call. Body is { \"users\": [ ... ] } (optional \"tenant_id\" must match the caller's tenant; omitted here). Each row (email required; password/display_name/phone optional) is attempted independently — a bad or duplicate row is reported in the response rather than failing the whole batch (partial success). Response: { succeeded, failed, errors[] }. Admin-gated on user.write. Max 1000 rows."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Import users from an IdP export",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-ndjson"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"email\":\"migrated1-{{$timestamp}}@example.com\",\"name\":\"Migrated One\",\"phone_number\":\"+14155550188\"}\n{\"email\":\"migrated2-{{$timestamp}}@example.com\",\"nickname\":\"m2\"}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/users/bulk/import?source=auth0",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "users",
+                "bulk",
+                "import"
+              ],
+              "query": [
+                {
+                  "key": "source",
+                  "value": "auth0",
+                  "description": "Required: auth0 (NDJSON, one JSON object/line) | cognito (User Import Job CSV) | azure_b2c (Graph /users list {\"value\":[...]})"
+                }
+              ]
+            },
+            "description": "Migration tooling for teams leaving another IdP. The request body is that vendor's own raw user-export file, converted to the same shape POST /v1/users/bulk accepts and run through the identical per-row partial-success pipeline. The example body is a synthetic 2-line Auth0 NDJSON export (Content-Type application/x-ndjson); for cognito use text/csv, for azure_b2c application/json. No vendor exports a portable password hash, so every imported row lands with no password credential (passkey / magic link / OTP / admin reset are how they first sign in). Response: { succeeded, failed, errors[] }. Admin-gated on user.write. Swap the body for a real export file to migrate production users."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1387,7 +1543,7 @@
       "name": "Verification",
       "item": [
         {
-          "name": "Start email verification \u2014 POST /v1/users/{id}/verify/email/start",
+          "name": "Start email verification",
           "request": {
             "method": "POST",
             "header": [
@@ -1417,7 +1573,7 @@
           }
         },
         {
-          "name": "Confirm email verification \u2014 POST /v1/users/{id}/verify/email/confirm",
+          "name": "Confirm email verification",
           "request": {
             "method": "POST",
             "header": [
@@ -1447,7 +1603,7 @@
           }
         },
         {
-          "name": "Start phone verification \u2014 POST /v1/users/{id}/verify/phone/start",
+          "name": "Start phone verification",
           "request": {
             "method": "POST",
             "header": [
@@ -1477,7 +1633,7 @@
           }
         },
         {
-          "name": "Confirm phone verification \u2014 POST /v1/users/{id}/verify/phone/confirm",
+          "name": "Confirm phone verification",
           "request": {
             "method": "POST",
             "header": [
@@ -1512,7 +1668,7 @@
       "name": "RBAC",
       "item": [
         {
-          "name": "List permissions \u2014 GET /v1/permissions",
+          "name": "List permissions",
           "request": {
             "method": "GET",
             "header": [],
@@ -1549,7 +1705,7 @@
           ]
         },
         {
-          "name": "List roles \u2014 GET /v1/tenants/{tenantID}/roles",
+          "name": "List roles",
           "request": {
             "method": "GET",
             "header": [],
@@ -1588,7 +1744,7 @@
           ]
         },
         {
-          "name": "Create role \u2014 POST /v1/tenants/{tenantID}/roles",
+          "name": "Create role",
           "event": [
             {
               "listen": "test",
@@ -1628,7 +1784,7 @@
           }
         },
         {
-          "name": "Grant permission to role \u2014 POST /v1/roles/{roleID}/permissions/{permID}",
+          "name": "Grant permission to role",
           "request": {
             "method": "POST",
             "header": [],
@@ -1648,7 +1804,7 @@
           }
         },
         {
-          "name": "Revoke permission from role \u2014 DELETE /v1/roles/{roleID}/permissions/{permID}",
+          "name": "Revoke permission from role",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1668,7 +1824,7 @@
           }
         },
         {
-          "name": "Assign role to user \u2014 POST /v1/users/{userID}/tenants/{tenantID}/roles/{roleID}",
+          "name": "Assign role to user",
           "request": {
             "method": "POST",
             "header": [],
@@ -1690,7 +1846,7 @@
           }
         },
         {
-          "name": "Unassign role from user \u2014 DELETE /v1/users/{userID}/tenants/{tenantID}/roles/{roleID}",
+          "name": "Unassign role from user",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1712,7 +1868,7 @@
           }
         },
         {
-          "name": "Effective permissions \u2014 GET /v1/users/{userID}/tenants/{tenantID}/permissions",
+          "name": "Effective permissions",
           "request": {
             "method": "GET",
             "header": [],
@@ -1733,7 +1889,7 @@
           }
         },
         {
-          "name": "Permission check \u2014 GET /v1/check",
+          "name": "Permission check",
           "request": {
             "method": "GET",
             "header": [],
@@ -1764,7 +1920,7 @@
           }
         },
         {
-          "name": "List group roles \u2014 GET /v1/tenants/{tenantID}/groups/{groupID}/roles",
+          "name": "List group roles",
           "request": {
             "method": "GET",
             "header": [],
@@ -1785,7 +1941,7 @@
           }
         },
         {
-          "name": "Grant role to group \u2014 POST .../groups/{groupID}/roles/{roleID}",
+          "name": "Grant role to group",
           "request": {
             "method": "POST",
             "header": [],
@@ -1807,7 +1963,7 @@
           }
         },
         {
-          "name": "Revoke role from group \u2014 DELETE .../groups/{groupID}/roles/{roleID}",
+          "name": "Revoke role from group",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1827,6 +1983,37 @@
               ]
             }
           }
+        },
+        {
+          "name": "List permissions granted to a role",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/roles/{{roleId}}/permissions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "roles",
+                "{{roleId}}",
+                "permissions"
+              ]
+            },
+            "description": "Returns {items:[Permission{id,key,description}]} for the role. Required permission: `role.read`. Uses `{{roleId}}` (set by Create role)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1834,7 +2021,7 @@
       "name": "Invites",
       "item": [
         {
-          "name": "Create invite \u2014 POST /v1/invites",
+          "name": "Create invite",
           "event": [
             {
               "listen": "test",
@@ -1872,7 +2059,7 @@
           }
         },
         {
-          "name": "List invites \u2014 GET /v1/tenants/{tenantID}/invites",
+          "name": "List invites",
           "request": {
             "method": "GET",
             "header": [],
@@ -1911,7 +2098,7 @@
           ]
         },
         {
-          "name": "Revoke invite \u2014 DELETE /v1/invites/{id}",
+          "name": "Revoke invite",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1929,7 +2116,7 @@
           }
         },
         {
-          "name": "Accept invite (public) \u2014 POST /v1/invites/accept",
+          "name": "Accept invite (public)",
           "request": {
             "auth": {
               "type": "noauth"
@@ -1957,6 +2144,37 @@
               ]
             }
           }
+        },
+        {
+          "name": "Resend invite",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/invites/{{inviteId}}/resend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "invites",
+                "{{inviteId}}",
+                "resend"
+              ]
+            },
+            "description": "Re-send a pending invitation email (rotates/re-mails the token). Authed; sibling of create/list/revoke. Was missing from both the OpenAPI spec and the collection."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -1964,7 +2182,7 @@
       "name": "MFA (TOTP)",
       "item": [
         {
-          "name": "Start TOTP enrollment \u2014 POST /v1/mfa/totp/enroll/start",
+          "name": "Start TOTP enrollment",
           "request": {
             "method": "POST",
             "header": [
@@ -1993,7 +2211,7 @@
           }
         },
         {
-          "name": "Confirm TOTP enrollment \u2014 POST /v1/mfa/totp/enroll/confirm",
+          "name": "Confirm TOTP enrollment",
           "request": {
             "method": "POST",
             "header": [
@@ -2022,7 +2240,7 @@
           }
         },
         {
-          "name": "Verify TOTP \u2014 POST /v1/mfa/totp/verify",
+          "name": "Verify TOTP",
           "request": {
             "method": "POST",
             "header": [
@@ -2050,7 +2268,7 @@
           }
         },
         {
-          "name": "Disable TOTP \u2014 DELETE /v1/mfa/totp",
+          "name": "Disable TOTP",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -2073,7 +2291,7 @@
       "name": "MFA (OTP, Recovery, WebAuthn, Step-up)",
       "item": [
         {
-          "name": "List OTP factors \u2014 GET /v1/mfa/otp/factors",
+          "name": "List OTP factors",
           "request": {
             "method": "GET",
             "header": [],
@@ -2092,7 +2310,7 @@
           }
         },
         {
-          "name": "Add OTP factor \u2014 POST /v1/mfa/otp/factors",
+          "name": "Add OTP factor",
           "request": {
             "method": "POST",
             "header": [
@@ -2133,7 +2351,7 @@
           ]
         },
         {
-          "name": "Confirm OTP factor \u2014 POST /v1/mfa/otp/factors/{id}/confirm",
+          "name": "Confirm OTP factor",
           "request": {
             "method": "POST",
             "header": [
@@ -2163,7 +2381,7 @@
           }
         },
         {
-          "name": "Challenge OTP factor \u2014 POST /v1/mfa/otp/factors/{id}/challenge",
+          "name": "Challenge OTP factor",
           "request": {
             "method": "POST",
             "header": [],
@@ -2184,7 +2402,7 @@
           }
         },
         {
-          "name": "Verify OTP \u2014 POST /v1/mfa/otp/verify",
+          "name": "Verify OTP",
           "request": {
             "method": "POST",
             "header": [
@@ -2212,7 +2430,7 @@
           }
         },
         {
-          "name": "Delete OTP factor \u2014 DELETE /v1/mfa/otp/factors/{id}",
+          "name": "Delete OTP factor",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -2232,7 +2450,7 @@
           }
         },
         {
-          "name": "Recovery codes status \u2014 GET /v1/mfa/recovery-codes",
+          "name": "Recovery codes status",
           "request": {
             "method": "GET",
             "header": [],
@@ -2250,7 +2468,7 @@
           }
         },
         {
-          "name": "Regenerate recovery codes (step-up) \u2014 POST /v1/mfa/recovery-codes/regenerate",
+          "name": "Regenerate recovery codes (step-up)",
           "request": {
             "method": "POST",
             "header": [],
@@ -2269,7 +2487,7 @@
           }
         },
         {
-          "name": "WebAuthn 2FA challenge \u2014 POST /v1/mfa/webauthn/challenge",
+          "name": "WebAuthn 2FA challenge",
           "request": {
             "method": "POST",
             "header": [],
@@ -2301,7 +2519,7 @@
           ]
         },
         {
-          "name": "WebAuthn 2FA verify \u2014 POST /v1/mfa/webauthn/verify",
+          "name": "WebAuthn 2FA verify",
           "request": {
             "method": "POST",
             "header": [
@@ -2329,7 +2547,7 @@
           }
         },
         {
-          "name": "Step-up status \u2014 GET /v1/mfa/step-up/status",
+          "name": "Step-up status",
           "request": {
             "method": "GET",
             "header": [],
@@ -2353,7 +2571,7 @@
       "name": "API Keys",
       "item": [
         {
-          "name": "Create API key \u2014 POST /v1/api-keys",
+          "name": "Create API key",
           "event": [
             {
               "listen": "test",
@@ -2392,7 +2610,7 @@
           }
         },
         {
-          "name": "List API keys \u2014 GET /v1/tenants/{tenantID}/api-keys",
+          "name": "List API keys",
           "request": {
             "method": "GET",
             "header": [],
@@ -2431,7 +2649,7 @@
           ]
         },
         {
-          "name": "Revoke API key \u2014 DELETE /v1/api-keys/{id}",
+          "name": "Revoke API key",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -2449,7 +2667,7 @@
           }
         },
         {
-          "name": "Authed call with API key \u2014 GET /v1/users (ApiKey auth)",
+          "name": "Authed call with API key (ApiKey auth)",
           "request": {
             "auth": {
               "type": "apikey",
@@ -2491,7 +2709,7 @@
       "name": "Service Principals (M2M)",
       "item": [
         {
-          "name": "Create service principal \u2014 POST /v1/service-principals",
+          "name": "Create service principal",
           "event": [
             {
               "listen": "test",
@@ -2534,7 +2752,7 @@
           }
         },
         {
-          "name": "List service principals \u2014 GET /v1/tenants/{tenantID}/service-principals",
+          "name": "List service principals",
           "request": {
             "method": "GET",
             "header": [],
@@ -2573,7 +2791,7 @@
           ]
         },
         {
-          "name": "Disable service principal \u2014 DELETE /v1/service-principals/{id}",
+          "name": "Disable service principal",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -2591,7 +2809,7 @@
           }
         },
         {
-          "name": "OAuth token (client_credentials) \u2014 POST /v1/oauth/token",
+          "name": "OAuth token (client_credentials)",
           "event": [
             {
               "listen": "test",
@@ -2654,7 +2872,7 @@
       "name": "OIDC (Authed)",
       "item": [
         {
-          "name": "Register OIDC client \u2014 POST /v1/oidc/clients",
+          "name": "Register OIDC client",
           "event": [
             {
               "listen": "test",
@@ -2694,7 +2912,7 @@
           }
         },
         {
-          "name": "Authorize \u2014 GET /v1/oauth/authorize",
+          "name": "Authorize",
           "request": {
             "method": "GET",
             "header": [],
@@ -2742,7 +2960,7 @@
           }
         },
         {
-          "name": "Token (authorization_code) \u2014 POST /v1/oauth/token-code",
+          "name": "Token (authorization_code)",
           "request": {
             "method": "POST",
             "header": [
@@ -2795,7 +3013,7 @@
           }
         },
         {
-          "name": "UserInfo \u2014 GET /v1/oauth/userinfo",
+          "name": "UserInfo",
           "request": {
             "method": "GET",
             "header": [],
@@ -2818,7 +3036,7 @@
       "name": "Passkeys (WebAuthn)",
       "item": [
         {
-          "name": "List passkeys \u2014 GET /v1/passkeys",
+          "name": "List passkeys",
           "request": {
             "method": "GET",
             "header": [],
@@ -2855,7 +3073,7 @@
           ]
         },
         {
-          "name": "Delete passkey \u2014 DELETE /v1/passkeys/{id}",
+          "name": "Delete passkey",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -2873,7 +3091,7 @@
           }
         },
         {
-          "name": "Register begin \u2014 POST /v1/passkeys/register/begin",
+          "name": "Register begin",
           "request": {
             "method": "POST",
             "header": [
@@ -2901,7 +3119,7 @@
           }
         },
         {
-          "name": "Register finish \u2014 POST /v1/passkeys/register/finish",
+          "name": "Register finish",
           "request": {
             "method": "POST",
             "header": [
@@ -2929,7 +3147,7 @@
           }
         },
         {
-          "name": "Login begin \u2014 POST /v1/passkeys/login/begin",
+          "name": "Login begin",
           "request": {
             "method": "POST",
             "header": [
@@ -2957,7 +3175,7 @@
           }
         },
         {
-          "name": "Login finish \u2014 POST /v1/passkeys/login/finish",
+          "name": "Login finish",
           "request": {
             "method": "POST",
             "header": [
@@ -2983,6 +3201,187 @@
               ]
             }
           }
+        },
+        {
+          "name": "Passkey signup begin (tenant-less)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"passkey-signup+{{$timestamp}}@example.com\",\n  \"display_name\": \"Passkey Signup User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/signup/passkey/begin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "signup",
+                "passkey",
+                "begin"
+              ]
+            },
+            "description": "Public (no bearer) — bootstraps a brand-new tenant-less account on a passkey (passwordless counterpart to POST /auth/signup; no password is created). Runnable as-is: returns a WebAuthn CredentialCreation challenge (`session_id` + `publicKey`). Enumeration-safe (250ms timing floor + neutral 422 on conflict). Handler: internal/access/passkeys/passkey.go signupBegin."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.eql(200));",
+                  "try { const b = pm.response.json(); if (b.session_id) pm.collectionVariables.set('passkeySignupSessionId', b.session_id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[setup] Passkey signup finish (tenant-less)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{passkeySignupSessionId}}\",\n  \"credential\": {},\n  \"name\": \"My passkey\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/signup/passkey/finish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "signup",
+                "passkey",
+                "finish"
+              ]
+            },
+            "description": "[setup] Public, but NOT runnable from Postman alone. `credential` must be a REAL WebAuthn attestation produced by an authenticator (hardware security key, a platform authenticator, or a VIRTUAL authenticator — e.g. Chrome DevTools 'WebAuthn' tab or a WebAuthn test harness) in response to the `publicKey` challenge returned by the begin call. The `{}` placeholder here will 422 ('invalid attestation'). On success returns 201 with a token pair (access_token/refresh_token/user_id/session_id) — captured below. Handler: passkey.go signupFinish → FinishSignup."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created', () => pm.expect(pm.response.code).to.eql(201));",
+                  "try { const b = pm.response.json();",
+                  "  if (b.access_token) pm.collectionVariables.set('accessToken', b.access_token);",
+                  "  if (b.refresh_token) pm.collectionVariables.set('refreshToken', b.refresh_token);",
+                  "  if (b.user_id) pm.collectionVariables.set('userId', b.user_id);",
+                  "  if (b.session_id) pm.collectionVariables.set('sessionId', b.session_id);",
+                  "} catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Passkey signup begin (tenant-scoped hosted)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenantId}}\",\n  \"email\": \"passkey-register+{{$timestamp}}@example.com\",\n  \"display_name\": \"Hosted Passkey Signup\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/register/passkey/begin",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "register",
+                "passkey",
+                "begin"
+              ]
+            },
+            "description": "Public — tenant-scoped hosted self-registration (passwordless counterpart to POST /auth/register). TENANT HINT: the target tenant is passed in the JSON body as `tenant_id` ({{tenantId}}); there is no query-param variant — the handler reads `tenant_id` from the body only and 400s if it's missing. Gated by the tenant's `self_registration_enabled` policy (403 if disabled). Runnable when self-registration is on: returns `session_id` + `publicKey` challenge. Handler: passkey.go tenantSignupBegin → BeginTenantSignup."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.eql(200));",
+                  "try { const b = pm.response.json(); if (b.session_id) pm.collectionVariables.set('passkeyRegisterSessionId', b.session_id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[setup] Passkey signup finish (tenant-scoped hosted)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"session_id\": \"{{passkeyRegisterSessionId}}\",\n  \"credential\": {},\n  \"name\": \"My passkey\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/register/passkey/finish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "register",
+                "passkey",
+                "finish"
+              ]
+            },
+            "description": "[setup] Public, but needs a REAL WebAuthn attestation (see the tenant-less finish — use a virtual/real authenticator against the `publicKey` from the begin call; the `{}` placeholder 422s). Creates the user inside the ceremony's tenant and sets the hosted-login SSO cookie (no bearer token pair). Returns 201 {user_id}. Handler: passkey.go tenantSignupFinish → FinishTenantSignup."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created', () => pm.expect(pm.response.code).to.eql(201));",
+                  "try { const b = pm.response.json(); if (b.user_id) pm.collectionVariables.set('userId', b.user_id); } catch(e){}"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -2990,7 +3389,7 @@
       "name": "Social Login",
       "item": [
         {
-          "name": "Upsert provider \u2014 POST /v1/social/providers",
+          "name": "Upsert provider",
           "request": {
             "method": "POST",
             "header": [
@@ -3017,7 +3416,7 @@
           }
         },
         {
-          "name": "List providers \u2014 GET /v1/tenants/{tenantID}/social/providers",
+          "name": "List providers",
           "request": {
             "method": "GET",
             "header": [],
@@ -3037,7 +3436,7 @@
           }
         },
         {
-          "name": "List linked identities \u2014 GET /v1/users/{userID}/social/identities",
+          "name": "List linked identities",
           "request": {
             "method": "GET",
             "header": [],
@@ -3077,7 +3476,7 @@
           ]
         },
         {
-          "name": "Unlink identity \u2014 DELETE /v1/social/identities/{id}",
+          "name": "Unlink identity",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -3096,7 +3495,7 @@
           }
         },
         {
-          "name": "OAuth start \u2014 GET /v1/social/{provider}/start",
+          "name": "OAuth start",
           "request": {
             "method": "GET",
             "header": [],
@@ -3115,7 +3514,7 @@
           }
         },
         {
-          "name": "OAuth callback \u2014 GET /v1/social/{provider}/callback",
+          "name": "OAuth callback",
           "request": {
             "method": "GET",
             "header": [],
@@ -3134,7 +3533,7 @@
           }
         },
         {
-          "name": "Exchange social code \u2014 POST /v1/social/exchange",
+          "name": "Exchange social code",
           "request": {
             "method": "POST",
             "header": [
@@ -3170,7 +3569,7 @@
       "name": "Webhooks",
       "item": [
         {
-          "name": "Create webhook \u2014 POST /v1/webhooks",
+          "name": "Create webhook",
           "event": [
             {
               "listen": "test",
@@ -3208,7 +3607,7 @@
           }
         },
         {
-          "name": "List webhooks \u2014 GET /v1/tenants/{tenantID}/webhooks",
+          "name": "List webhooks",
           "request": {
             "method": "GET",
             "header": [],
@@ -3247,7 +3646,7 @@
           ]
         },
         {
-          "name": "Disable webhook \u2014 DELETE /v1/webhooks/{id}",
+          "name": "Disable webhook",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -3265,7 +3664,7 @@
           }
         },
         {
-          "name": "Test webhook \u2014 POST /v1/webhooks/{id}/test",
+          "name": "Test webhook",
           "request": {
             "method": "POST",
             "header": [],
@@ -3284,7 +3683,7 @@
           }
         },
         {
-          "name": "Get webhook \u2014 GET /v1/webhooks/{id}",
+          "name": "Get webhook",
           "request": {
             "method": "GET",
             "header": [],
@@ -3302,7 +3701,7 @@
           }
         },
         {
-          "name": "List deliveries \u2014 GET /v1/webhooks/{id}/deliveries",
+          "name": "List deliveries",
           "request": {
             "method": "GET",
             "header": [],
@@ -3334,7 +3733,7 @@
           ]
         },
         {
-          "name": "Retry delivery \u2014 POST /v1/webhooks/{id}/deliveries/{deliveryID}/retry",
+          "name": "Retry delivery",
           "request": {
             "method": "POST",
             "header": [],
@@ -3360,7 +3759,7 @@
       "name": "Branding",
       "item": [
         {
-          "name": "Get branding \u2014 GET /v1/tenants/{tenantID}/branding",
+          "name": "Get branding",
           "request": {
             "method": "GET",
             "header": [],
@@ -3379,7 +3778,7 @@
           }
         },
         {
-          "name": "Update branding \u2014 PUT /v1/tenants/{tenantID}/branding",
+          "name": "Update branding",
           "request": {
             "method": "PUT",
             "header": [
@@ -3412,7 +3811,7 @@
       "name": "Policy",
       "item": [
         {
-          "name": "Get policy \u2014 GET /v1/tenants/{tenantID}/policy",
+          "name": "Get policy",
           "request": {
             "method": "GET",
             "header": [],
@@ -3431,7 +3830,7 @@
           }
         },
         {
-          "name": "Update policy \u2014 PUT /v1/tenants/{tenantID}/policy",
+          "name": "Update policy",
           "request": {
             "method": "PUT",
             "header": [
@@ -3464,7 +3863,7 @@
       "name": "Audit",
       "item": [
         {
-          "name": "List audit events \u2014 GET /v1/tenants/{tenantID}/audit",
+          "name": "List audit events",
           "request": {
             "method": "GET",
             "header": [],
@@ -3509,7 +3908,7 @@
           }
         },
         {
-          "name": "Verify audit chain \u2014 GET /v1/tenants/{tenantID}/audit/verify",
+          "name": "Verify audit chain",
           "request": {
             "method": "GET",
             "header": [],
@@ -3528,6 +3927,223 @@
             },
             "description": "Verifies the tamper-evident hash chain across audit events for the tenant. Returns ok=true plus the verified range; ok=false with break_at when a tampered row is detected."
           }
+        },
+        {
+          "name": "Verify platform audit chain (public)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/audit/verify",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "audit",
+                "verify"
+              ]
+            },
+            "description": "PUBLIC (no bearer). Platform-chain integrity check over the NULL-tenant audit rows. Returns `{ chain_valid, rows_checked }` only — no tenant data. Mounted via Audit.MountPublic in the public route group so any external party can confirm the platform has not tampered with its own log."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List audit anomalies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/audit/anomalies?limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "audit",
+                "anomalies"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "open",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Behavioral-baseline anomalies for the tenant, most recent first. Requires `audit.read`. `status` filters to open/resolved. Captures the first anomaly id into {{anomalyId}} for the resolve request."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));",
+                  "try { const b = pm.response.json(); if (b.items && b.items[0] && b.items[0].id) pm.collectionVariables.set('anomalyId', b.items[0].id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Audit anomaly summary",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/audit/anomalies/summary",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "audit",
+                "anomalies",
+                "summary"
+              ]
+            },
+            "description": "Counts for the anomaly dashboard: `{ open, resolved_7d, high_score_open }`. Requires `audit.read`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resolve an audit anomaly",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/audit/anomalies/{{anomalyId}}/resolve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "audit",
+                "anomalies",
+                "{{anomalyId}}",
+                "resolve"
+              ]
+            },
+            "description": "Marks {{anomalyId}} resolved (204, no body). Must be attributed to a human — the principal needs a UserID (a service/API-key principal is rejected 401). Depends on List audit anomalies having populated {{anomalyId}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Resolved', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get anomaly-detection settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/audit/anomaly-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "audit",
+                "anomaly-settings"
+              ]
+            },
+            "description": "Returns `{ tenant_id, enabled, score_threshold, min_baseline_events }`. Falls back to defaults (enabled=true, score_threshold=0.6, min_baseline_events=20) when no row exists yet."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update anomaly-detection settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"enabled\": true,\n  \"score_threshold\": 0.6,\n  \"min_baseline_events\": 20\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/audit/anomaly-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "audit",
+                "anomaly-settings"
+              ]
+            },
+            "description": "Upserts the tenant's anomaly settings. `score_threshold` must be 0..1 and `min_baseline_events` >= 0 (else 422). tenant_id is taken from the path, not the body."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -3535,7 +4151,7 @@
       "name": "Analytics",
       "item": [
         {
-          "name": "Tenant analytics overview \u2014 GET /v1/tenants/{tenantID}/analytics/overview",
+          "name": "Tenant analytics overview",
           "request": {
             "method": "GET",
             "header": [],
@@ -3561,7 +4177,7 @@
       "name": "Admin / Outbox",
       "item": [
         {
-          "name": "List DLQ events \u2014 GET /v1/admin/outbox/dlq",
+          "name": "List DLQ events",
           "request": {
             "method": "GET",
             "header": [],
@@ -3592,7 +4208,7 @@
       "name": "GDPR",
       "item": [
         {
-          "name": "Create purge request \u2014 POST /v1/gdpr/purge",
+          "name": "Create purge request",
           "event": [
             {
               "listen": "test",
@@ -3631,7 +4247,7 @@
           }
         },
         {
-          "name": "List purge requests \u2014 GET /v1/tenants/{tenantID}/gdpr/purge",
+          "name": "List purge requests",
           "request": {
             "method": "GET",
             "header": [],
@@ -3671,7 +4287,7 @@
           ]
         },
         {
-          "name": "Cancel purge request \u2014 DELETE /v1/gdpr/purge/{id}",
+          "name": "Cancel purge request",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -3688,6 +4304,111 @@
               ]
             }
           }
+        },
+        {
+          "name": "Request a GDPR data export",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant_id\": \"{{tenantId}}\",\n  \"user_id\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/gdpr/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "gdpr",
+                "export"
+              ]
+            },
+            "description": "AUTHED (not public). Despite CONVENTIONS listing /v1/gdpr/export as public, the handler (createExport) calls httpx.RequireTenant and the route is mounted via GDPR.Mount inside the authenticated router group — tenant_id in the body is overridden by the caller's token scope. Queues an async export job (202 Accepted); the background sweep builds the payload. Captures the request id into {{gdprRequestId}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Accepted', () => pm.expect(pm.response.code).to.be.oneOf([200,201,202]));",
+                  "try { const b = pm.response.json(); if (b.id) pm.collectionVariables.set('gdprRequestId', b.id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List GDPR export requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/gdpr/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "gdpr",
+                "export"
+              ]
+            },
+            "description": "Lists the tenant's export requests, most recent first (`{ items: [...] }`). Payloads are omitted from the list; fetch a single request to see its payload once ready."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get a GDPR export request",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/gdpr/export/{{gdprRequestId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "gdpr",
+                "export",
+                "{{gdprRequestId}}"
+              ]
+            },
+            "description": "Returns the export request status plus the full data payload once status is `ready` (response then carries a Content-Disposition download header). Depends on {{gdprRequestId}} from Request a GDPR data export. The payload is filled asynchronously by the sweep, so expect status `pending` immediately after creation."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -3695,7 +4416,7 @@
       "name": "Groups",
       "item": [
         {
-          "name": "Create group \u2014 POST /v1/groups",
+          "name": "Create group",
           "event": [
             {
               "listen": "test",
@@ -3733,7 +4454,7 @@
           }
         },
         {
-          "name": "List groups \u2014 GET /v1/tenants/{tenantID}/groups",
+          "name": "List groups",
           "request": {
             "method": "GET",
             "header": [],
@@ -3772,7 +4493,7 @@
           ]
         },
         {
-          "name": "Delete group \u2014 DELETE /v1/groups/{id}",
+          "name": "Delete group",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -3790,7 +4511,7 @@
           }
         },
         {
-          "name": "Add member \u2014 POST /v1/groups/{id}/members/{userID}",
+          "name": "Add member",
           "request": {
             "method": "POST",
             "header": [],
@@ -3810,7 +4531,7 @@
           }
         },
         {
-          "name": "Remove member \u2014 DELETE /v1/groups/{id}/members/{userID}",
+          "name": "Remove member",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -3830,7 +4551,7 @@
           }
         },
         {
-          "name": "List members \u2014 GET /v1/groups/{id}/members",
+          "name": "List members",
           "request": {
             "method": "GET",
             "header": [],
@@ -3847,6 +4568,45 @@
               ]
             }
           }
+        },
+        {
+          "name": "Update group",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Engineering (renamed)\",\n  \"description\": \"Updated via Postman\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/groups/{{groupId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "groups",
+                "{{groupId}}"
+              ]
+            },
+            "description": "Update the group identified by {{groupId}}. Body fields: name, description, parent_id (nullable). Tenant-scoped via the caller's token. Response is the updated Group."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -3854,7 +4614,7 @@
       "name": "SCIM 2.0",
       "item": [
         {
-          "name": "Get SCIM config \u2014 GET /v1/tenants/{tenantID}/scim",
+          "name": "Get SCIM config",
           "request": {
             "method": "GET",
             "header": [],
@@ -3884,7 +4644,7 @@
           ]
         },
         {
-          "name": "Rotate SCIM token \u2014 POST /v1/tenants/{tenantID}/scim/token",
+          "name": "Rotate SCIM token",
           "request": {
             "method": "POST",
             "header": [],
@@ -3917,7 +4677,7 @@
           ]
         },
         {
-          "name": "List provisioned users \u2014 GET /v1/tenants/{tenantID}/scim/users",
+          "name": "List provisioned users",
           "request": {
             "method": "GET",
             "header": [],
@@ -3948,7 +4708,7 @@
           ]
         },
         {
-          "name": "[scim] ServiceProviderConfig \u2014 GET /scim/v2/ServiceProviderConfig",
+          "name": "[scim] ServiceProviderConfig",
           "request": {
             "method": "GET",
             "header": [],
@@ -3987,7 +4747,7 @@
           ]
         },
         {
-          "name": "[scim] Create user \u2014 POST /scim/v2/Users",
+          "name": "[scim] Create user",
           "request": {
             "method": "POST",
             "header": [
@@ -4037,7 +4797,7 @@
           ]
         },
         {
-          "name": "[scim] List users \u2014 GET /scim/v2/Users",
+          "name": "[scim] List users",
           "request": {
             "method": "GET",
             "header": [],
@@ -4077,7 +4837,7 @@
           ]
         },
         {
-          "name": "Revoke SCIM token \u2014 DELETE /v1/tenants/{tenantID}/scim/token",
+          "name": "Revoke SCIM token",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -4108,7 +4868,7 @@
           ]
         },
         {
-          "name": "[scim] ResourceTypes \u2014 GET /scim/v2/ResourceTypes",
+          "name": "[scim] ResourceTypes",
           "request": {
             "method": "GET",
             "header": [],
@@ -4136,7 +4896,7 @@
           }
         },
         {
-          "name": "[scim] Schemas \u2014 GET /scim/v2/Schemas",
+          "name": "[scim] Schemas",
           "request": {
             "method": "GET",
             "header": [],
@@ -4164,7 +4924,7 @@
           }
         },
         {
-          "name": "[scim] Get user \u2014 GET /scim/v2/Users/{id}",
+          "name": "[scim] Get user",
           "request": {
             "method": "GET",
             "header": [],
@@ -4193,7 +4953,7 @@
           }
         },
         {
-          "name": "[scim] Replace user \u2014 PUT /scim/v2/Users/{id}",
+          "name": "[scim] Replace user",
           "request": {
             "method": "PUT",
             "header": [
@@ -4231,7 +4991,7 @@
           }
         },
         {
-          "name": "[scim] Patch user (deprovision) \u2014 PATCH /scim/v2/Users/{id}",
+          "name": "[scim] Patch user (deprovision)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -4269,7 +5029,7 @@
           }
         },
         {
-          "name": "[scim] Delete user \u2014 DELETE /scim/v2/Users/{id}",
+          "name": "[scim] Delete user",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -4298,7 +5058,7 @@
           }
         },
         {
-          "name": "[scim] List groups \u2014 GET /scim/v2/Groups",
+          "name": "[scim] List groups",
           "request": {
             "method": "GET",
             "header": [],
@@ -4337,7 +5097,7 @@
           ]
         },
         {
-          "name": "[scim] Create group \u2014 POST /scim/v2/Groups",
+          "name": "[scim] Create group",
           "request": {
             "method": "POST",
             "header": [
@@ -4386,7 +5146,7 @@
           ]
         },
         {
-          "name": "[scim] Get group \u2014 GET /scim/v2/Groups/{id}",
+          "name": "[scim] Get group",
           "request": {
             "method": "GET",
             "header": [],
@@ -4415,7 +5175,7 @@
           }
         },
         {
-          "name": "[scim] Replace group \u2014 PUT /scim/v2/Groups/{id}",
+          "name": "[scim] Replace group",
           "request": {
             "method": "PUT",
             "header": [
@@ -4453,7 +5213,7 @@
           }
         },
         {
-          "name": "[scim] Patch group \u2014 PATCH /scim/v2/Groups/{id}",
+          "name": "[scim] Patch group",
           "request": {
             "method": "PATCH",
             "header": [
@@ -4491,7 +5251,7 @@
           }
         },
         {
-          "name": "[scim] Delete group \u2014 DELETE /scim/v2/Groups/{id}",
+          "name": "[scim] Delete group",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -4525,7 +5285,7 @@
       "name": "SAML 2.0 SSO",
       "item": [
         {
-          "name": "Create connection \u2014 POST /v1/tenants/{tenantID}/saml",
+          "name": "Create connection",
           "request": {
             "method": "POST",
             "header": [
@@ -4566,7 +5326,7 @@
           ]
         },
         {
-          "name": "List connections \u2014 GET /v1/tenants/{tenantID}/saml",
+          "name": "List connections",
           "request": {
             "method": "GET",
             "header": [],
@@ -4596,7 +5356,7 @@
           ]
         },
         {
-          "name": "Get connection \u2014 GET /v1/tenants/{tenantID}/saml/{id}",
+          "name": "Get connection",
           "request": {
             "method": "GET",
             "header": [],
@@ -4627,7 +5387,7 @@
           ]
         },
         {
-          "name": "Update connection \u2014 PATCH /v1/tenants/{tenantID}/saml/{id}",
+          "name": "Update connection",
           "request": {
             "method": "PATCH",
             "header": [
@@ -4667,7 +5427,7 @@
           ]
         },
         {
-          "name": "SP metadata (public) \u2014 GET /saml/metadata/{id}",
+          "name": "SP metadata (public)",
           "request": {
             "method": "GET",
             "header": [],
@@ -4699,7 +5459,7 @@
           ]
         },
         {
-          "name": "Login redirect (public) \u2014 GET /saml/login/{id}",
+          "name": "Login redirect (public)",
           "request": {
             "method": "GET",
             "header": [],
@@ -4731,7 +5491,7 @@
           ]
         },
         {
-          "name": "Exchange code (public) \u2014 POST /saml/exchange",
+          "name": "Exchange code (public)",
           "request": {
             "method": "POST",
             "header": [
@@ -4771,7 +5531,7 @@
           ]
         },
         {
-          "name": "Delete connection \u2014 DELETE /v1/tenants/{tenantID}/saml/{id}",
+          "name": "Delete connection",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -4802,7 +5562,7 @@
           ]
         },
         {
-          "name": "Test SAML connection \u2014 POST /v1/tenants/{tenantID}/saml/{id}/test",
+          "name": "Test SAML connection",
           "request": {
             "method": "POST",
             "header": [],
@@ -4824,7 +5584,7 @@
           }
         },
         {
-          "name": "List SAML SPs (IdP side) \u2014 GET /v1/tenants/{tenantID}/saml-providers",
+          "name": "List SAML SPs (IdP side)",
           "request": {
             "method": "GET",
             "header": [],
@@ -4843,7 +5603,7 @@
           }
         },
         {
-          "name": "Register SAML SP (IdP side) \u2014 POST /v1/tenants/{tenantID}/saml-providers",
+          "name": "Register SAML SP (IdP side)",
           "request": {
             "method": "POST",
             "header": [
@@ -4884,7 +5644,7 @@
           ]
         },
         {
-          "name": "Get SAML SP \u2014 GET /v1/tenants/{tenantID}/saml-providers/{id}",
+          "name": "Get SAML SP",
           "request": {
             "method": "GET",
             "header": [],
@@ -4904,7 +5664,7 @@
           }
         },
         {
-          "name": "Update SAML SP \u2014 PATCH /v1/tenants/{tenantID}/saml-providers/{id}",
+          "name": "Update SAML SP",
           "request": {
             "method": "PATCH",
             "header": [
@@ -4933,7 +5693,7 @@
           }
         },
         {
-          "name": "Delete SAML SP \u2014 DELETE /v1/tenants/{tenantID}/saml-providers/{id}",
+          "name": "Delete SAML SP",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -4953,7 +5713,7 @@
           }
         },
         {
-          "name": "[acs] Assertion Consumer Service \u2014 POST /saml/acs/{id}",
+          "name": "[acs] Assertion Consumer Service",
           "request": {
             "method": "POST",
             "header": [
@@ -4995,7 +5755,7 @@
           }
         },
         {
-          "name": "[idp] IdP metadata \u2014 GET /saml/idp/metadata",
+          "name": "[idp] IdP metadata",
           "request": {
             "method": "GET",
             "header": [],
@@ -5017,7 +5777,7 @@
           }
         },
         {
-          "name": "[idp] IdP SSO (redirect binding) \u2014 GET /saml/idp/sso",
+          "name": "[idp] IdP SSO (redirect binding)",
           "request": {
             "method": "GET",
             "header": [],
@@ -5048,7 +5808,7 @@
           }
         },
         {
-          "name": "[idp] IdP SSO (POST binding) \u2014 POST /saml/idp/sso",
+          "name": "[idp] IdP SSO (POST binding)",
           "request": {
             "method": "POST",
             "header": [
@@ -5094,7 +5854,7 @@
       "name": "LDAP / Active Directory",
       "item": [
         {
-          "name": "Create connection \u2014 POST /v1/tenants/{tenantID}/ldap",
+          "name": "Create connection",
           "request": {
             "method": "POST",
             "header": [
@@ -5135,7 +5895,7 @@
           ]
         },
         {
-          "name": "List connections \u2014 GET /v1/tenants/{tenantID}/ldap",
+          "name": "List connections",
           "request": {
             "method": "GET",
             "header": [],
@@ -5165,7 +5925,7 @@
           ]
         },
         {
-          "name": "Get connection \u2014 GET /v1/tenants/{tenantID}/ldap/{id}",
+          "name": "Get connection",
           "request": {
             "method": "GET",
             "header": [],
@@ -5196,7 +5956,7 @@
           ]
         },
         {
-          "name": "Update connection \u2014 PATCH /v1/tenants/{tenantID}/ldap/{id}",
+          "name": "Update connection",
           "request": {
             "method": "PATCH",
             "header": [
@@ -5236,7 +5996,7 @@
           ]
         },
         {
-          "name": "Test bind \u2014 POST /v1/tenants/{tenantID}/ldap/{id}/test",
+          "name": "Test bind",
           "request": {
             "method": "POST",
             "header": [],
@@ -5268,7 +6028,7 @@
           ]
         },
         {
-          "name": "Authenticate (public) \u2014 POST /ldap/{id}/authenticate",
+          "name": "Authenticate (public)",
           "request": {
             "method": "POST",
             "header": [
@@ -5309,7 +6069,7 @@
           ]
         },
         {
-          "name": "Delete connection \u2014 DELETE /v1/tenants/{tenantID}/ldap/{id}",
+          "name": "Delete connection",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -5345,7 +6105,7 @@
       "name": "Auth Policy",
       "item": [
         {
-          "name": "Get auth policy \u2014 GET /v1/tenants/{tenantID}/auth-policy",
+          "name": "Get auth policy",
           "request": {
             "method": "GET",
             "header": [],
@@ -5375,7 +6135,7 @@
           ]
         },
         {
-          "name": "Update auth policy \u2014 PUT /v1/tenants/{tenantID}/auth-policy",
+          "name": "Update auth policy",
           "request": {
             "method": "PUT",
             "header": [
@@ -5419,7 +6179,7 @@
       "name": "IP Allow/Deny Rules",
       "item": [
         {
-          "name": "List rules + enforcement \u2014 GET /v1/tenants/{tenantID}/ip-rules",
+          "name": "List rules + enforcement",
           "request": {
             "method": "GET",
             "header": [],
@@ -5449,7 +6209,7 @@
           ]
         },
         {
-          "name": "Set enforcement \u2014 PUT /v1/tenants/{tenantID}/ip-rules/config",
+          "name": "Set enforcement",
           "request": {
             "method": "PUT",
             "header": [
@@ -5489,7 +6249,7 @@
           ]
         },
         {
-          "name": "Add rule \u2014 POST /v1/tenants/{tenantID}/ip-rules",
+          "name": "Add rule",
           "request": {
             "method": "POST",
             "header": [
@@ -5530,7 +6290,7 @@
           ]
         },
         {
-          "name": "Check an address \u2014 POST /v1/tenants/{tenantID}/ip-rules/check",
+          "name": "Check an address",
           "request": {
             "method": "POST",
             "header": [
@@ -5570,7 +6330,7 @@
           ]
         },
         {
-          "name": "Delete rule \u2014 DELETE /v1/tenants/{tenantID}/ip-rules/{ruleID}",
+          "name": "Delete rule",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -5606,7 +6366,7 @@
       "name": "Email Templates",
       "item": [
         {
-          "name": "List templates \u2014 GET /v1/tenants/{tenantID}/email-templates",
+          "name": "List templates",
           "request": {
             "method": "GET",
             "header": [],
@@ -5636,7 +6396,7 @@
           ]
         },
         {
-          "name": "Get template \u2014 GET /v1/tenants/{tenantID}/email-templates/{key}",
+          "name": "Get template",
           "request": {
             "method": "GET",
             "header": [],
@@ -5667,7 +6427,7 @@
           ]
         },
         {
-          "name": "Override template \u2014 PUT /v1/tenants/{tenantID}/email-templates/{key}",
+          "name": "Override template",
           "request": {
             "method": "PUT",
             "header": [
@@ -5707,7 +6467,7 @@
           ]
         },
         {
-          "name": "Preview template \u2014 POST /v1/tenants/{tenantID}/email-templates/{key}/preview",
+          "name": "Preview template",
           "request": {
             "method": "POST",
             "header": [
@@ -5748,7 +6508,7 @@
           ]
         },
         {
-          "name": "Reset to default \u2014 DELETE /v1/tenants/{tenantID}/email-templates/{key}",
+          "name": "Reset to default",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -5784,7 +6544,7 @@
       "name": "Secrets Vault",
       "item": [
         {
-          "name": "List secrets \u2014 GET /v1/tenants/{tenantID}/secrets",
+          "name": "List secrets",
           "request": {
             "method": "GET",
             "header": [],
@@ -5814,7 +6574,7 @@
           ]
         },
         {
-          "name": "Create secret \u2014 POST /v1/tenants/{tenantID}/secrets",
+          "name": "Create secret",
           "request": {
             "method": "POST",
             "header": [
@@ -5855,7 +6615,7 @@
           ]
         },
         {
-          "name": "Reveal secret \u2014 POST /v1/tenants/{tenantID}/secrets/{id}/reveal",
+          "name": "Reveal secret",
           "request": {
             "method": "POST",
             "header": [],
@@ -5887,7 +6647,7 @@
           ]
         },
         {
-          "name": "Rotate secret \u2014 PATCH /v1/tenants/{tenantID}/secrets/{id}",
+          "name": "Rotate secret",
           "request": {
             "method": "PATCH",
             "header": [
@@ -5927,7 +6687,7 @@
           ]
         },
         {
-          "name": "Delete secret \u2014 DELETE /v1/tenants/{tenantID}/secrets/{id}",
+          "name": "Delete secret",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -5958,7 +6718,7 @@
           ]
         },
         {
-          "name": "Vault read by name \u2014 GET /v1/vault/{name}",
+          "name": "Vault read by name",
           "request": {
             "method": "GET",
             "header": [],
@@ -5983,7 +6743,7 @@
                 "{{secretName}}"
               ]
             },
-            "description": "Token vaulting: fetch a secret by name with a scoped principal (e.g. an AI agent). Requires scope vault:<name> or vault:read \u2014 uses {{agentAccessToken}}. Set {{secretName}} to a secret created in this folder."
+            "description": "Token vaulting: fetch a secret by name with a scoped principal (e.g. an AI agent). Requires scope vault:<name> or vault:read — uses {{agentAccessToken}}. Set {{secretName}} to a secret created in this folder."
           }
         }
       ]
@@ -5992,7 +6752,7 @@
       "name": "Data Retention",
       "item": [
         {
-          "name": "Get retention policy \u2014 GET /v1/tenants/{tenantID}/retention",
+          "name": "Get retention policy",
           "request": {
             "method": "GET",
             "header": [],
@@ -6022,7 +6782,7 @@
           ]
         },
         {
-          "name": "Update retention policy \u2014 PUT /v1/tenants/{tenantID}/retention",
+          "name": "Update retention policy",
           "request": {
             "method": "PUT",
             "header": [
@@ -6061,7 +6821,7 @@
           ]
         },
         {
-          "name": "Preview ripe users \u2014 POST /v1/tenants/{tenantID}/retention/preview",
+          "name": "Preview ripe users",
           "request": {
             "method": "POST",
             "header": [],
@@ -6092,7 +6852,7 @@
           ]
         },
         {
-          "name": "Run purge now \u2014 POST /v1/tenants/{tenantID}/retention/run",
+          "name": "Run purge now",
           "request": {
             "method": "POST",
             "header": [],
@@ -6128,7 +6888,7 @@
       "name": "Billing",
       "item": [
         {
-          "name": "List plans \u2014 GET /v1/billing/plans",
+          "name": "List plans",
           "request": {
             "method": "GET",
             "header": [],
@@ -6157,7 +6917,7 @@
           ]
         },
         {
-          "name": "Get subscription \u2014 GET /v1/tenants/{tenantID}/billing/subscription",
+          "name": "Get subscription",
           "request": {
             "method": "GET",
             "header": [],
@@ -6188,7 +6948,7 @@
           ]
         },
         {
-          "name": "Subscribe / change plan \u2014 PUT /v1/tenants/{tenantID}/billing/subscription",
+          "name": "Subscribe / change plan",
           "request": {
             "method": "PUT",
             "header": [
@@ -6228,7 +6988,7 @@
           ]
         },
         {
-          "name": "List invoices \u2014 GET /v1/tenants/{tenantID}/billing/invoices",
+          "name": "List invoices",
           "request": {
             "method": "GET",
             "header": [],
@@ -6259,7 +7019,7 @@
           ]
         },
         {
-          "name": "Cancel at period end \u2014 POST /v1/tenants/{tenantID}/billing/subscription/cancel",
+          "name": "Cancel at period end",
           "request": {
             "method": "POST",
             "header": [],
@@ -6291,7 +7051,7 @@
           ]
         },
         {
-          "name": "Start checkout \u2014 POST /v1/tenants/{tenantID}/billing/checkout",
+          "name": "Start checkout",
           "request": {
             "method": "POST",
             "header": [
@@ -6321,7 +7081,7 @@
           }
         },
         {
-          "name": "Payment webhook \u2014 POST /v1/billing/webhooks/stripe",
+          "name": "Payment webhook",
           "request": {
             "method": "POST",
             "header": [
@@ -6349,8 +7109,120 @@
                 "stripe"
               ]
             },
-            "description": "Provider webhook (path is the provider: stripe | razorpay). Signature-verified server-side \u2014 Postman calls will be rejected without a valid provider signature."
+            "description": "Provider webhook (path is the provider: stripe | razorpay). Signature-verified server-side — Postman calls will be rejected without a valid provider signature."
           }
+        },
+        {
+          "name": "[setup] Sandbox checkout page (dev)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/billing/sandbox/checkout?ref={{checkoutRef}}&plan=pro&amount=1900&currency=INR&success_url=http://localhost:3002/billing/success&cancel_url=http://localhost:3002/billing/cancel",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "billing",
+                "sandbox",
+                "checkout"
+              ],
+              "query": [
+                {
+                  "key": "ref",
+                  "value": "{{checkoutRef}}"
+                },
+                {
+                  "key": "plan",
+                  "value": "pro"
+                },
+                {
+                  "key": "amount",
+                  "value": "1900"
+                },
+                {
+                  "key": "currency",
+                  "value": "INR"
+                },
+                {
+                  "key": "success_url",
+                  "value": "http://localhost:3002/billing/success"
+                },
+                {
+                  "key": "cancel_url",
+                  "value": "http://localhost:3002/billing/cancel"
+                }
+              ]
+            },
+            "description": "Dev-only mock hosted-checkout PAGE (returns HTML), public/no-auth. Route exists in the router but is intentionally undocumented in the OpenAPI spec. 404 unless the sandbox provider is enabled (PAYMENT_SANDBOX_BASE_URL). `ref` comes from a real 'Start checkout' whose `checkout_url` points here; `success_url`/`cancel_url` are open-redirect validated. `[setup]` — meant to be opened in a browser, not asserted in Newman."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('page or 404 (sandbox disabled)', () => pm.expect(pm.response.code).to.be.oneOf([200,400,404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[setup] Sandbox pay (dev)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "ref",
+                  "value": "{{checkoutRef}}"
+                },
+                {
+                  "key": "success_url",
+                  "value": "http://localhost:3002/billing/success"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/billing/sandbox/pay",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "billing",
+                "sandbox",
+                "pay"
+              ]
+            },
+            "description": "Dev-only sandbox 'pay' action (form-urlencoded), public/no-auth — undocumented in the OpenAPI spec but registered by the router. Completes the checkout referenced by `ref` (same path a real provider webhook takes) then 303-redirects to `success_url`. 404 unless the sandbox is enabled. `[setup]` — needs a valid `ref` from a started checkout."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('redirect/303 or 404 (sandbox disabled)', () => pm.expect(pm.response.code).to.be.oneOf([303,302,400,404]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -6358,7 +7230,7 @@
       "name": "OAuth Grants",
       "item": [
         {
-          "name": "List active grants \u2014 GET /v1/tenants/{tenantID}/oauth/grants",
+          "name": "List active grants",
           "request": {
             "method": "GET",
             "header": [],
@@ -6389,7 +7261,7 @@
           ]
         },
         {
-          "name": "Revoke grant \u2014 DELETE /v1/tenants/{tenantID}/oauth/grants/{id}",
+          "name": "Revoke grant",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -6423,10 +7295,10 @@
       ]
     },
     {
-      "name": "Users \u2014 Recycle Bin",
+      "name": "Users — Recycle Bin",
       "item": [
         {
-          "name": "List deleted users \u2014 GET /v1/users/deleted",
+          "name": "List deleted users",
           "request": {
             "method": "GET",
             "header": [],
@@ -6455,7 +7327,7 @@
           ]
         },
         {
-          "name": "Restore user \u2014 POST /v1/users/{id}/restore",
+          "name": "Restore user",
           "request": {
             "method": "POST",
             "header": [],
@@ -6485,7 +7357,7 @@
           ]
         },
         {
-          "name": "Purge user \u2014 DELETE /v1/users/{id}/purge",
+          "name": "Purge user",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -6520,7 +7392,7 @@
       "name": "OAuth 2.0 & OIDC Flows",
       "item": [
         {
-          "name": "Login context \u2014 GET /v1/oauth/login-context",
+          "name": "Login context",
           "request": {
             "method": "GET",
             "header": [],
@@ -6548,7 +7420,7 @@
           }
         },
         {
-          "name": "Authorize decision (consent) \u2014 POST /v1/oauth/authorize/decision",
+          "name": "Authorize decision (consent)",
           "request": {
             "method": "POST",
             "header": [
@@ -6580,7 +7452,7 @@
           }
         },
         {
-          "name": "Device authorization \u2014 POST /v1/oauth/device_authorization",
+          "name": "Device authorization",
           "request": {
             "method": "POST",
             "header": [
@@ -6623,7 +7495,7 @@
                 "device_authorization"
               ]
             },
-            "description": "RFC 8628 \u00a73.1 device flow initiation."
+            "description": "RFC 8628 §3.1 device flow initiation."
           },
           "event": [
             {
@@ -6640,7 +7512,7 @@
           ]
         },
         {
-          "name": "Device verification context \u2014 GET /v1/oauth/device",
+          "name": "Device verification context",
           "request": {
             "method": "GET",
             "header": [],
@@ -6667,7 +7539,7 @@
           }
         },
         {
-          "name": "Device decision (approve) \u2014 POST /v1/oauth/device/decision",
+          "name": "Device decision (approve)",
           "request": {
             "method": "POST",
             "header": [
@@ -6698,7 +7570,7 @@
           }
         },
         {
-          "name": "RP-initiated logout \u2014 GET /v1/oauth/logout",
+          "name": "RP-initiated logout (GET)",
           "request": {
             "method": "GET",
             "header": [],
@@ -6725,7 +7597,7 @@
           }
         },
         {
-          "name": "RP-initiated logout \u2014 POST /v1/oauth/logout",
+          "name": "RP-initiated logout (POST)",
           "request": {
             "method": "POST",
             "header": [
@@ -6755,7 +7627,7 @@
           }
         },
         {
-          "name": "Token revoke (RFC 7009) \u2014 POST /oauth/revoke",
+          "name": "Token revoke (RFC 7009)",
           "request": {
             "method": "POST",
             "header": [
@@ -6806,7 +7678,7 @@
           }
         },
         {
-          "name": "Token introspect (RFC 7662) \u2014 POST /oauth/introspect",
+          "name": "Token introspect (RFC 7662)",
           "request": {
             "method": "POST",
             "header": [
@@ -6852,7 +7724,7 @@
           }
         },
         {
-          "name": "Signing keys metadata \u2014 GET /v1/oidc/signing-keys",
+          "name": "Signing keys metadata",
           "request": {
             "method": "GET",
             "header": [],
@@ -6871,7 +7743,7 @@
           }
         },
         {
-          "name": "Token exchange (RFC 8693) \u2014 POST /v1/oauth/token-code",
+          "name": "Token exchange (RFC 8693)",
           "request": {
             "method": "POST",
             "header": [
@@ -6960,7 +7832,7 @@
           ]
         },
         {
-          "name": "Device token poll \u2014 POST /v1/oauth/token-code",
+          "name": "Device token poll",
           "request": {
             "method": "POST",
             "header": [
@@ -7003,8 +7875,181 @@
                 "token-code"
               ]
             },
-            "description": "RFC 8628 \u00a73.4 device-code polling against the shared /v1/oauth/token-code endpoint. Poll after Device authorization + Device decision (approve)."
+            "description": "RFC 8628 §3.4 device-code polling against the shared /v1/oauth/token-code endpoint. Poll after Device authorization + Device decision (approve)."
           }
+        },
+        {
+          "name": "Protected resource metadata (RFC 9728)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/.well-known/oauth-protected-resource",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                ".well-known",
+                "oauth-protected-resource"
+              ]
+            },
+            "description": "Public discovery — RFC 9728 OAuth 2.0 Protected Resource Metadata (for MCP authorization-server compliance). Advertises `resource`, `authorization_servers`, `bearer_methods_supported`, and `resource_signing_alg_values_supported`. Runnable as-is. Handler: internal/federation/oidc/oidc.go protectedResourceMetadata (MountPublic)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Backchannel authorize (CIBA, poll mode)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/x-www-form-urlencoded"
+              }
+            ],
+            "body": {
+              "mode": "urlencoded",
+              "urlencoded": [
+                {
+                  "key": "client_id",
+                  "value": "{{oidcClientId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "client_secret",
+                  "value": "{{oidcClientSecret}}",
+                  "type": "text"
+                },
+                {
+                  "key": "login_hint",
+                  "value": "{{signupEmail}}",
+                  "type": "text"
+                },
+                {
+                  "key": "scope",
+                  "value": "openid",
+                  "type": "text"
+                },
+                {
+                  "key": "binding_message",
+                  "value": "Approve sign-in from Postman",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/oauth/bc-authorize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "oauth",
+                "bc-authorize"
+              ]
+            },
+            "description": "Public, CLIENT-authenticated (client_id/client_secret in the form body, or HTTP Basic) — mounted in the public group (MountBrowser), so no bearer JWT. OpenID CIBA §7 poll mode. Prereqs: the client must be granted the CIBA grant (urn:openid:params:grant-type:ciba) and `login_hint` must resolve to a user in the client's own tenant (else `unknown_user_id`). Returns `auth_req_id`; the client then polls POST /v1/oauth/token-code with grant_type=urn:openid:params:grant-type:ciba while the user approves via .../decision. Captures auth_req_id into {{cibaAuthReqId}}. Handler: internal/federation/oidc/ciba.go backchannelAuthorize."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.eql(200));",
+                  "try { const b = pm.response.json(); if (b.auth_req_id) pm.collectionVariables.set('cibaAuthReqId', b.auth_req_id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List my pending CIBA requests",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/oauth/bc-authorize/pending",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "oauth",
+                "bc-authorize",
+                "pending"
+              ]
+            },
+            "description": "Authed (bearer JWT / API key) — the signed-in user's own still-pending, unexpired backchannel (CIBA) requests, for an 'approve sign-in' view. The signed-in user must be the same user that `login_hint` resolved to in bc-authorize. Captures items[0].id into {{cibaRequestId}} for the decision call. Handler: ciba.go pendingBackchannel → ListPendingCIBA."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.eql(200));",
+                  "try { const b = pm.response.json(); if (b.items && b.items.length) pm.collectionVariables.set('cibaRequestId', b.items[0].id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Approve/deny a pending CIBA request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"{{cibaRequestId}}\",\n  \"approve\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/oauth/bc-authorize/decision",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "oauth",
+                "bc-authorize",
+                "decision"
+              ]
+            },
+            "description": "Authed — records the signed-in user's approve/deny of one of THEIR OWN pending CIBA requests. `id` is the opaque request id from GET .../pending ({{cibaRequestId}}), NOT the raw auth_req_id. Rejects ids that aren't yours (403), already-decided (409), or expired (400). Returns {status: authorized|denied}. Handler: ciba.go backchannelDecision → DecideBackchannel."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -7012,7 +8057,7 @@
       "name": "OIDC Client Management",
       "item": [
         {
-          "name": "List OIDC clients \u2014 GET /v1/tenants/{tenantID}/oidc/clients",
+          "name": "List OIDC clients",
           "request": {
             "method": "GET",
             "header": [],
@@ -7045,7 +8090,7 @@
           ]
         },
         {
-          "name": "Create OIDC client \u2014 POST /v1/tenants/{tenantID}/oidc/clients",
+          "name": "Create OIDC client",
           "request": {
             "method": "POST",
             "header": [
@@ -7089,7 +8134,7 @@
           ]
         },
         {
-          "name": "Get OIDC client \u2014 GET /v1/tenants/{tenantID}/oidc/clients/{id}",
+          "name": "Get OIDC client",
           "request": {
             "method": "GET",
             "header": [],
@@ -7110,7 +8155,7 @@
           }
         },
         {
-          "name": "Update OIDC client \u2014 PATCH /v1/tenants/{tenantID}/oidc/clients/{id}",
+          "name": "Update OIDC client",
           "request": {
             "method": "PATCH",
             "header": [
@@ -7140,7 +8185,7 @@
           }
         },
         {
-          "name": "Rotate client secret \u2014 POST .../oidc/clients/{id}/rotate-secret",
+          "name": "Rotate client secret",
           "request": {
             "method": "POST",
             "header": [],
@@ -7174,7 +8219,7 @@
           ]
         },
         {
-          "name": "Delete OIDC client \u2014 DELETE /v1/tenants/{tenantID}/oidc/clients/{id}",
+          "name": "Delete OIDC client",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -7195,7 +8240,7 @@
           }
         },
         {
-          "name": "Delete OIDC client (by scope) \u2014 DELETE /v1/oidc/clients/{id}",
+          "name": "Delete OIDC client (by scope)",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -7215,7 +8260,7 @@
           }
         },
         {
-          "name": "List device authorizations \u2014 GET /v1/tenants/{tenantID}/oauth/devices",
+          "name": "List device authorizations",
           "request": {
             "method": "GET",
             "header": [],
@@ -7248,7 +8293,7 @@
           ]
         },
         {
-          "name": "Revoke device authorization \u2014 DELETE .../oauth/devices/{id}",
+          "name": "Revoke device authorization",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -7267,6 +8312,40 @@
               ]
             }
           }
+        },
+        {
+          "name": "Acknowledge a shadow-AI candidate",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/oidc/clients/{{oidcClientRowId}}/review",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "oidc",
+                "clients",
+                "{{oidcClientRowId}}",
+                "review"
+              ]
+            },
+            "description": "Authed — marks an OIDC client that surfaced on the shadow-AI candidates list (GET .../oidc/clients/shadow-ai) as reviewed, attributed to the calling HUMAN principal. The token must carry a user id (a bearer user JWT) — an API key / service-principal token with no user id is rejected 401 ('review must be attributed to a human'). Drops the client off the shadow-AI list until its grant_types change again. Returns 204. {{oidcClientRowId}} must be a real client row id in {{tenantId}}. Handler: clients_admin.go reviewShadowAI → ReviewShadowAIClient."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('No Content', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -7274,7 +8353,7 @@
       "name": "ReBAC (Relationships)",
       "item": [
         {
-          "name": "List relation tuples \u2014 GET /v1/tenants/{tenantID}/relation-tuples",
+          "name": "List relation tuples",
           "request": {
             "method": "GET",
             "header": [],
@@ -7300,7 +8379,7 @@
           }
         },
         {
-          "name": "Write relation tuple \u2014 POST /v1/tenants/{tenantID}/relation-tuples",
+          "name": "Write relation tuple",
           "request": {
             "method": "POST",
             "header": [
@@ -7341,7 +8420,7 @@
           ]
         },
         {
-          "name": "Check relation \u2014 POST /v1/tenants/{tenantID}/relation-tuples/check",
+          "name": "Check relation",
           "request": {
             "method": "POST",
             "header": [
@@ -7371,7 +8450,7 @@
           }
         },
         {
-          "name": "Delete relation tuple \u2014 DELETE /v1/tenants/{tenantID}/relation-tuples/{id}",
+          "name": "Delete relation tuple",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -7389,6 +8468,55 @@
               ]
             }
           }
+        },
+        {
+          "name": "Expand identity graph",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/relation-tuples/graph?object=document:readme&relation=owner&depth=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "relation-tuples",
+                "graph"
+              ],
+              "query": [
+                {
+                  "key": "object",
+                  "value": "document:readme",
+                  "description": "Root object ref 'type:id' (required)."
+                },
+                {
+                  "key": "relation",
+                  "value": "owner",
+                  "description": "Relation to expand from the root (required)."
+                },
+                {
+                  "key": "depth",
+                  "value": "5",
+                  "description": "Max hops to follow (1-10, default 10)."
+                }
+              ]
+            },
+            "description": "Builds nodes+edges of every subject reachable from object+relation up to depth hops ('who/what can reach this resource?'). Returns {nodes:[{id,type,label}], edges:[{from,to,relation}]}. object & relation are required. Required permission: `role.read`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -7396,7 +8524,7 @@
       "name": "Security & Threat Detection",
       "item": [
         {
-          "name": "List anomalies \u2014 GET /v1/tenants/{tenantID}/security/anomalies",
+          "name": "List anomalies",
           "request": {
             "method": "GET",
             "header": [],
@@ -7429,7 +8557,7 @@
           ]
         },
         {
-          "name": "Anomaly summary \u2014 GET /v1/tenants/{tenantID}/security/anomalies/summary",
+          "name": "Anomaly summary",
           "request": {
             "method": "GET",
             "header": [],
@@ -7450,7 +8578,7 @@
           }
         },
         {
-          "name": "Resolve anomaly \u2014 POST .../security/anomalies/{id}/resolve",
+          "name": "Resolve anomaly",
           "request": {
             "method": "POST",
             "header": [],
@@ -7472,7 +8600,7 @@
           }
         },
         {
-          "name": "Bot telemetry \u2014 GET /v1/tenants/{tenantID}/security/bots",
+          "name": "Bot telemetry",
           "request": {
             "method": "GET",
             "header": [],
@@ -7492,7 +8620,7 @@
           }
         },
         {
-          "name": "Get bot settings \u2014 GET /v1/tenants/{tenantID}/security/bots/settings",
+          "name": "Get bot settings",
           "request": {
             "method": "GET",
             "header": [],
@@ -7513,7 +8641,7 @@
           }
         },
         {
-          "name": "Update bot settings \u2014 PUT /v1/tenants/{tenantID}/security/bots/settings",
+          "name": "Update bot settings",
           "request": {
             "method": "PUT",
             "header": [
@@ -7541,6 +8669,79 @@
               ]
             }
           }
+        },
+        {
+          "name": "Get risk settings",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/security/risk-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "security",
+                "risk-settings"
+              ]
+            },
+            "description": "Returns RiskSettings: medium/high thresholds, force_mfa_at_level, and the two additive adaptive-MFA signals (impossible_travel, device_reputation; both off by default). Ungated beyond tenant scope."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update risk settings",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"medium_threshold\": 40,\n  \"high_threshold\": 70,\n  \"force_mfa_at_level\": \"high\",\n  \"impossible_travel_enabled\": true,\n  \"min_travel_hours\": 2,\n  \"device_reputation_enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/security/risk-settings",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "security",
+                "risk-settings"
+              ]
+            },
+            "description": "Upserts RiskSettings (send the full RiskSettings object). force_mfa_at_level is 'medium' or 'high'. Ungated beyond tenant scope."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -7548,7 +8749,7 @@
       "name": "AI Agents",
       "item": [
         {
-          "name": "List agents \u2014 GET /v1/tenants/{tenantID}/agents",
+          "name": "List agents",
           "request": {
             "method": "GET",
             "header": [],
@@ -7580,7 +8781,7 @@
           ]
         },
         {
-          "name": "Create agent \u2014 POST /v1/tenants/{tenantID}/agents",
+          "name": "Create agent",
           "request": {
             "method": "POST",
             "header": [
@@ -7591,7 +8792,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"ci-agent-{{$timestamp}}\",\n  \"scopes\": [\n    \"user.read\",\n    \"audit:read\"\n  ],\n  \"token_ttl_seconds\": 300\n}"
+              "raw": "{\n  \"name\": \"ci-agent-{{$timestamp}}\",\n  \"sponsor_user_id\": \"{{userId}}\",\n  \"scopes\": [\n    \"user.read\",\n    \"audit.read\"\n  ],\n  \"token_ttl_seconds\": 300\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/agents",
@@ -7622,7 +8823,7 @@
           ]
         },
         {
-          "name": "Delete agent \u2014 DELETE /v1/tenants/{tenantID}/agents/{id}",
+          "name": "Delete agent",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -7642,7 +8843,7 @@
           }
         },
         {
-          "name": "Mint agent token \u2014 POST /v1/agents/token",
+          "name": "Mint agent token",
           "request": {
             "method": "POST",
             "header": [
@@ -7683,6 +8884,255 @@
               }
             }
           ]
+        },
+        {
+          "name": "List agents sponsored by a user",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/agents/sponsored-by/{{userId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "agents",
+                "sponsored-by",
+                "{{userId}}"
+              ]
+            },
+            "description": "Lists the tenant's non-decommissioned agents owned (sponsored) by {{userId}} — what an admin reviews before offboarding that person."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));",
+                  "try { const r = pm.response.json(); const arr = r.items || r; if (Array.isArray(arr) && arr.length && arr[0].id !== undefined) pm.collectionVariables.set('agentId', arr[0].id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Transfer sponsorship",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"to_user_id\": \"{{userId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/agents/sponsored-by/{{userId}}/transfer",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "agents",
+                "sponsored-by",
+                "{{userId}}",
+                "transfer"
+              ]
+            },
+            "description": "Reassigns every agent sponsored by the path {userID} (the `from` user) to `to_user_id` in one statement — the offboarding op. `to_user_id` must itself be a member of the tenant. Placeholder uses {{userId}} for both sides (a self-transfer, effectively a no-op) — set a different member's id in the body for a real transfer. Returns `{ \"transferred\": <n> }`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,422]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update agent (suspend/resume via disabled)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"disabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/agents/{{agentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "agents",
+                "{{agentId}}"
+              ]
+            },
+            "description": "Back-compat update: PATCH `{disabled}` maps onto the lifecycle state machine — `true` → suspend, `false` → resume. Returns 204 No Content."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Updated', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Suspend agent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/agents/{{agentId}}/suspend",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "agents",
+                "{{agentId}}",
+                "suspend"
+              ]
+            },
+            "description": "Moves an agent to `suspended` (reversible). Its tokens are denied at authz within one request cycle. Allowed source: active (no-op if already suspended). Returns `{ \"status\": \"suspended\" }`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Resume agent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/agents/{{agentId}}/resume",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "agents",
+                "{{agentId}}",
+                "resume"
+              ]
+            },
+            "description": "Moves a suspended agent back to `active`. Returns `{ \"status\": \"active\" }`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Decommission agent",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/agents/{{agentId}}/decommission",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "agents",
+                "{{agentId}}",
+                "decommission"
+              ]
+            },
+            "description": "Permanently retires an agent (TERMINAL). It can no longer mint tokens and is excluded from listings. Run this LAST for a given agent — after this the {{agentId}} is unusable. Returns `{ \"status\": \"decommissioned\" }`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Suspend all agents (kill switch)",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/agents/kill-all",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "agents",
+                "kill-all"
+              ]
+            },
+            "description": "Security incident response: suspends every ACTIVE agent for the tenant in one statement and emits a single agent.kill_switch webhook + audit event. Returns `{ \"suspended\": <n> }`. Destructive — run after the per-agent lifecycle tests, since it will suspend {{agentId}} too."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },
@@ -7690,7 +9140,7 @@
       "name": "Verifiable Credentials",
       "item": [
         {
-          "name": "List credentials \u2014 GET /v1/tenants/{tenantID}/credentials",
+          "name": "List credentials",
           "request": {
             "method": "GET",
             "header": [],
@@ -7722,7 +9172,7 @@
           ]
         },
         {
-          "name": "Issue credential \u2014 POST /v1/tenants/{tenantID}/credentials",
+          "name": "Issue credential",
           "request": {
             "method": "POST",
             "header": [
@@ -7747,7 +9197,7 @@
                 "credentials"
               ]
             },
-            "description": "Issue a W3C JWT-VC. Returns {id, credential} \u2014 credential is the signed JWT-VC."
+            "description": "Issue a W3C JWT-VC. Returns {id, credential} — credential is the signed JWT-VC."
           },
           "event": [
             {
@@ -7764,7 +9214,7 @@
           ]
         },
         {
-          "name": "Revoke credential \u2014 POST .../credentials/{id}/revoke",
+          "name": "Revoke credential",
           "request": {
             "method": "POST",
             "header": [],
@@ -7785,7 +9235,7 @@
           }
         },
         {
-          "name": "Verify credential (public) \u2014 POST /v1/credentials/verify",
+          "name": "Verify credential (public)",
           "request": {
             "method": "POST",
             "header": [
@@ -7821,7 +9271,7 @@
       "name": "Auth Hooks (Actions)",
       "item": [
         {
-          "name": "List auth hooks \u2014 GET /v1/tenants/{tenantID}/auth-hooks",
+          "name": "List auth hooks",
           "request": {
             "method": "GET",
             "header": [],
@@ -7853,7 +9303,7 @@
           ]
         },
         {
-          "name": "Create auth hook \u2014 POST /v1/tenants/{tenantID}/auth-hooks",
+          "name": "Create auth hook",
           "request": {
             "method": "POST",
             "header": [
@@ -7894,7 +9344,7 @@
           ]
         },
         {
-          "name": "Update auth hook \u2014 PATCH /v1/tenants/{tenantID}/auth-hooks/{id}",
+          "name": "Update auth hook",
           "request": {
             "method": "PATCH",
             "header": [
@@ -7923,7 +9373,7 @@
           }
         },
         {
-          "name": "Delete auth hook \u2014 DELETE /v1/tenants/{tenantID}/auth-hooks/{id}",
+          "name": "Delete auth hook",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -7948,7 +9398,7 @@
       "name": "Domain Verification",
       "item": [
         {
-          "name": "List domains \u2014 GET /v1/tenants/{tenantID}/domains",
+          "name": "List domains",
           "request": {
             "method": "GET",
             "header": [],
@@ -7980,7 +9430,7 @@
           ]
         },
         {
-          "name": "Claim domain \u2014 POST /v1/tenants/{tenantID}/domains",
+          "name": "Claim domain",
           "request": {
             "method": "POST",
             "header": [
@@ -8021,7 +9471,7 @@
           ]
         },
         {
-          "name": "Verify domain \u2014 POST /v1/tenants/{tenantID}/domains/{id}/verify",
+          "name": "Verify domain",
           "request": {
             "method": "POST",
             "header": [],
@@ -8043,7 +9493,7 @@
           }
         },
         {
-          "name": "Remove domain \u2014 DELETE /v1/tenants/{tenantID}/domains/{id}",
+          "name": "Remove domain",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -8068,7 +9518,7 @@
       "name": "SIEM / Log Sinks",
       "item": [
         {
-          "name": "List log sinks \u2014 GET /v1/tenants/{tenantID}/log-sinks",
+          "name": "List log sinks",
           "request": {
             "method": "GET",
             "header": [],
@@ -8100,7 +9550,7 @@
           ]
         },
         {
-          "name": "Create log sink \u2014 POST /v1/tenants/{tenantID}/log-sinks",
+          "name": "Create log sink",
           "request": {
             "method": "POST",
             "header": [
@@ -8125,7 +9575,7 @@
                 "log-sinks"
               ]
             },
-            "description": "Stream audit/security events to a SIEM. type \u2208 {splunk_hec, datadog, http}."
+            "description": "Stream audit/security events to a SIEM. type ∈ {splunk_hec, datadog, http}."
           },
           "event": [
             {
@@ -8141,7 +9591,7 @@
           ]
         },
         {
-          "name": "Enable/disable sink \u2014 PATCH /v1/tenants/{tenantID}/log-sinks/{id}",
+          "name": "Enable/disable sink",
           "request": {
             "method": "PATCH",
             "header": [
@@ -8170,7 +9620,7 @@
           }
         },
         {
-          "name": "Delete sink \u2014 DELETE /v1/tenants/{tenantID}/log-sinks/{id}",
+          "name": "Delete sink",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -8195,7 +9645,7 @@
       "name": "Notifications",
       "item": [
         {
-          "name": "List notifications \u2014 GET /v1/notifications",
+          "name": "List notifications",
           "request": {
             "method": "GET",
             "header": [],
@@ -8213,7 +9663,7 @@
           }
         },
         {
-          "name": "Mark all read \u2014 POST /v1/notifications/mark-all-read",
+          "name": "Mark all read",
           "request": {
             "method": "POST",
             "header": [],
@@ -8229,6 +9679,1703 @@
               ]
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "ABAC",
+      "item": [
+        {
+          "name": "List ABAC policies",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/abac/policies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "abac",
+                "policies"
+              ]
+            },
+            "description": "Returns {items:[ABACPolicy]} ordered by priority desc then name. Required permission: `policy.read`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create ABAC policy",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"deny-contractor-read-{{$timestamp}}\",\n  \"description\": \"Deny contractors from reading documents\",\n  \"effect\": \"deny\",\n  \"resource_type\": \"document\",\n  \"action\": \"read\",\n  \"condition\": {\n    \"attr\": \"subject.department\",\n    \"op\": \"eq\",\n    \"value\": \"contractor\"\n  },\n  \"priority\": 10,\n  \"enabled\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/abac/policies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "abac",
+                "policies"
+              ]
+            },
+            "description": "Creates an ABAC policy (201 returns the ABACPolicy). Required permission: `policy.write`. Captures `id` -> `abacPolicyId`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "try { const b = pm.response.json(); if (b.id) pm.collectionVariables.set('abacPolicyId', b.id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get ABAC policy",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/abac/policies/{{abacPolicyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "abac",
+                "policies",
+                "{{abacPolicyId}}"
+              ]
+            },
+            "description": "Returns a single ABACPolicy. Required permission: `policy.read`. Depends on Create ABAC policy for `abacPolicyId`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update ABAC policy",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"deny-contractor-read\",\n  \"description\": \"Updated: deny contractors, now disabled\",\n  \"effect\": \"deny\",\n  \"resource_type\": \"document\",\n  \"action\": \"read\",\n  \"condition\": {\n    \"attr\": \"subject.department\",\n    \"op\": \"eq\",\n    \"value\": \"contractor\"\n  },\n  \"priority\": 20,\n  \"enabled\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/abac/policies/{{abacPolicyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "abac",
+                "policies",
+                "{{abacPolicyId}}"
+              ]
+            },
+            "description": "Replaces ALL mutable fields (send the full desired state; schema is ABACPolicyCreate). Required permission: `policy.write`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Evaluate ABAC policies",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": {\n    \"id\": \"user:{{userId}}\",\n    \"department\": \"eng\"\n  },\n  \"resource\": {\n    \"type\": \"document\",\n    \"id\": \"security-runbook\",\n    \"attrs\": {\n      \"classification\": \"internal\"\n    }\n  },\n  \"action\": \"read\",\n  \"context\": {\n    \"ip\": \"1.2.3.4\",\n    \"hour\": 14\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/abac/evaluate?explain=true",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "abac",
+                "evaluate"
+              ],
+              "query": [
+                {
+                  "key": "explain",
+                  "value": "true",
+                  "description": "Include a per-policy trace in the response."
+                }
+              ]
+            },
+            "description": "Deny-wins PDP evaluation over enabled policies matching resource_type+action. Returns ABACDecision {allow, effect, matched_policy_id, reason, trace}. Ungated beyond tenant scope (self-gates via requirePathTenant). ?explain=true adds the trace."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete ABAC policy",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/abac/policies/{{abacPolicyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "abac",
+                "policies",
+                "{{abacPolicyId}}"
+              ]
+            },
+            "description": "Deletes the policy (204). Required permission: `policy.write`. Run last in the ABAC sequence."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('No Content', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "AuthZEN",
+      "item": [
+        {
+          "name": "AuthZEN evaluation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"subject\": {\n    \"type\": \"user\",\n    \"id\": \"{{userId}}\"\n  },\n  \"resource\": {\n    \"type\": \"permission\",\n    \"id\": \"\"\n  },\n  \"action\": {\n    \"name\": \"user.read\"\n  },\n  \"context\": {\n    \"explain\": true\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/access/v1/evaluation",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "access",
+                "v1",
+                "evaluation"
+              ]
+            },
+            "description": "OpenID AuthZEN core PDP request. resource.type 'permission' routes to RBAC (action.name is the permission key); any other type routes to ReBAC (resource -> 'type:id', action.name -> relation). Returns {decision, context}. context.explain=true inlines the grant-path trace. Ungated beyond tenant scope."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Rate Limits",
+      "item": [
+        {
+          "name": "Get rate limits",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/rate-limits",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "rate-limits"
+              ]
+            },
+            "description": "Returns effective per-bucket limits (platform defaults merged with tenant overrides): {tenant, user, api_key} each {rate, capacity}. Ungated beyond tenant scope."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Set rate limits",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"tenant\": {\n    \"rate\": 100,\n    \"capacity\": 200\n  },\n  \"user\": {\n    \"rate\": 20,\n    \"capacity\": 40\n  },\n  \"api_key\": {\n    \"rate\": 50,\n    \"capacity\": 100\n  }\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/rate-limits",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "rate-limits"
+              ]
+            },
+            "description": "Upserts an override for any bucket supplied; returns the updated effective limits. Each bucket is {rate, capacity}. Ungated beyond tenant scope."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.equal(200));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Reset rate limits",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/rate-limits",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "rate-limits"
+              ]
+            },
+            "description": "Clears all tenant rate-limit overrides so defaults apply again (204). Ungated beyond tenant scope."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('No Content', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Token Vault",
+      "item": [
+        {
+          "name": "List providers",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/vault/tokens/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "vault",
+                "tokens",
+                "providers"
+              ]
+            },
+            "description": "Lists the tenant's registered OAuth2 providers. Client secrets are never returned. Requires the caller's own tenant (EnforceTenantScope)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Register an OAuth2 provider",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"provider\": \"{{vaultProvider}}\",\n  \"client_id\": \"google-client-id.apps.googleusercontent.com\",\n  \"client_secret\": \"GOCSPX-example-client-secret\",\n  \"authorize_url\": \"https://accounts.google.com/o/oauth2/v2/auth\",\n  \"token_url\": \"https://oauth2.googleapis.com/token\",\n  \"scopes\": \"openid email profile\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/vault/tokens/providers",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "vault",
+                "tokens",
+                "providers"
+              ]
+            },
+            "description": "Registers (or upserts) the OAuth2 endpoints + client credentials for one third-party provider, tenant-wide. `provider` is a short literal key (e.g. \"google\", \"slack\", \"github\"). This must be run BEFORE any connect / access-token / disconnect call for that provider."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "try { const b = pm.response.json(); if (b.provider) pm.collectionVariables.set('vaultProvider', b.provider); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete a provider",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/vault/tokens/providers/{{vaultProvider}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "vault",
+                "tokens",
+                "providers",
+                "{{vaultProvider}}"
+              ]
+            },
+            "description": "Deletes the tenant's registered provider config by its `provider` name key. 404 if it was never registered."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Deleted', () => pm.expect(pm.response.code).to.be.oneOf([200,204,404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[setup] OAuth2 redirect callback",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/vault/tokens/callback",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "vault",
+                "tokens",
+                "callback"
+              ],
+              "query": [
+                {
+                  "key": "state",
+                  "value": "<single-use-state-issued-by-connect>",
+                  "disabled": true
+                },
+                {
+                  "key": "code",
+                  "value": "<authorization-code-from-provider>",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "PUBLIC (no bearer). The fixed OAuth2 redirect_uri registered with the third-party provider — mounted in the router's public group (TokenVault.MountPublic). It is driven by the BROWSER redirect after the user consents at the provider: the provider appends `?state=&code=` and the handler exchanges the code, encrypts the tokens, and renders a minimal HTML confirmation page (never a redirect). Cannot be exercised directly from Postman — the `state` is single-use and minted by the connect ceremony, and the `code` comes from a real IdP. Marked [setup]. Without a valid state/code it returns a 400 HTML error page."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('HTML page returned', () => pm.expect(pm.response.code).to.be.oneOf([200,400]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[setup] Begin connecting an account",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/vault/tokens/{{vaultProvider}}/connect",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "vault",
+                "tokens",
+                "{{vaultProvider}}",
+                "connect"
+              ]
+            },
+            "description": "Authed (uses the caller's own tenant + user from the JWT). Starts an OAuth2 authorization-code ceremony against the tenant's registered provider config and returns JSON `{ \"authorize_url\": \"...\" }` with 200 — NOT a 302 redirect. The client is expected to send the user's browser to that URL; the provider then redirects back to /v1/vault/tokens/callback. Marked [setup] because it requires the provider to be registered first (404 otherwise) and only completes end-to-end against a real IdP."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK or not-registered', () => pm.expect(pm.response.code).to.be.oneOf([200,404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[setup] Get a live access token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/vault/tokens/{{vaultProvider}}/access-token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "vault",
+                "tokens",
+                "{{vaultProvider}}",
+                "access-token"
+              ]
+            },
+            "description": "The \"agent-safe\" fetch: returns `{ \"access_token\": \"...\" }`, transparently refreshing if expired; the refresh token is never exposed. Marked [setup] because it needs (1) the provider registered, (2) a connected account for the caller's userID (real OAuth ceremony completed), and (3) a PRINCIPAL/agent token carrying `vault:<provider>` or `vault:read` scope — a plain user access token lacks that scope and gets 403. Every access is audited (vault.tokens.accessed). To exercise: mint an agent token with a vault scope and swap the Authorization header to that token."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK / forbidden / not-connected', () => pm.expect(pm.response.code).to.be.oneOf([200,403,404]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Disconnect a third-party account",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/vault/tokens/{{vaultProvider}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "vault",
+                "tokens",
+                "{{vaultProvider}}"
+              ]
+            },
+            "description": "Deletes the calling user's connected account (token grant) for this provider. 404 if there is no connected account."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Deleted', () => pm.expect(pm.response.code).to.be.oneOf([200,204,404]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Qeet AI",
+      "item": [
+        {
+          "name": "Qeet AI status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/qeetai/status",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "qeetai",
+                "status"
+              ]
+            },
+            "description": "Returns whether the AI qeetai is configured server-side (`{ configured, provider, model }`). Never returns key material. `configured` is true only when QEETAI_PROVIDER + QEETAI_API_KEY are set; when false, conversation CRUD still works but the messages stream returns 409."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List conversations",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/qeetai/conversations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "qeetai",
+                "conversations"
+              ]
+            },
+            "description": "Lists the authenticated user's qeetai conversations (tenant + user scoped), pinned-first then most-recently-updated. Returns `{ items: Conversation[] }`."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));",
+                  "try { const r = pm.response.json(); const arr = r.items || r; if (Array.isArray(arr) && arr.length && arr[0].id !== undefined) pm.collectionVariables.set('qeetaiConversationId', arr[0].id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create conversation",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Postman qeetai thread {{$timestamp}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/qeetai/conversations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "qeetai",
+                "conversations"
+              ]
+            },
+            "description": "Creates a new qeetai conversation thread for the authenticated user. Body is optional (title defaults to \"New conversation\" server-side). Returns the created Conversation; its id is captured into {{qeetaiConversationId}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "try { const b = pm.response.json(); if (b.id) pm.collectionVariables.set('qeetaiConversationId', b.id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get conversation",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/qeetai/conversations/{{qeetaiConversationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "qeetai",
+                "conversations",
+                "{{qeetaiConversationId}}"
+              ]
+            },
+            "description": "Returns a conversation with its full message history (`{ conversation, messages }`). Scoped by tenant AND user — a conversation owned by another user returns 404."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rename / pin conversation",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Renamed by Postman\",\n  \"pinned\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/qeetai/conversations/{{qeetaiConversationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "qeetai",
+                "conversations",
+                "{{qeetaiConversationId}}"
+              ]
+            },
+            "description": "Renames and/or pins-unpins a conversation. Both `title` and `pinned` are optional (nullable) — send only the fields you want to change. Returns the updated Conversation."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete conversation",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/qeetai/conversations/{{qeetaiConversationId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "qeetai",
+                "conversations",
+                "{{qeetaiConversationId}}"
+              ]
+            },
+            "description": "Deletes a conversation and all its messages (cascade). 404 if out of scope. Run this AFTER the get/patch/messages tests for {{qeetaiConversationId}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Deleted', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[setup] Send a message (SSE stream)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Accept",
+                "value": "text/event-stream"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"message\": \"List the users in my tenant.\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/qeetai/conversations/{{qeetaiConversationId}}/messages",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "qeetai",
+                "conversations",
+                "{{qeetaiConversationId}}",
+                "messages"
+              ]
+            },
+            "description": "Opens a streaming turn of the conversation, emitting the model's response as Server-Sent Events (text/event-stream). Body: `{ message }` (and/or `tool_results`, `context`). The qeetai never mutates domain state itself — tool calls are streamed as SSE events for the browser to execute under the user's own token. Marked [setup] because it requires the qeetai to be CONFIGURED (QEETAI_PROVIDER + QEETAI_API_KEY / an LLM key) — otherwise it returns 409 qeetai_unconfigured. Postman does not render SSE incrementally; expect the raw event stream in the response body."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Streaming or unconfigured', () => pm.expect(pm.response.code).to.be.oneOf([200,409]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Activity",
+      "item": [
+        {
+          "name": "Activity history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/activity?limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "activity"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                },
+                {
+                  "key": "types",
+                  "value": "user.created,user.deleted",
+                  "disabled": true
+                },
+                {
+                  "key": "severity",
+                  "value": "info",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "authentication",
+                  "disabled": true
+                },
+                {
+                  "key": "actor",
+                  "value": "{{userId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "subject",
+                  "value": "{{userId}}",
+                  "disabled": true
+                },
+                {
+                  "key": "q",
+                  "value": "login",
+                  "disabled": true
+                },
+                {
+                  "key": "from",
+                  "value": "2026-01-01T00:00:00Z",
+                  "disabled": true
+                },
+                {
+                  "key": "to",
+                  "value": "2026-12-31T23:59:59Z",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Cursor-paginated activity feed derived from the tenant's audit log (`{ events: [...], next_cursor? }`). Tenant comes from the JWT principal only. Gated by `audit.read`. `limit` 1–200 (handler default 50); severity/category are derived and applied post-fetch; `q` is a websearch_to_tsquery expression."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "[setup] Live activity stream (SSE)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/activity/stream",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "activity",
+                "stream"
+              ],
+              "query": [
+                {
+                  "key": "types",
+                  "value": "user,auth",
+                  "disabled": true
+                },
+                {
+                  "key": "severity",
+                  "value": "info",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "authentication",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "[setup] SERVER-SENT EVENTS. Implemented and gated by `audit.read`, but this is a long-lived text/event-stream connection: the server extends the write deadline to 1 hour and emits `event: activity` frames plus `: keep-alive` comments. Postman's request runner will hold the connection open and not complete like a normal request — open it in the SSE/streaming view or via curl. Optional `Last-Event-ID` header triggers replay of missed events. Filters (types/severity/category) apply to both replay and live stream."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Search",
+      "item": [
+        {
+          "name": "Universal search",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/search?q=jane&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "search"
+              ],
+              "query": [
+                {
+                  "key": "q",
+                  "value": "jane"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "types",
+                  "value": "user,group",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Tenant-scoped fuzzy search across user, organization, group, role, oidc_client, and audit_event. `q` is REQUIRED (1+ chars after trimming; 400 otherwise). Each resource type is gated behind its own read permission — types the caller cannot read are silently excluded. Returns `{ results: [...], next_cursor? }`. `limit` 1–50 (default 20)."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Compliance",
+      "item": [
+        {
+          "name": "List compliance evidence runs",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/compliance/{{complianceFramework}}/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "compliance",
+                "{{complianceFramework}}",
+                "evidence"
+              ]
+            },
+            "description": "Previous evidence runs for the framework, most recent first (`{ items: [...] }`, controls omitted). `framework` must be `soc2` or `iso27001` (else 400) — defaults to {{complianceFramework}}=soc2. Handler lives in internal/operations/gdpr/evidence.go (package gdpr), mounted via GDPR.Mount → mountEvidence."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate compliance evidence",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/compliance/{{complianceFramework}}/evidence",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "compliance",
+                "{{complianceFramework}}",
+                "evidence"
+              ]
+            },
+            "description": "Runs every control for {{complianceFramework}} against live tenant state (MFA policy, audit chain, RBAC, retention, SIEM, secrets vault, …), persists an immutable evidence run, and returns the full per-control report (201). No request body — framework is in the path, actor from the token. Captures the run id into {{evidenceId}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "try { const b = pm.response.json(); if (b.id) pm.collectionVariables.set('evidenceId', b.id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get compliance evidence run (full report)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/compliance/evidence/{{evidenceId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "compliance",
+                "evidence",
+                "{{evidenceId}}"
+              ]
+            },
+            "description": "Full evidence run including per-control results; carries a Content-Disposition header so browsers download it as a JSON report. Tenant-scoped (404 if the run belongs to another tenant). Note the path has no {framework} segment — it is /compliance/evidence/{id}. Depends on {{evidenceId}} from Generate compliance evidence."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin Portal",
+      "item": [
+        {
+          "name": "List links",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/admin-portal/links",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "admin-portal",
+                "links"
+              ]
+            },
+            "description": "Sub-group: link management (authed). List the tenant's admin-portal links (metadata only — the raw token is never returned again after generation). Gated by connection.read like the rest of SSO config."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Generate a link",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"capabilities\": [\"saml\", \"scim\"],\n  \"ttl_seconds\": 86400\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/admin-portal/links",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "admin-portal",
+                "links"
+              ]
+            },
+            "description": "Sub-group: link management (authed). Mint a one-time admin-portal link scoped to SAML/SCIM and expiring after ttl_seconds (clamped 15m-24h, default 1h). The URL carries the credential only in its fragment. Run 'Exchange portal link' next; the raw token cannot be exchanged twice."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "try { const b = pm.response.json(); if (b.token) pm.collectionVariables.set('portalToken', b.token); if (b.link && b.link.id) pm.collectionVariables.set('portalLinkId', b.link.id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Exchange portal link",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{portalToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/session",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "session"
+              ]
+            },
+            "description": "Consumes {{portalToken}} exactly once and sets the scoped HttpOnly admin-portal session cookie. Postman's cookie jar carries that session for the token-free requests below."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Portal session created', () => pm.expect(pm.response.code).to.eql(201));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revoke a link",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/tenants/{{tenantId}}/admin-portal/links/{{portalLinkId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "tenants",
+                "{{tenantId}}",
+                "admin-portal",
+                "links",
+                "{{portalLinkId}}"
+              ]
+            },
+            "description": "Sub-group: link management (authed). Revoke the link captured by 'Generate a link'. Run this after the cookie-session requests: parent-link revocation invalidates every derived portal session immediately."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Revoked', () => pm.expect(pm.response.code).to.be.oneOf([204,200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get portal context",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/context",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "context"
+              ]
+            },
+            "description": "Cookie-authenticated portal context. Returns tenant name, granted capabilities, session expiry and branding. Run 'Exchange portal link' first."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List connections (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/saml",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "saml"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Lists SAML SP-side connections and requires the session's saml capability."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Create connection (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Okta (portal)\",\n  \"idp_entity_id\": \"https://idp.example.com/entity\",\n  \"idp_sso_url\": \"https://idp.example.com/sso\",\n  \"idp_certificate\": \"{{samlIdpCert}}\",\n  \"email_attribute\": \"email\",\n  \"name_attribute\": \"displayName\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/saml",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "saml"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Creates a SAML connection and requires the saml capability. Captures the connection id in {{portalSamlConnId}}."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Created', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "try { const b = pm.response.json(); if (b.id) pm.collectionVariables.set('portalSamlConnId', b.id); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get connection (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/saml/{{portalSamlConnId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "saml",
+                "{{portalSamlConnId}}"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Fetches one connection and requires the saml capability."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Update connection (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Acme Okta (portal, updated)\",\n  \"status\": \"active\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/saml/{{portalSamlConnId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "saml",
+                "{{portalSamlConnId}}"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Partially updates a connection and requires the saml capability."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Test connection (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/saml/{{portalSamlConnId}}/test",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "saml",
+                "{{portalSamlConnId}}",
+                "test"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Runs the offline SAML preflight and requires the saml capability."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Delete connection (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/saml/{{portalSamlConnId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "saml",
+                "{{portalSamlConnId}}"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Deletes the connection and requires the saml capability."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Deleted', () => pm.expect(pm.response.code).to.be.oneOf([204,200]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Get SCIM config (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/scim",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "scim"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Returns SCIM configuration status and requires the scim capability."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,204]));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Rotate SCIM token (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/scim/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "scim",
+                "token"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Rotates the SCIM bearer token, returns it once, and requires the scim capability."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('OK', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));",
+                  "try { const b = pm.response.json(); if (b.token) pm.collectionVariables.set('scimToken', b.token); } catch(e){}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Revoke SCIM token (portal)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/v1/admin-portal/scim/token",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "v1",
+                "admin-portal",
+                "scim",
+                "token"
+              ]
+            },
+            "description": "Cookie-authenticated portal session. Revokes the tenant's SCIM token and requires the scim capability."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Revoked', () => pm.expect(pm.response.code).to.be.oneOf([204,200]));"
+                ]
+              }
+            }
+          ]
         }
       ]
     }

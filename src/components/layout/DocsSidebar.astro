@@ -1,0 +1,88 @@
+---
+/**
+ * Left navigation for the guide pages.
+ *
+ * Hierarchy is carried by a small uppercase section label, indentation and one
+ * hairline — no cards, no nested boxes, no disclosure animation. The active
+ * item is marked by a brand rail *and* a weight change, so state never depends
+ * on colour alone (§19).
+ */
+import { DOCS_NAV, isActive } from "../../config/navigation";
+
+const pathname = Astro.url.pathname;
+---
+
+<nav class="docs-nav" aria-label="Documentation" data-docs-nav>
+  <div class="px-4 py-5">
+    {
+      DOCS_NAV.map((section) => (
+        <div class="mb-6 last:mb-0">
+          <p class="mb-2 px-2 font-ui text-2xs font-semibold uppercase tracking-[0.14em] text-ink-faint">
+            {section.title}
+          </p>
+          <ul class="list-none space-y-px">
+            {section.items.map((item) => {
+              const current = isActive(pathname, item);
+              return (
+                <li>
+                  <a
+                    href={item.href}
+                    class:list={[
+                      "block rounded-md border-l-2 px-2 py-1.5 font-ui text-base transition-colors",
+                      current
+                        ? "border-brand bg-brand-faint font-medium text-ink"
+                        : "border-transparent text-ink-muted hover:bg-surface-2 hover:text-ink",
+                    ]}
+                    aria-current={current ? "page" : undefined}
+                  >
+                    {item.label}
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))
+    }
+  </div>
+</nav>
+
+<style>
+  .docs-nav {
+    position: sticky;
+    top: var(--dev-header-h);
+    height: calc(100vh - var(--dev-header-h));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border-right: 1px solid var(--rule);
+    scrollbar-width: thin;
+  }
+  @supports (height: 100dvh) {
+    .docs-nav {
+      height: calc(100dvh - var(--dev-header-h));
+    }
+  }
+
+  /* Drawer below the laptop breakpoint. Closed means `visibility: hidden`, not
+     just transparent — otherwise every link stays in the tab order while
+     invisible (the exact defect the audit found in the marketing header). */
+  @media (max-width: 1023px) {
+    .docs-nav {
+      position: fixed;
+      top: var(--dev-header-h);
+      left: 0;
+      width: min(18rem, 84vw);
+      z-index: var(--z-drawer);
+      background: var(--surface);
+      transform: translateX(-100%);
+      transition: transform var(--dur) var(--ease);
+      box-shadow: var(--shadow-lg);
+    }
+    .docs-nav[data-open="true"] {
+      transform: translateX(0);
+    }
+    .docs-nav:not([data-open="true"]) {
+      visibility: hidden;
+    }
+  }
+</style>

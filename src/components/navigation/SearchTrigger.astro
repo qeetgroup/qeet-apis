@@ -1,0 +1,47 @@
+---
+/**
+ * The single search control for the whole platform.
+ *
+ * Qeet owns search outright (O3): Scalar's own search box is disabled via
+ * `hideSearch`, and nothing here reaches into Scalar's DOM. The index is built
+ * at build time by scripts/build-catalog.mjs from the MDX pages plus the
+ * spec-derived endpoint list, and shipped as one static JSON file — so there is
+ * no search service and no client-side indexing library.
+ *
+ * This component is just the trigger; the palette itself is CommandPalette.astro,
+ * mounted once per layout.
+ */
+interface Props {
+  class?: string;
+}
+const { class: className } = Astro.props;
+---
+
+<button
+  type="button"
+  class:list={[
+    "group flex items-center gap-2 rounded-md border border-rule bg-surface px-2.5 py-1.5 text-left font-ui text-base text-ink-subtle transition-colors hover:border-rule-strong hover:text-ink",
+    className,
+  ]}
+  data-search-trigger
+  aria-keyshortcuts="Meta+K Control+K"
+>
+  <svg
+    class="h-3.5 w-3.5 shrink-0"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    stroke-width="2"
+    stroke-linecap="round"
+    aria-hidden="true"
+  >
+    <circle cx="11" cy="11" r="7"></circle>
+    <path d="m20 20-3.5-3.5"></path>
+  </svg>
+  <span class="hidden sm:inline">Search documentation…</span>
+  <span class="sr-only sm:hidden">Search documentation</span>
+  <kbd
+    class="ml-3 hidden items-center gap-0.5 rounded-xs border border-rule bg-surface-2 px-1.5 py-0.5 font-mono text-2xs text-ink-faint sm:inline-flex"
+    aria-hidden="true"><span class="text-[0.9em]">⌘</span>K</kbd
+  >
+</button>

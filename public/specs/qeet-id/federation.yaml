@@ -5,7 +5,7 @@ info:
   description: |-
     Qeet ID identity platform — full HTTP surface.
 
-    This document is generated to cover EVERY route mounted by the chi router (internal/http/router.go) and is guarded by internal/http/openapi_coverage_test.go, which fails CI if any mounted route is undocumented. Launch-critical families (Auth, OIDC/OAuth, SCIM, SAML, Users, Tenants, RBAC, API Keys) carry fully-described request/response bodies; remaining admin CRUD routes carry accurate path/method/params/security with summarized bodies (noted in each operation's description).
+    This document covers routes mounted by internal/bootstrap/router.go. internal/bootstrap/openapi_coverage_test.go walks the production mount helpers and fails when a mounted operation is undocumented, a documented operation is stale, or API-auth security declarations disagree with runtime classification. Launch-critical families carry fully-described request/response bodies; remaining admin CRUD routes carry accurate path/method/params/security with summarized bodies.
 
     Auth modes: `bearerAuth` (user/service JWT), `apiKeyAuth` (`Authorization: ApiKey <key>`), `scimBearer` (per-tenant SCIM token), `clientCredentials` (OAuth M2M), and `ssoCookie` (hosted-login SSO session).
 servers:
@@ -26,7 +26,756 @@ tags:
     description: Social/OAuth identity-provider login and account linking.
   - name: LDAP
     description: LDAP / Active Directory connection management and bind authentication.
+  - name: Directory
+    description: Tenant-scoped directory connection inventory and synchronization metadata.
+  - name: Admin Portal
+    description: A unique, time-limited, capability-scoped link a tenant admin can hand to their own IT admin — no Qeet ID account required — to configure the tenant's SAML connection and/or roll its SCIM token directly.
 paths:
+  /v1/tenants/{tenantID}/directory/connections/{connectionID}/mappings:
+    get:
+      operationId: get_directory_connection_mappings
+      summary: List effective profile mapping rules
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: connectionID
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rules and supported profile target types
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DirectoryMapping'
+                  targets:
+                    type: object
+                    additionalProperties:
+                      type: string
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.read
+        '404':
+          description: Connection not found in this tenant
+    post:
+      operationId: post_directory_connection_mapping
+      summary: Create a profile mapping
+      description: Requires connection.write. Maximum 50 rules per connection and one enabled rule per target. Rules apply to SCIM user writes and LDAP JIT provisioning. Profile data is tenant-scoped; groups are profile labels, not role or group membership grants. Email mapping affects creation, not existing account email addresses. Secret sources and privilege targets are rejected.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: connectionID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectoryMapping'
+      responses:
+        '201':
+          description: Mapping created and audited
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectoryMapping'
+        '400':
+          description: Invalid source
+          target: null
+          type or transform: null
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.write
+        '404':
+          description: Connection not found in this tenant
+        '409':
+          description: Duplicate enabled target or rule limit reached
+  /v1/tenants/{tenantID}/directory/connections/{connectionID}/mappings/{mappingID}:
+    put:
+      operationId: put_directory_connection_mapping
+      summary: Update a versioned profile mapping
+      description: Requires connection.write. The current version is required to prevent lost updates. Audited in the same transaction.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: connectionID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mappingID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DirectoryMapping'
+      responses:
+        '200':
+          description: Updated mapping and incremented version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DirectoryMapping'
+        '400':
+          description: Invalid mapping or missing version
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.write
+        '404':
+          description: Connection not found
+        '409':
+          description: Stale version
+          missing mapping or duplicate enabled target: null
+    delete:
+      operationId: delete_directory_connection_mapping
+      summary: Delete a profile mapping
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: connectionID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mappingID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Mapping removed and audited
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.write
+        '404':
+          description: Mapping not found in this tenant and connection
+  /v1/tenants/{tenantID}/directory/connections/{connectionID}/mappings/preview:
+    post:
+      operationId: post_directory_connection_mappings_preview
+      summary: Preview the saved mappings with source data
+      description: Requires connection.read. Uses the provisioning engine, without persisting the source or changing users. Source input is capped at 64 KiB.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: connectionID
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - source
+              properties:
+                source:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '200':
+          description: Transformed profile, per-rule preview values and validation issues
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  valid:
+                    type: boolean
+                  profile:
+                    type: object
+                    additionalProperties: true
+                  values:
+                    type: object
+                    additionalProperties: true
+                  issues:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        mapping_id:
+                          type: string
+                          format: uuid
+                        field:
+                          type: string
+                        message:
+                          type: string
+        '400':
+          description: Invalid source JSON
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.read
+        '404':
+          description: Connection not found
+        '413':
+          description: Source exceeds the supported size
+  /v1/tenants/{tenantID}/directory/errors:
+    get:
+      operationId: get_v1_tenants_ByTenantID_directory_errors
+      summary: List directory errors and remediation summary
+      description: Requires connection.read. Only errors from the authenticated tenant are returned. Unknown affected-user counts are null, not inferred from request volume.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 90
+            default: 7
+        - name: connection_id
+          in: query
+          schema:
+            type: string
+            maxLength: 128
+        - name: severity
+          in: query
+          schema:
+            type: string
+            enum:
+              - warning
+              - critical
+        - name: resolution
+          in: query
+          schema:
+            type: string
+            enum:
+              - open
+              - resolved
+              - retried
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100000
+      responses:
+        '200':
+          description: Error page, categories, affected connections, and latest remediations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DirectoryEvent'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+                  summary:
+                    type: object
+                    properties:
+                      open:
+                        type: integer
+                      critical:
+                        type: integer
+                      warning:
+                        type: integer
+                      retried:
+                        type: integer
+                      impacted_users:
+                        type:
+                          - integer
+                          - 'null'
+                  categories:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        count:
+                          type: integer
+                  connections:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        key:
+                          type: string
+                        count:
+                          type: integer
+                  remediations:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DirectoryEvent'
+        '400':
+          description: Invalid filters
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.read
+  /v1/tenants/{tenantID}/directory/errors/{eventID}/resolve:
+    post:
+      operationId: post_v1_tenants_ByTenantID_directory_errors_ByEventID_resolve
+      summary: Resolve a directory error
+      description: Requires connection.write. Atomically closes an open error with an audit record. Does not retry its original operation.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: eventID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Error resolved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: boolean
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.write
+        '404':
+          description: Error not found in this tenant
+        '409':
+          description: Error already closed
+  /v1/tenants/{tenantID}/directory/errors/{eventID}/retry:
+    post:
+      operationId: post_v1_tenants_ByTenantID_directory_errors_ByEventID_retry
+      summary: Retry a failed LDAP connection check
+      description: Requires connection.write. Repeats only a failed manual LDAP bind check using current connection settings. SCIM pushes and sign-ins cannot be replayed because request bodies and credentials are never retained. Concurrent retries serialize and a successful retry closes the original error atomically with an audit record. Failed checks remain open.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: eventID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Check completed; succeeded reports the actual outcome
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  succeeded:
+                    type: boolean
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.write
+        '404':
+          description: Error not found in this tenant
+        '409':
+          description: Operation cannot be retried or is already closed
+  /v1/tenants/{tenantID}/directory/activity:
+    get:
+      operationId: get_v1_tenants_ByTenantID_directory_activity
+      summary: List recorded directory operations
+      description: Tenant-scoped SCIM writes and LDAP operations, newest first. Requires connection.read. Counts and durations describe observed operations, not provider scheduler jobs. Request bodies and credentials are never stored.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 90
+            default: 7
+        - name: connection_id
+          in: query
+          schema:
+            type: string
+            maxLength: 128
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum:
+              - success
+              - warning
+              - failed
+        - name: q
+          in: query
+          schema:
+            type: string
+            maxLength: 200
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 25
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+            maximum: 100000
+      responses:
+        '200':
+          description: Operation page, filtered summary, and daily UTC volumes
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                  - total
+                  - limit
+                  - offset
+                  - summary
+                  - volume
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DirectoryEvent'
+                  total:
+                    type: integer
+                  limit:
+                    type: integer
+                  offset:
+                    type: integer
+                  summary:
+                    type: object
+                    properties:
+                      total:
+                        type: integer
+                      successful:
+                        type: integer
+                      warnings:
+                        type: integer
+                      failed:
+                        type: integer
+                      average_duration_ms:
+                        type:
+                          - integer
+                          - 'null'
+                  volume:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        date:
+                          type: string
+                          format: date
+                        users:
+                          type: integer
+                        groups:
+                          type: integer
+        '400':
+          description: Invalid filters
+        '401':
+          description: Authentication required
+        '403':
+          description: Tenant mismatch or missing connection.read
+  /v1/tenants/{tenantID}/directory/alerts:
+    post:
+      operationId: post_v1_tenants_ByTenantID_directory_alerts
+      summary: Create a directory failure alert
+      description: Requires connection.write and a user principal. Creates an in-app alert for the caller when the failure threshold is reached within 15 minutes. Notifications are rate limited to once per alert per 15 minutes.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - threshold
+              properties:
+                name:
+                  type: string
+                  minLength: 1
+                  maxLength: 100
+                connection_id:
+                  type:
+                    - string
+                    - 'null'
+                threshold:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+      responses:
+        '201':
+          description: Alert created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  connection_id:
+                    type:
+                      - string
+                      - 'null'
+                  threshold:
+                    type: integer
+                  enabled:
+                    type: boolean
+        '400':
+          description: Invalid alert settings
+        '401':
+          description: Authenticated user required
+        '403':
+          description: Tenant mismatch or missing connection.write
+        '404':
+          description: Connection not found in this tenant
+  /v1/tenants/{tenantID}/directory/connections:
+    get:
+      operationId: get_v1_tenants_ByTenantID_directory_connections
+      summary: List directory connections
+      description: Combines the tenant's configured SCIM endpoint and LDAP connections. Requires connection.read. Tenant scope is derived from the authenticated principal and must match the path. Credentials are never returned. Health is unknown until explicitly observed; last_activity_at is a request or login timestamp and is not evidence of a successful synchronization.
+      tags:
+        - Directory
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Directory connection inventory
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - items
+                properties:
+                  items:
+                    type: array
+                    items:
+                      type: object
+                      required:
+                        - id
+                        - name
+                        - reference
+                        - type
+                        - status
+                        - health
+                        - scope
+                      properties:
+                        id:
+                          type: string
+                        name:
+                          type: string
+                        reference:
+                          type: string
+                        type:
+                          type: string
+                          enum:
+                            - scim
+                            - ldap
+                        status:
+                          type: string
+                          enum:
+                            - configured
+                            - active
+                            - draft
+                            - disabled
+                        health:
+                          type: string
+                          enum:
+                            - healthy
+                            - warning
+                            - failed
+                            - unknown
+                        environment:
+                          type:
+                            - string
+                            - 'null'
+                        scope:
+                          type: string
+                          enum:
+                            - users-and-groups
+                            - users-on-signin
+                        created_at:
+                          type:
+                            - string
+                            - 'null'
+                          format: date-time
+                        last_activity_at:
+                          type:
+                            - string
+                            - 'null'
+                          format: date-time
+                        last_sync_at:
+                          type:
+                            - string
+                            - 'null'
+                          format: date-time
+                        user_count:
+                          type:
+                            - integer
+                            - 'null'
+                          minimum: 0
+                        group_count:
+                          type:
+                            - integer
+                            - 'null'
+                          minimum: 0
+                        server_url:
+                          type:
+                            - string
+                            - 'null'
+        '400':
+          description: Invalid tenant identifier
+        '401':
+          description: Authentication and tenant scope required
+        '403':
+          description: Tenant mismatch or missing connection.read permission
+        '500':
+          description: Directory inventory could not be loaded
   /.well-known/jwks.json:
     get:
       operationId: get_wellKnown_jwks_json
@@ -126,7 +875,7 @@ paths:
       tags:
         - OIDC
       security:
-        - clientCredentials: []
+        - OAuth2-Client-Credentials: []
       requestBody:
         required: true
         content:
@@ -158,7 +907,7 @@ paths:
       tags:
         - OIDC
       security:
-        - clientCredentials: []
+        - OAuth2-Client-Credentials: []
       requestBody:
         required: true
         content:
@@ -371,7 +1120,7 @@ paths:
           schema:
             type: integer
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '200':
           description: ListResponse
@@ -389,7 +1138,7 @@ paths:
       tags:
         - SCIM
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       requestBody:
         required: true
         content:
@@ -422,7 +1171,7 @@ paths:
           schema:
             type: string
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '204':
           description: Deleted
@@ -442,7 +1191,7 @@ paths:
           schema:
             type: string
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '200':
           description: Group
@@ -466,7 +1215,7 @@ paths:
           schema:
             type: string
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       requestBody:
         required: true
         content:
@@ -498,7 +1247,7 @@ paths:
           schema:
             type: string
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       requestBody:
         required: true
         content:
@@ -525,7 +1274,7 @@ paths:
       tags:
         - SCIM
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '200':
           description: SCIM metadata
@@ -543,7 +1292,7 @@ paths:
       tags:
         - SCIM
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '200':
           description: SCIM metadata
@@ -561,7 +1310,7 @@ paths:
       tags:
         - SCIM
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '200':
           description: SCIM metadata
@@ -595,7 +1344,7 @@ paths:
             type: integer
             minimum: 0
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '200':
           description: ListResponse
@@ -613,7 +1362,7 @@ paths:
       tags:
         - SCIM
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       requestBody:
         required: true
         content:
@@ -649,7 +1398,7 @@ paths:
           schema:
             type: string
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '204':
           description: Deprovisioned
@@ -669,7 +1418,7 @@ paths:
           schema:
             type: string
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       responses:
         '200':
           description: User
@@ -693,7 +1442,7 @@ paths:
           schema:
             type: string
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       requestBody:
         required: true
         content:
@@ -725,7 +1474,7 @@ paths:
           schema:
             type: string
       security:
-        - scimBearer: []
+        - SCIM-Token: []
       requestBody:
         required: true
         content:
@@ -793,7 +1542,7 @@ paths:
           schema:
             type: string
       security:
-        - ssoCookie: []
+        - Session-Cookie: []
       responses:
         '302':
           description: Redirect to the hosted-login UI or back to the client with a code
@@ -808,7 +1557,7 @@ paths:
       tags:
         - OIDC
       security:
-        - ssoCookie: []
+        - Session-Cookie: []
       requestBody:
         required: true
         content:
@@ -848,7 +1597,7 @@ paths:
             type: string
           description: The human-typed user_code (e.g. BCDF-GHJK).
       security:
-        - ssoCookie: []
+        - Session-Cookie: []
       responses:
         '200':
           description: Device verification context
@@ -877,7 +1626,7 @@ paths:
       tags:
         - OIDC
       security:
-        - ssoCookie: []
+        - Session-Cookie: []
       requestBody:
         required: true
         content:
@@ -923,7 +1672,7 @@ paths:
       tags:
         - OIDC
       security:
-        - clientCredentials: []
+        - OAuth2-Client-Credentials: []
       requestBody:
         required: true
         content:
@@ -950,6 +1699,118 @@ paths:
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
+  /v1/oauth/bc-authorize:
+    post:
+      operationId: post_v1_oauth_bc_authorize
+      summary: Backchannel authentication (CIBA, poll mode)
+      description: OpenID CIBA §7. Client-authenticated endpoint for a client that already knows who the user is (login_hint, an email scoped to the client's tenant) — no browser redirect. Best-effort notifies the user (in-app), then returns auth_req_id; the client polls /v1/oauth/token-code with grant_type=urn:openid:params:grant-type:ciba while the user approves/denies via GET/POST /v1/oauth/bc-authorize/{pending,decision}.
+      tags:
+        - OIDC
+      security:
+        - OAuth2-Client-Credentials: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - client_id
+                - login_hint
+              properties:
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+                login_hint:
+                  type: string
+                  format: email
+                scope:
+                  type: string
+                binding_message:
+                  type: string
+                  description: Shown to the user in the consent notification (e.g. a transaction reference).
+      responses:
+        '200':
+          description: Backchannel authentication response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  auth_req_id:
+                    type: string
+                  expires_in:
+                    type: integer
+                  interval:
+                    type: integer
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/oauth/bc-authorize/pending:
+    get:
+      operationId: get_v1_oauth_bc_authorize_pending
+      summary: List my pending CIBA requests
+      description: The authenticated user's own still-pending, unexpired backchannel authentication requests — an "approve sign-in" view.
+      tags:
+        - OIDC
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/oauth/bc-authorize/decision:
+    post:
+      operationId: post_v1_oauth_bc_authorize_decision
+      summary: Approve or deny a pending CIBA request
+      description: Records the authenticated user's decision on one of their own pending requests (the id from GET .../pending, not the raw auth_req_id).
+      tags:
+        - OIDC
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - id
+                - approve
+              properties:
+                id:
+                  type: string
+                  format: uuid
+                approve:
+                  type: boolean
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /v1/oauth/login-context:
     get:
       operationId: get_v1_oauth_login_context
@@ -963,7 +1824,7 @@ paths:
           schema:
             type: string
       security:
-        - ssoCookie: []
+        - Session-Cookie: []
       responses:
         '200':
           description: Hosted-login context (client name, scopes, branding)
@@ -972,6 +1833,20 @@ paths:
               schema:
                 type: object
                 additionalProperties: true
+                properties:
+                  branding:
+                    type: object
+                    nullable: true
+                    properties:
+                      logo_url:
+                        type: string
+                      primary_color:
+                        type: string
+                      secondary_color:
+                        type: string
+                      background_color:
+                        type: string
+                        description: Optional page background from tenant branding settings.
         '400':
           $ref: '#/components/responses/BadRequest'
         '404':
@@ -997,7 +1872,7 @@ paths:
           schema:
             type: string
       security:
-        - ssoCookie: []
+        - Session-Cookie: []
       responses:
         '302':
           description: Redirect to post_logout_redirect_uri
@@ -1023,7 +1898,7 @@ paths:
           schema:
             type: string
       security:
-        - ssoCookie: []
+        - Session-Cookie: []
       requestBody:
         required: false
         content:
@@ -1044,7 +1919,7 @@ paths:
       tags:
         - OIDC
       security:
-        - clientCredentials: []
+        - OAuth2-Client-Credentials: []
       requestBody:
         required: true
         content:
@@ -1082,7 +1957,7 @@ paths:
       tags:
         - OIDC
       security:
-        - clientCredentials: []
+        - OAuth2-Client-Credentials: []
       requestBody:
         required: true
         content:
@@ -1107,8 +1982,8 @@ paths:
       tags:
         - OIDC
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: UserInfo claims
@@ -1132,8 +2007,8 @@ paths:
       tags:
         - OIDC
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -1176,8 +2051,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Client deleted
@@ -1194,11 +2069,11 @@ paths:
       tags:
         - OIDC
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
-          description: Signing keys (active + retired)
+          description: Signing keys (candidate, active, and unexpired retired keys)
           content:
             application/json:
               schema:
@@ -1212,36 +2087,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
-  /v1/oidc/signing-keys/rotate:
-    post:
-      operationId: post_v1_oidc_signing_keys_rotate
-      summary: Rotate signing key
-      description: Generates a fresh EC P-256 signing key, makes it active, and retires the previous key to verify-only. The new private key PEM is returned once in the response — the operator must persist it as JWT_SIGNING_KEY before the next restart. Existing tokens remain verifiable during the grace window.
-      tags:
-        - OIDC
-      security:
-        - bearerAuth: []
-        - apiKeyAuth: []
-      responses:
-        '200':
-          description: Rotation complete (new private key shown once)
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  kid:
-                    type: string
-                  alg:
-                    type: string
-                  private_key_pem:
-                    type: string
-                  warning:
-                    type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '403':
-          $ref: '#/components/responses/Forbidden'
   /v1/service-principals:
     post:
       operationId: post_v1_service_principals
@@ -1249,8 +2094,8 @@ paths:
       tags:
         - OIDC
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -1286,8 +2131,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '204':
@@ -1332,6 +2177,87 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+  /v1/me/social/identities:
+    get:
+      operationId: get_v1_me_social_identities
+      summary: List my connected social accounts
+      description: The signed-in (tenant-less/console) user's connected social identities, recorded by platform sign-in and the link flow.
+      tags:
+        - Social
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/me/social/identities/{id}:
+    delete:
+      operationId: delete_v1_me_social_identities_ById
+      summary: Unlink one of my connected social accounts
+      tags:
+        - Social
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
+  /v1/social/{provider}/link/start:
+    post:
+      operationId: post_v1_social_ByProvider_link_start
+      summary: Begin linking a provider to my account
+      description: Authenticated "connect this provider" ceremony. Returns the provider authorize URL for the browser to navigate to; the callback attaches the identity to the caller — never creating or switching accounts, and refusing an identity already linked elsewhere (`social.already_linked`).
+      tags:
+        - Social
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  authorize_url:
+                    type: string
+                required:
+                  - authorize_url
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          $ref: '#/components/responses/TooManyRequests'
   /v1/social/identities/{id}:
     delete:
       operationId: delete_v1_social_identities_ById
@@ -1345,8 +2271,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '204':
@@ -1368,8 +2294,8 @@ paths:
       tags:
         - Social
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -1425,6 +2351,55 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+    post:
+      operationId: post_v1_social_ByProvider_callback
+      summary: Social login callback using form_post
+      description: Sign in with Apple returns the authorization response as a bounded form POST. Successful callbacks redirect with a one-time Qeet login code.
+      tags:
+        - Social
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              required:
+                - state
+                - code
+              properties:
+                state:
+                  type: string
+                code:
+                  type: string
+      responses:
+        '302':
+          description: Redirect to the hosted login or account application
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '413':
+          description: Form body too large
+  /v1/social/platform/providers:
+    get:
+      operationId: get_v1_social_platform_providers
+      summary: List enabled platform social providers
+      tags:
+        - Social
+      security: []
+      responses:
+        '200':
+          description: Enabled provider names
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
   /v1/social/{provider}/start:
     get:
       operationId: get_v1_social_ByProvIDer_start
@@ -1466,8 +2441,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -1499,8 +2474,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -1546,8 +2521,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '204':
@@ -1579,8 +2554,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -1617,8 +2592,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -1664,8 +2639,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -1707,8 +2682,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Device authorizations
@@ -1747,8 +2722,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Device authorization revoked
@@ -1772,8 +2747,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: OIDC clients
@@ -1805,8 +2780,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -1855,8 +2830,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: OIDC client
@@ -1889,8 +2864,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -1933,8 +2908,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Client deleted
@@ -1964,8 +2939,8 @@ paths:
             type: string
             format: uuid
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: New client secret (shown once)
@@ -1986,6 +2961,67 @@ paths:
           $ref: '#/components/responses/NotFound'
         '422':
           $ref: '#/components/responses/Unprocessable'
+  /v1/tenants/{tenantID}/oidc/clients/shadow-ai:
+    get:
+      operationId: get_v1_tenants_ByTenantID_oidc_clients_shadow_ai
+      summary: List shadow-AI candidates
+      description: OIDC clients whose grant_types include a machine grant type (client_credentials or token-exchange) that haven't been explicitly reviewed — the same "unmanaged non-human identity" risk the agents/service-accounts registries exist to close, surfaced for a client that picked up a machine grant type sideways. Ordered by live (active, unexpired, unrevoked) refresh-token count so clients actually in use surface first.
+      tags:
+        - OIDC
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/tenants/{tenantID}/oidc/clients/{id}/review:
+    post:
+      operationId: post_v1_tenants_ByTenantID_oidc_clients_ById_review
+      summary: Acknowledge a shadow-AI candidate
+      description: Marks the client reviewed, attributed to the calling human principal — it drops off the shadow-AI list until/unless its grant_types change again.
+      tags:
+        - OIDC
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '204':
+          description: No Content
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
   /v1/tenants/{tenantID}/oauth/grants:
     get:
       operationId: get_v1_tenants_ByTenantID_oauth_grants
@@ -1999,8 +3035,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Consent grants
@@ -2038,8 +3074,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Grant revoked
@@ -2062,8 +3098,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Connections
@@ -2092,8 +3128,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -2128,8 +3164,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Service providers
@@ -2158,8 +3194,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: true
         content:
@@ -2199,8 +3235,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Deleted
@@ -2227,8 +3263,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Service provider
@@ -2259,8 +3295,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -2301,8 +3337,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Per-check preflight results
@@ -2335,8 +3371,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '204':
           description: Deleted
@@ -2363,8 +3399,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       responses:
         '200':
           description: Connection
@@ -2395,8 +3431,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -2431,8 +3467,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -2465,8 +3501,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '204':
@@ -2493,8 +3529,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       requestBody:
         required: false
         content:
@@ -2535,8 +3571,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -2556,6 +3592,396 @@ paths:
           $ref: '#/components/responses/Unprocessable'
         '429':
           $ref: '#/components/responses/TooManyRequests'
+  /v1/tenants/{tenantID}/admin-portal/links:
+    get:
+      operationId: get_v1_tenants_ByTenantID_admin_portal_links
+      summary: List admin portal links
+      tags:
+        - Admin Portal
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '200':
+          description: Links (metadata only — the raw token is never returned again after generation)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminPortalLink'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      operationId: post_v1_tenants_ByTenantID_admin_portal_links
+      summary: Generate an admin portal link
+      description: Mints a one-time link an external IT admin (no Qeet ID account) can exchange for a short-lived portal session, scoped to the given capabilities and expiring after ttl_seconds (clamped 15m-24h, default 1h). The raw token/url is returned exactly once; the URL carries the token only in its fragment.
+      tags:
+        - Admin Portal
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - capabilities
+              properties:
+                capabilities:
+                  type: array
+                  items:
+                    type: string
+                    enum:
+                      - saml
+                      - scim
+                ttl_seconds:
+                  type: integer
+      responses:
+        '201':
+          description: Link generated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  link:
+                    $ref: '#/components/schemas/AdminPortalLink'
+                  token:
+                    type: string
+                    description: The raw token — shown only here. Not recoverable afterward.
+                  url:
+                    type: string
+                    format: uri
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /v1/tenants/{tenantID}/admin-portal/links/{id}:
+    delete:
+      operationId: delete_v1_tenants_ByTenantID_admin_portal_links_ById
+      summary: Revoke an admin portal link
+      tags:
+        - Admin Portal
+      parameters:
+        - name: tenantID
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      security:
+        - Bearer-Token: []
+        - API-Key: []
+      responses:
+        '204':
+          description: Revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/admin-portal/session:
+    post:
+      operationId: post_v1_admin_portal_session
+      summary: Exchange a one-time portal link
+      description: 'Consumes the link token from `Authorization: Bearer <token>` and sets a short-lived HttpOnly portal session cookie. The link token cannot be exchanged again.'
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Link: []
+      responses:
+        '201':
+          description: Portal session created
+          headers:
+            Set-Cookie:
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: delete_v1_admin_portal_session
+      summary: Revoke the current portal session
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      responses:
+        '204':
+          description: Session revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/admin-portal/context:
+    get:
+      operationId: get_v1_admin_portal_context
+      summary: Get portal context
+      description: Returns the tenant name, granted capabilities, session expiry, and branding for the cookie-authenticated portal.
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      responses:
+        '200':
+          description: Portal context
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminPortalContext'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/admin-portal/saml:
+    get:
+      operationId: get_v1_admin_portal_saml
+      summary: List connections (portal)
+      description: Requires the link's capabilities to include "saml".
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      responses:
+        '200':
+          description: Connections
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SAMLConnection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    post:
+      operationId: post_v1_admin_portal_saml
+      summary: Create connection (portal)
+      description: Requires the link's capabilities to include "saml".
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SAMLConnectionCreate'
+      responses:
+        '201':
+          description: Connection created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SAMLConnection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+  /v1/admin-portal/saml/{id}:
+    get:
+      operationId: get_v1_admin_portal_saml_ById
+      summary: Get connection (portal)
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Connection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SAMLConnection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      operationId: patch_v1_admin_portal_saml_ById
+      summary: Update connection (portal)
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SAMLConnectionCreate'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SAMLConnection'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '422':
+          $ref: '#/components/responses/Unprocessable'
+    delete:
+      operationId: delete_v1_admin_portal_saml_ById
+      summary: Delete connection (portal)
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/admin-portal/saml/{id}/test:
+    post:
+      operationId: post_v1_admin_portal_saml_ById_test
+      summary: Test connection (portal)
+      description: Same offline preflight as the admin endpoint — no network I/O.
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Per-check preflight results
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/admin-portal/scim:
+    get:
+      operationId: get_v1_admin_portal_scim
+      summary: Get SCIM config (portal)
+      description: Requires the link's capabilities to include "scim". Never exposes the provisioned-users list — only rotate/revoke/status.
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      responses:
+        '200':
+          description: SCIM config
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /v1/admin-portal/scim/token:
+    post:
+      operationId: post_v1_admin_portal_scim_token
+      summary: Rotate SCIM token (portal)
+      description: Returns the full plaintext token exactly once, alongside the updated config view.
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      responses:
+        '200':
+          description: '{ token: string, config: object }'
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: true
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+    delete:
+      operationId: delete_v1_admin_portal_scim_token
+      summary: Revoke SCIM token (portal)
+      tags:
+        - Admin Portal
+      security:
+        - Admin-Portal-Cookie: []
+      responses:
+        '204':
+          description: Revoked
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /v1/tenants/{tenantID}/service-principals:
     get:
       operationId: get_v1_tenants_ByTenantID_service_principals
@@ -2569,8 +3995,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -2603,8 +4029,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -2637,8 +4063,8 @@ paths:
           schema:
             type: string
       security:
-        - bearerAuth: []
-        - apiKeyAuth: []
+        - Bearer-Token: []
+        - API-Key: []
       description: Response body summarized; accurate path/method/params/security. Enrich the body later.
       responses:
         '200':
@@ -2660,32 +4086,41 @@ paths:
           $ref: '#/components/responses/TooManyRequests'
 components:
   securitySchemes:
-    bearerAuth:
-      type: http
-      scheme: bearer
-      bearerFormat: JWT
-      description: 'User or service JWT: `Authorization: Bearer <token>`.'
-    apiKeyAuth:
+    API-Key:
       type: apiKey
       in: header
       name: Authorization
       description: 'API key credential. Send `Authorization: ApiKey <key>` (note the `ApiKey ` prefix). Accepted on the same authenticated routes as bearerAuth.'
-    scimBearer:
+    Bearer-Token:
       type: http
       scheme: bearer
-      description: 'Per-tenant SCIM provisioning token presented by the IdP: `Authorization: Bearer <scim-token>`. Distinct from user JWTs; rotated via the SCIM admin endpoints.'
-    clientCredentials:
+      bearerFormat: JWT
+      description: 'User or service JWT: `Authorization: Bearer <token>`.'
+    OAuth2-Client-Credentials:
       type: oauth2
       description: OAuth 2.0 client credentials. Clients authenticate at the token endpoint via form params (`client_id`/`client_secret`) or HTTP Basic. Revocation/introspection use the same client auth.
       flows:
         clientCredentials:
           tokenUrl: /v1/oauth/token
           scopes: {}
-    ssoCookie:
+    SCIM-Token:
+      type: http
+      scheme: bearer
+      description: 'Per-tenant SCIM provisioning token presented by the IdP: `Authorization: Bearer <scim-token>`. Distinct from user JWTs; rotated via the SCIM admin endpoints.'
+    Session-Cookie:
       type: apiKey
       in: cookie
       name: qe_ls
       description: Hosted-login SSO session cookie (HttpOnly). Set by POST /v1/auth/session and consumed by the OAuth authorize/consent flow.
+    Admin-Portal-Link:
+      type: http
+      scheme: bearer
+      description: One-time admin-portal link credential. Accepted only by POST /v1/admin-portal/session and invalid after exchange.
+    Admin-Portal-Cookie:
+      type: apiKey
+      in: cookie
+      name: qeet_admin_portal_session
+      description: Short-lived HttpOnly, SameSite=Strict admin-portal session cookie. Mutations also require the global CSRF double-submit token.
   responses:
     BadRequest:
       description: Malformed request
@@ -2730,6 +4165,144 @@ components:
           schema:
             $ref: '#/components/schemas/Error'
   schemas:
+    DirectoryMapping:
+      type: object
+      required:
+        - source_attribute
+        - target_field
+        - value_type
+        - transform
+        - enabled
+        - required
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        source_attribute:
+          type: string
+          minLength: 1
+          maxLength: 128
+        target_field:
+          type: string
+          enum:
+            - email
+            - display_name
+            - first_name
+            - last_name
+            - department
+            - title
+            - manager_id
+            - groups
+        value_type:
+          type: string
+          enum:
+            - string
+            - array
+        transform:
+          type: string
+          enum:
+            - none
+            - trim
+            - lowercase
+            - uppercase
+            - extract
+        pattern:
+          type: string
+          maxLength: 256
+        enabled:
+          type: boolean
+        required:
+          type: boolean
+        version:
+          type: integer
+          minimum: 1
+    DirectoryEvent:
+      type: object
+      required:
+        - id
+        - connection_id
+        - operation
+        - trigger
+        - resource_type
+        - started_at
+        - duration_ms
+        - status
+        - users_synced
+        - groups_synced
+        - retryable
+      properties:
+        id:
+          type: string
+          format: uuid
+        connection_id:
+          type: string
+        operation:
+          type: string
+        trigger:
+          type: string
+          enum:
+            - push
+            - manual
+            - sign-in
+        resource_type:
+          type: string
+          enum:
+            - user
+            - group
+            - connection
+        resource_id:
+          type: string
+        started_at:
+          type: string
+          format: date-time
+        duration_ms:
+          type: integer
+          minimum: 0
+        http_status:
+          type: integer
+        status:
+          type: string
+          enum:
+            - success
+            - warning
+            - failed
+        users_synced:
+          type: integer
+          minimum: 0
+        groups_synced:
+          type: integer
+          minimum: 0
+        error_code:
+          type: string
+        message:
+          type: string
+        category:
+          type: string
+        severity:
+          type: string
+          enum:
+            - ''
+            - warning
+            - critical
+        resolution:
+          type: string
+          enum:
+            - open
+            - resolved
+            - retried
+        resolved_at:
+          type:
+            - string
+            - 'null'
+          format: date-time
+        retry_of:
+          type:
+            - string
+            - 'null'
+          format: uuid
+        retryable:
+          type: boolean
     Error:
       type: object
       required:
@@ -2929,8 +4502,13 @@ components:
         status:
           type: string
           enum:
+            - candidate
             - active
             - retired
+        retire_at:
+          type: string
+          format: date-time
+          nullable: true
     ServicePrincipalCreate:
       type: object
       required:
@@ -2959,6 +4537,7 @@ components:
             - authorization_code
             - refresh_token
             - urn:ietf:params:oauth:grant-type:device_code
+            - urn:ietf:params:oauth:grant-type:token-exchange
         code:
           type: string
         redirect_uri:
@@ -2971,6 +4550,25 @@ components:
         device_code:
           type: string
           description: Present when grant_type is the RFC 8628 device_code grant.
+        resource:
+          type: string
+          format: uri
+          description: RFC 8707 resource indicator. Grant-agnostic — accepted on authorization_code, refresh_token, and token-exchange — and binds the issued access token's audience to this resource (e.g. an MCP server) in addition to the platform's own audience. On refresh_token, omitting it preserves the resource bound at the original grant; supplying it switches the bound resource.
+        subject_token:
+          type: string
+          description: RFC 8693 token-exchange grant only — the token identifying the party whose authority is being exercised.
+        subject_token_type:
+          type: string
+          description: RFC 8693 token-exchange grant only. Only "urn:ietf:params:oauth:token-type:access_token" is supported.
+        actor_token:
+          type: string
+          description: RFC 8693 token-exchange grant only (optional) — names the delegate acting on the subject's behalf (e.g. an AI agent); the issued token carries an "act" claim.
+        actor_token_type:
+          type: string
+        requested_token_type:
+          type: string
+        scope:
+          type: string
         client_id:
           type: string
         client_secret:
@@ -3059,6 +4657,10 @@ components:
           type: string
         status:
           type: string
+        allow_idp_initiated:
+          type: boolean
+          default: false
+          description: Accept unsolicited assertions that carry no InResponseTo, i.e. IdP-initiated SSO. Off by default. Enabling it relaxes only the AuthnRequest correlation — signature, issuer, audience, destination and time-condition validation are unchanged, and response and assertion IDs are still consumed for replay protection.
         created_at:
           type: string
           format: date-time
@@ -3147,6 +4749,67 @@ components:
           type: string
         certificate:
           type: string
+    AdminPortalLink:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_id:
+          type: string
+          format: uuid
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum:
+              - saml
+              - scim
+        created_by:
+          type: string
+          format: uuid
+          nullable: true
+        expires_at:
+          type: string
+          format: date-time
+        revoked_at:
+          type: string
+          format: date-time
+          nullable: true
+        last_used_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    AdminPortalContext:
+      type: object
+      properties:
+        tenant_name:
+          type: string
+        capabilities:
+          type: array
+          items:
+            type: string
+            enum:
+              - saml
+              - scim
+        expires_at:
+          type: string
+          format: date-time
+        branding:
+          type: object
+          properties:
+            logo_url:
+              type: string
+            primary_color:
+              type: string
+            secondary_color:
+              type: string
+            background_color:
+              type: string
+              description: Optional hosted-login page background from tenant branding settings.
     SCIMUser:
       type: object
       required:

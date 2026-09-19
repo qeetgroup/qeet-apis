@@ -1,0 +1,32 @@
+---
+/**
+ * Per-product reference pages for everything except the default product, which
+ * lives at `/reference` (see `referenceHref`). Prerendered from the typed
+ * product config, so a new product needs no new route file.
+ */
+import { ScalarComponent } from "@scalar/astro";
+import ReferenceLayout from "../../layouts/ReferenceLayout.astro";
+import { PRODUCTS } from "../../config/products";
+import { scalarConfigFor } from "../../config/scalar";
+import type { ProductConfig } from "../../types/product";
+
+export function getStaticPaths() {
+  // Skip PRODUCTS[0]: it is served at /reference, so generating it here too
+  // would publish the same document at two URLs.
+  return PRODUCTS.slice(1).map((product) => ({
+    params: { product: product.id },
+    props: { product },
+  }));
+}
+
+const { product } = Astro.props as { product: ProductConfig };
+---
+
+<ReferenceLayout
+  title={`${product.name} API Reference`}
+  section={product.name}
+  description={`Interactive reference for the ${product.name} API — ${product.description}`}
+  activeProductId={product.id}
+>
+  <ScalarComponent renderMode="client" configuration={scalarConfigFor(product)} />
+</ReferenceLayout>

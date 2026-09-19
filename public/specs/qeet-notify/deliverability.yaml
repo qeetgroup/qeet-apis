@@ -1,0 +1,1872 @@
+openapi: 3.1.0
+info:
+  title: Qeet Notify — Deliverability API
+  version: 1.0.0
+  description: |-
+    Qeet Notify — multi-channel transactional notification platform.
+
+    Authentication: pass your API key in the `X-Qeet-Api-Key` header (scopes: `full` all · `read` GET-only · `send` POST /v1/events only).
+
+    Sending providers, India DLT compliance, suppression list, national DND, dead-letter queue, and inbound webhooks.
+servers:
+  - url: https://api.notify.qeet.in
+    description: Production
+  - url: https://api.notify.staging.qeet.in
+    description: Staging
+  - url: http://localhost:8080
+    description: Local
+security:
+  - API-Key: []
+tags:
+  - name: Providers
+    description: Per-channel provider configs (encrypted credentials).
+  - name: Suppressions
+    description: Blocked addresses (hashed).
+  - name: NDNC
+    description: National Do-Not-Call registry.
+  - name: Compliance
+    description: Unified compliance dashboard & pre-send validation (Module 35).
+  - name: Email Deliverability
+    description: Sender-domain SPF/DKIM/DMARC verification & reputation (Module 23).
+  - name: Inbound
+    description: Inbound messages & WhatsApp number→tenant mapping (Module 26.2).
+  - name: DeadLetters
+    description: Failed jobs — inspect, redrive, discard.
+  - name: Public
+    description: Provider inbound webhooks (bounces/complaints).
+  - name: DLT
+  - name: IP Warmup
+paths:
+  /v1/dlq:
+    get:
+      summary: List dead-lettered jobs
+      operationId: get_v1_dlq
+      tags:
+        - DeadLetters
+      description: |
+        Lists notification jobs that exhausted their delivery retries and were
+        dead-lettered, newest first. A drainer copies each NOTIFY_DLQ entry into
+        a queryable table so failed sends can be inspected and replayed.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - redriven
+              - discarded
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum:
+              - email
+              - sms
+              - whatsapp
+              - push
+              - inapp
+              - webhook
+              - rcs
+              - chatops
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 50
+            maximum: 200
+      responses:
+        '200':
+          description: Dead-letter list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dead_letters:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DeadLetter'
+                required:
+                  - dead_letters
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/dlq/{id}:
+    get:
+      summary: Get a dead-lettered job
+      operationId: get_v1_dlq_ById
+      tags:
+        - DeadLetters
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Dead-letter record
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeadLetter'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Discard a dead-lettered job
+      operationId: delete_v1_dlq_ById
+      tags:
+        - DeadLetters
+      description: Marks a pending dead-letter discarded without redriving it.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Discarded
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found or not in the pending state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /v1/dlq/{id}/redrive:
+    post:
+      summary: Redrive a dead-lettered job
+      operationId: post_v1_dlq_ById_redrive
+      tags:
+        - DeadLetters
+      description: |
+        Republishes the original job onto its channel subject for another
+        delivery attempt and marks it redriven. This is the supported replay
+        path for exhausted-retry failures.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Redriven
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: redriven
+                required:
+                  - id
+                  - status
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          description: Not found or not in the pending state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '502':
+          description: Republish to the message bus failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /v1/dlt/templates:
+    get:
+      summary: List TRAI DLT templates
+      operationId: get_v1_dlt_templates
+      tags:
+        - DLT
+      description: |
+        Lists the tenant's DLT / WhatsApp BSP template registrations,
+        newest first, optionally filtered by channel, carrier, or status.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum:
+              - sms
+              - whatsapp
+        - in: query
+          name: carrier
+          description: Filter by registered carrier (e.g. airtel, jio, all).
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum:
+              - pending
+              - approved
+              - rejected
+      responses:
+        '200':
+          description: DLT template list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  dlt_templates:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/DltTemplate'
+                required:
+                  - dlt_templates
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Register a TRAI DLT template
+      description: |
+        DLT (Distributed Ledger Technology) templates are mandatory for SMS in India.
+        Every outbound SMS body must match a pre-registered DLT template regex. `channel`
+        defaults to `sms` and `category` to `transactional`.
+      operationId: post_v1_dlt_templates
+      tags:
+        - DLT
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - carrier
+                - template_id_ext
+                - template_name
+                - body_regex
+              properties:
+                carrier:
+                  type: string
+                  description: Registered carrier (e.g. airtel, jio, vodafone, bsnl, meta, all)
+                channel:
+                  type: string
+                  enum:
+                    - sms
+                    - whatsapp
+                  default: sms
+                template_id_ext:
+                  type: string
+                  description: TRAI DLT template ID or Meta template name
+                template_name:
+                  type: string
+                pe_id:
+                  type: string
+                  nullable: true
+                  description: TRAI Principal Entity ID
+                sender_id:
+                  type: string
+                  nullable: true
+                  description: TRAI Sender Header / WhatsApp display name
+                category:
+                  type: string
+                  enum:
+                    - transactional
+                    - promotional
+                    - service_explicit
+                    - service_implicit
+                  default: transactional
+                body_regex:
+                  type: string
+                  description: Regex that matches approved message bodies
+                metadata:
+                  type: object
+                  additionalProperties: true
+      responses:
+        '201':
+          description: Registered (status starts as pending)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  status:
+                    type: string
+                    example: pending
+                required:
+                  - id
+                  - status
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/dlt/templates/{id}:
+    put:
+      summary: Update DLT template
+      description: |
+        Updates a DLT template's approval status, principal-entity ID, or
+        sender ID. Only supplied fields are changed.
+      operationId: put_v1_dlt_templates_ById
+      tags:
+        - DLT
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum:
+                    - pending
+                    - approved
+                    - rejected
+                pe_id:
+                  type: string
+                sender_id:
+                  type: string
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                required:
+                  - id
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete DLT template
+      operationId: delete_v1_dlt_templates_ById
+      tags:
+        - DLT
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/ndnc:
+    get:
+      summary: List NDNC entries
+      operationId: get_v1_ndnc
+      tags:
+        - NDNC
+      description: |
+        Lists registered National Do-Not-Call (DND) entries as SHA-256 phone
+        hashes. This is national reference data — an entry applies to every
+        sender, so it is not tenant-scoped.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+            maximum: 500
+      responses:
+        '200':
+          description: NDNC entries (phone hashes only)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ndnc:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/NdncEntry'
+                required:
+                  - ndnc
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Register a phone on the DND list
+      operationId: post_v1_ndnc
+      tags:
+        - NDNC
+      description: |
+        Adds a phone to the national DND list (source=manual). Idempotent. Note:
+        this is national data — the entry suppresses promotional SMS for every
+        tenant, matching TRAI DND semantics.
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone
+              properties:
+                phone:
+                  type: string
+                  description: E.164 phone, e.g. +919876543210 (hashed server-side)
+                category:
+                  type: string
+                  default: all
+                  description: '''all'' or a specific DLT category'
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registered:
+                    type: boolean
+                  category:
+                    type: string
+                required:
+                  - registered
+                  - category
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/ndnc/check:
+    get:
+      summary: Check DND status
+      operationId: get_v1_ndnc_check
+      tags:
+        - NDNC
+      description: Reports whether a phone is on the DND list. Safe, read-only.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: phone
+          required: true
+          schema:
+            type: string
+          description: E.164 phone (hashed server-side)
+        - in: query
+          name: category
+          schema:
+            type: string
+          description: Optional DLT category; defaults to any
+      responses:
+        '200':
+          description: DND status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  registered:
+                    type: boolean
+                required:
+                  - registered
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/providers:
+    get:
+      summary: List provider configurations
+      operationId: get_v1_providers
+      tags:
+        - Providers
+      description: Lists the tenant's provider configs (credentials never returned).
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Provider config list (credentials redacted)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  providers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Provider'
+                required:
+                  - providers
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create provider configuration
+      operationId: post_v1_providers
+      tags:
+        - Providers
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - channel
+                - provider
+                - config
+              properties:
+                channel:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - whatsapp
+                    - push
+                    - webhook
+                    - rcs
+                    - chatops
+                provider:
+                  type: string
+                  example: ses
+                  description: 'Provider adapter. email: ses | resend. sms (India, DLT/NDNC-compliant): msg91 | 2factor. sms (international, used for non-+91 destinations): twilio | plivo. whatsapp: meta. push: fcm | apns | webpush. rcs: rbm. chatops: slack | teams | line.'
+                priority:
+                  type: integer
+                  default: 1
+                  description: Lower number = higher priority (used for fallback ordering). Defaults to 1.
+                config:
+                  type: object
+                  additionalProperties: true
+                  description: 'Provider-specific credentials (encrypted at rest). e.g. msg91/2factor: {api_key}; twilio: {account_sid, auth_token, from}; plivo: {auth_id, auth_token, from}; rbm: {service_account}; slack/teams: {webhook_url}; line: {channel_token, to}.'
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                required:
+                  - id
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/providers/{id}:
+    put:
+      summary: Update provider configuration
+      description: |
+        Updates provider priority, active state, and/or credentials. Only
+        supplied fields are changed.
+      operationId: put_v1_providers_ById
+      tags:
+        - Providers
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                priority:
+                  type: integer
+                is_active:
+                  type: boolean
+                config:
+                  type: object
+                  additionalProperties: true
+                  description: Provider-specific credentials (re-encrypted at rest).
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                required:
+                  - id
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      summary: Delete provider configuration
+      operationId: delete_v1_providers_ById
+      tags:
+        - Providers
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/suppressions:
+    get:
+      summary: List suppressions
+      operationId: get_v1_suppressions
+      tags:
+        - Suppressions
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: channel
+          description: Filter by channel
+          schema:
+            type: string
+            enum:
+              - email
+              - sms
+              - whatsapp
+              - push
+              - inapp
+              - webhook
+              - rcs
+              - chatops
+      responses:
+        '200':
+          description: |
+            Suppression list. Only the SHA-256 value hash is returned — the
+            underlying email/phone is never stored in plaintext.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  suppressions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Suppression'
+                required:
+                  - suppressions
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Add a suppression
+      operationId: post_v1_suppressions
+      tags:
+        - Suppressions
+      description: |
+        Suppresses future sends to an address on a channel. The plaintext value
+        is hashed (SHA-256) with the same scheme the channel workers use when
+        checking suppression, so the entry takes effect immediately. Idempotent:
+        re-adding the same value updates its reason.
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - channel
+                - value
+              properties:
+                channel:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - whatsapp
+                    - push
+                    - inapp
+                    - webhook
+                    - rcs
+                    - chatops
+                value:
+                  type: string
+                  description: Plaintext email / phone / token to suppress (hashed server-side)
+                reason:
+                  type: string
+                  enum:
+                    - hard_bounce
+                    - spam_complaint
+                    - manual
+                    - unsubscribe
+                    - ndnc
+                  default: manual
+      responses:
+        '201':
+          description: Suppression created (or reason updated if already present)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  channel:
+                    type: string
+                  value_hash:
+                    type: string
+                  reason:
+                    type: string
+                required:
+                  - id
+                  - channel
+                  - value_hash
+                  - reason
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/suppressions/{id}:
+    delete:
+      summary: Remove a suppression
+      operationId: delete_v1_suppressions_ById
+      tags:
+        - Suppressions
+      description: Removes an address from the suppression list, re-enabling sends.
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Removed
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/webhooks/email/{provider}:
+    post:
+      operationId: post_v1_webhooks_email_ByProvider
+      summary: Inbound email provider webhook
+      tags:
+        - Public
+      security: []
+      description: Provider callback (SES/Resend) for bounces and complaints; matched addresses are auto-suppressed.
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            enum:
+              - ses
+              - resend
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Event accepted (acked even when it is not a type we handle)
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/webhooks/sms/{provider}:
+    post:
+      operationId: post_v1_webhooks_sms_ByProvider
+      summary: Inbound SMS delivery receipt (DLR)
+      tags:
+        - Public
+      security: []
+      description: Provider DLR callback (MSG91 and generic) — normalized into delivery events and notification status, matched by provider_message_id.
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            example: msg91
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Callback accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/webhooks/whatsapp/{provider}:
+    get:
+      operationId: get_v1_webhooks_whatsapp_ByProvider
+      summary: WhatsApp (Meta) webhook verification
+      tags:
+        - Public
+      security: []
+      description: Meta's subscription handshake — echoes hub.challenge when hub.verify_token matches.
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            example: meta
+        - in: query
+          name: hub.mode
+          schema:
+            type: string
+        - in: query
+          name: hub.verify_token
+          schema:
+            type: string
+        - in: query
+          name: hub.challenge
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Challenge echoed
+          content:
+            text/plain:
+              schema:
+                type: string
+                description: The hub.challenge value, echoed verbatim.
+        '403':
+          description: Verification failed
+    post:
+      operationId: post_v1_webhooks_whatsapp_ByProvider
+      summary: WhatsApp (Meta) status callback
+      tags:
+        - Public
+      security: []
+      description: Meta status callbacks (sent/delivered/read/failed) — normalized into delivery events and notification status, matched by provider_message_id. Inbound messages are acknowledged.
+      parameters:
+        - in: path
+          name: provider
+          required: true
+          schema:
+            type: string
+            example: meta
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        '200':
+          description: Callback accepted
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /v1/deliverability/domains:
+    get:
+      summary: List sender domains
+      operationId: get_v1_deliverability_domains
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Sender domains with SPF/DKIM/DMARC status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domains:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SenderDomain'
+                required:
+                  - domains
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Register a sender domain
+      operationId: post_v1_deliverability_domains
+      tags:
+        - Email Deliverability
+      description: |
+        Registers a sending domain (unverified until checked). Idempotent —
+        re-registering an existing domain updates its DKIM selector.
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - domain
+              properties:
+                domain:
+                  type: string
+                  example: mail.acme.com
+                dkim_selector:
+                  type: string
+                  default: qeet
+      responses:
+        '201':
+          description: Registered (unverified)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  domain:
+                    type: string
+                    description: The normalized (lower-cased) domain.
+                required:
+                  - id
+                  - domain
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/deliverability/domains/{id}:
+    get:
+      summary: Get a sender domain + DNS records to publish
+      description: |
+        Returns the sender domain plus the DNS record names to publish for
+        SPF, DKIM, and DMARC verification.
+      operationId: get_v1_deliverability_domains_ById
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Sender domain with the DNS host names to publish
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domain:
+                    $ref: '#/components/schemas/SenderDomain'
+                  dns_checks:
+                    type: object
+                    description: DNS host names whose TXT records must be published/resolved.
+                    properties:
+                      spf:
+                        type: string
+                        description: The apex/sending domain (SPF TXT lives here).
+                      dkim:
+                        type: string
+                        example: qeet._domainkey.mail.acme.com
+                      dmarc:
+                        type: string
+                        example: _dmarc.mail.acme.com
+                required:
+                  - domain
+                  - dns_checks
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      summary: Delete a sender domain
+      operationId: delete_v1_deliverability_domains_ById
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/deliverability/domains/{id}/verify:
+    post:
+      summary: Verify SPF/DKIM/DMARC via DNS
+      description: Resolves the domain's TXT records and updates verification state.
+      operationId: post_v1_deliverability_domains_ById_verify
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  domain:
+                    type: string
+                  spf_verified:
+                    type: boolean
+                  dkim_verified:
+                    type: boolean
+                  dmarc_verified:
+                    type: boolean
+                  fully_verified:
+                    type: boolean
+                    description: True only when SPF, DKIM, and DMARC all pass.
+                required:
+                  - domain
+                  - spf_verified
+                  - dkim_verified
+                  - dmarc_verified
+                  - fully_verified
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/deliverability/reputation:
+    get:
+      summary: Email reputation (bounce/complaint rates)
+      description: Email bounce and complaint rates from delivery_events with a status against the Gmail/Yahoo/Microsoft 2024+ thresholds (Module 23.3).
+      operationId: get_v1_deliverability_reputation
+      tags:
+        - Email Deliverability
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Reputation snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReputationSnapshot'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/inbound:
+    get:
+      summary: List inbound messages
+      operationId: get_v1_inbound
+      tags:
+        - Inbound
+      description: |
+        Lists the tenant's inbound messages, newest first (limit 100). The
+        sender is exposed only as a last-4 masked reference — never the raw address.
+      security:
+        - API-Key: []
+      parameters:
+        - in: query
+          name: channel
+          schema:
+            type: string
+            enum:
+              - whatsapp
+              - sms
+      responses:
+        '200':
+          description: Inbound messages (newest first)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  inbound:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/InboundMessage'
+                required:
+                  - inbound
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/wa-numbers:
+    get:
+      summary: List WhatsApp number mappings
+      operationId: get_v1_wa_numbers
+      tags:
+        - Inbound
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: WhatsApp number → tenant mappings
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  wa_numbers:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/WaNumber'
+                required:
+                  - wa_numbers
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Map a WhatsApp phone_number_id to this tenant
+      description: Routes inbound WhatsApp messages received on this Meta phone_number_id to the tenant.
+      operationId: post_v1_wa_numbers
+      tags:
+        - Inbound
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - phone_number_id
+              properties:
+                phone_number_id:
+                  type: string
+                label:
+                  type: string
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  phone_number_id:
+                    type: string
+                  label:
+                    type: string
+                required:
+                  - id
+                  - phone_number_id
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/wa-numbers/{id}:
+    delete:
+      summary: Remove a WhatsApp number mapping
+      operationId: delete_v1_wa_numbers_ById
+      tags:
+        - Inbound
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/compliance/dashboard:
+    get:
+      summary: Unified compliance dashboard
+      description: Per-tenant compliance posture across regimes (TRAI DLT, WhatsApp/Meta templates, NDNC registry, DPDP consent, email auth), each with a red/amber/green status. A regime whose data source is not yet available reads as `unknown`, never as compliant; the overall status is the worst known pane.
+      operationId: get_v1_compliance_dashboard
+      tags:
+        - Compliance
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Compliance snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ComplianceDashboard'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /v1/compliance/preflight:
+    post:
+      summary: Pre-send compliance validation
+      description: Runs the deterministic send gates (DLT template match, NDNC scrubbing, promotional window, subscriber consent) for a proposed send and reports whether it would be allowed, with a per-check breakdown. Checks that cannot be evaluated return `unknown` and do not block.
+      operationId: post_v1_compliance_preflight
+      tags:
+        - Compliance
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - channel
+              properties:
+                channel:
+                  type: string
+                  enum:
+                    - email
+                    - sms
+                    - whatsapp
+                    - push
+                    - inapp
+                    - webhook
+                    - rcs
+                    - chatops
+                to:
+                  type: string
+                  description: Destination phone (sms/whatsapp) or email.
+                category:
+                  type: string
+                  example: promotional
+                body:
+                  type: string
+                  description: Message body — matched against approved DLT templates for SMS.
+                carrier:
+                  type: string
+                  description: Optional carrier for DLT matching; defaults to 'all'.
+                subscriber_id:
+                  type: string
+                  format: uuid
+                  description: Optional — enables the consent check.
+      responses:
+        '200':
+          description: Preflight verdict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreflightResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/ip-warmup/pools:
+    get:
+      summary: List IP warmup pools
+      description: Returns the tenant's dedicated-IP warmup pools, newest first (Module 23.2). A warmup pool governs the daily send ceiling for an email stream while a dedicated IP ramps its reputation.
+      operationId: list_v1_ip_warmup_pools
+      tags:
+        - IP Warmup
+      security:
+        - API-Key: []
+      responses:
+        '200':
+          description: Warmup pools
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  pools:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/IPWarmupPool'
+                required:
+                  - pools
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    post:
+      summary: Create an IP warmup pool
+      description: Creates a warmup pool. warmup_started_on defaults to today; a pool starts active and un-throttled. name must be unique per tenant.
+      operationId: create_v1_ip_warmup_pool
+      tags:
+        - IP Warmup
+      security:
+        - API-Key: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - name
+                - provider
+                - target_daily_volume
+              properties:
+                name:
+                  type: string
+                stream:
+                  type: string
+                  nullable: true
+                  description: Sending stream this pool governs (e.g. promotional). Null means a catch-all across all email streams.
+                provider:
+                  type: string
+                  example: ses
+                is_dedicated:
+                  type: boolean
+                warmup_started_on:
+                  type: string
+                  format: date
+                  description: YYYY-MM-DD; defaults to today.
+                target_daily_volume:
+                  type: integer
+                  description: The post-warmup daily ceiling.
+      responses:
+        '201':
+          description: Pool created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '422':
+          $ref: '#/components/responses/UnprocessableEntity'
+  /v1/ip-warmup/pools/{id}:
+    delete:
+      summary: Delete an IP warmup pool
+      operationId: delete_v1_ip_warmup_pool
+      tags:
+        - IP Warmup
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Pool deleted
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /v1/ip-warmup/pools/{id}/status:
+    get:
+      summary: IP warmup plan & progress
+      description: 'Returns the computed warmup plan for a pool: the day-in-warmup, today''s daily cap (reduced when the pool is complaint-throttled), sends so far today, and remaining headroom.'
+      operationId: get_v1_ip_warmup_pool_status
+      tags:
+        - IP Warmup
+      security:
+        - API-Key: []
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Warmup status
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/IPWarmupPool'
+                  - type: object
+                    properties:
+                      day_in_warmup:
+                        type: integer
+                      warmup_complete:
+                        type: boolean
+                      daily_cap:
+                        type: integer
+                      sent_today:
+                        type: integer
+                      remaining:
+                        type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  securitySchemes:
+    API-Key:
+      type: apiKey
+      in: header
+      name: X-Qeet-Api-Key
+  schemas:
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required:
+        - error
+    IPWarmupPool:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        stream:
+          type: string
+          nullable: true
+        provider:
+          type: string
+        is_dedicated:
+          type: boolean
+        warmup_started_on:
+          type: string
+          format: date
+        target_daily_volume:
+          type: integer
+        status:
+          type: string
+          enum:
+            - active
+            - paused
+            - completed
+        throttled:
+          type: boolean
+    PaginatedMeta:
+      type: object
+      properties:
+        total:
+          type: integer
+        limit:
+          type: integer
+        offset:
+          type: integer
+    DeadLetter:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        subject:
+          type: string
+          description: Original channel subject the job is redriven to
+        payload:
+          type: object
+          additionalProperties: true
+          description: The original ChannelJob
+        error:
+          type: string
+          nullable: true
+        attempts:
+          type: integer
+        status:
+          type: string
+          enum:
+            - pending
+            - redriven
+            - discarded
+        created_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+          nullable: true
+    Provider:
+      type: object
+      description: A provider config (credentials are never returned).
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        provider:
+          type: string
+        priority:
+          type: integer
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    Suppression:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        value_hash:
+          type: string
+          description: SHA-256 of the suppressed address; plaintext is never stored.
+        reason:
+          type: string
+          enum:
+            - hard_bounce
+            - spam_complaint
+            - manual
+            - unsubscribe
+            - ndnc
+        created_at:
+          type: string
+          format: date-time
+    DltTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        carrier:
+          type: string
+        channel:
+          type: string
+          enum:
+            - sms
+            - whatsapp
+        template_id_ext:
+          type: string
+          description: TRAI DLT template ID or Meta template name
+        template_name:
+          type: string
+        pe_id:
+          type: string
+          nullable: true
+        sender_id:
+          type: string
+          nullable: true
+        category:
+          type: string
+          enum:
+            - transactional
+            - promotional
+            - service_explicit
+            - service_implicit
+        body_regex:
+          type: string
+        status:
+          type: string
+          enum:
+            - pending
+            - approved
+            - rejected
+        metadata:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+    NdncEntry:
+      type: object
+      description: A national DND entry — phone hash only, not tenant-scoped.
+      properties:
+        phone_hash:
+          type: string
+          description: SHA-256 of the phone number.
+        category:
+          type: string
+        source:
+          type: string
+          enum:
+            - manual
+            - trai_sync
+        created_at:
+          type: string
+          format: date-time
+    SenderDomain:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        domain:
+          type: string
+        dkim_selector:
+          type: string
+        spf_verified:
+          type: boolean
+        dkim_verified:
+          type: boolean
+        dmarc_verified:
+          type: boolean
+        last_checked_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    ReputationSnapshot:
+      type: object
+      properties:
+        channel:
+          type: string
+          example: email
+        sent:
+          type: integer
+        bounced:
+          type: integer
+        complained:
+          type: integer
+        bounce_rate:
+          type: number
+        complaint_rate:
+          type: number
+        status:
+          type: string
+          enum:
+            - healthy
+            - at_risk
+            - critical
+    InboundMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        channel:
+          type: string
+        provider:
+          type: string
+          nullable: true
+        from_ref:
+          type: string
+          nullable: true
+          description: Last-4 masked sender reference; the raw address is never returned.
+        body:
+          type: string
+          nullable: true
+        received_at:
+          type: string
+          format: date-time
+    WaNumber:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        phone_number_id:
+          type: string
+        label:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+    CompliancePane:
+      type: object
+      properties:
+        regime:
+          type: string
+          example: dlt_sms
+        status:
+          type: string
+          enum:
+            - green
+            - amber
+            - red
+            - unknown
+        detail:
+          type: string
+        metrics:
+          type: object
+          additionalProperties: true
+      required:
+        - regime
+        - status
+        - detail
+    ComplianceDashboard:
+      type: object
+      properties:
+        tenant_id:
+          type: string
+          format: uuid
+        overall:
+          type: string
+          enum:
+            - green
+            - amber
+            - red
+            - unknown
+        promotional_window_open:
+          type: boolean
+        panes:
+          type: array
+          items:
+            $ref: '#/components/schemas/CompliancePane'
+        generated_at:
+          type: string
+          format: date-time
+      required:
+        - tenant_id
+        - overall
+        - promotional_window_open
+        - panes
+        - generated_at
+    PreflightCheck:
+      type: object
+      properties:
+        name:
+          type: string
+          example: dlt_template
+        status:
+          type: string
+          enum:
+            - green
+            - red
+            - unknown
+        detail:
+          type: string
+      required:
+        - name
+        - status
+        - detail
+    PreflightResult:
+      type: object
+      properties:
+        allowed:
+          type: boolean
+        checks:
+          type: array
+          items:
+            $ref: '#/components/schemas/PreflightCheck'
+      required:
+        - allowed
+        - checks
+  responses:
+    Unauthorized:
+      description: Missing or invalid API key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    BadRequest:
+      description: Malformed request body
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    Conflict:
+      description: Conflict with an existing resource
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+    UnprocessableEntity:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'

@@ -1,40 +1,38 @@
 ---
-import BaseLayout from "../layouts/BaseLayout.astro";
-import SectionHead from "../components/SectionHead.astro";
-import Icon from "../components/Icon.astro";
-import CodeTabs from "../components/CodeTabs.astro";
+import MarketingLayout from "../layouts/MarketingLayout.astro";
+import SectionHead from "../components/marketing/SectionHead.astro";
+import Icon from "../components/shared/Icon.astro";
+import CodeTabs from "../components/docs/CodeTabs.astro";
 import { LINKS } from "../data/catalog";
 
 // 1 · Hero + trust
-import Hero from "../components/Hero.astro";
-import TrustedBy from "../components/TrustedBy.astro";
-import LogoMarquee from "../components/LogoMarquee.astro";
+import Hero from "../components/marketing/Hero.astro";
+import TrustedBy from "../components/marketing/TrustedBy.astro";
+import LogoMarquee from "../components/marketing/LogoMarquee.astro";
 // 3 · Platform
-import PlatformOverview from "../components/PlatformOverview.astro";
-import ProductSuite from "../components/ProductSuite.astro";
-import MetricBand from "../components/MetricBand.astro";
+import PlatformOverview from "../components/marketing/PlatformOverview.astro";
+import ProductSuite from "../components/marketing/ProductSuite.astro";
+import MetricBand from "../components/marketing/MetricBand.astro";
 // 4–13 · Capabilities
-import ApiDiscovery from "../components/ApiDiscovery.astro";
-import DocsPreview from "../components/DocsPreview.astro";
-import ApiPlayground from "../components/ApiPlayground.astro";
-import Authentication from "../components/Authentication.astro";
-import SdkGeneration from "../components/SdkGeneration.astro";
-import PlatformMetrics from "../components/PlatformMetrics.astro";
-import ApiAnalytics from "../components/ApiAnalytics.astro";
-import ApiMonitoring from "../components/ApiMonitoring.astro";
-import RateLimiting from "../components/RateLimiting.astro";
-import ApiVersioning from "../components/ApiVersioning.astro";
-import Webhooks from "../components/Webhooks.astro";
+import ApiDiscovery from "../components/marketing/ApiDiscovery.astro";
+import DocsPreview from "../components/marketing/DocsPreview.astro";
+import ApiPlayground from "../components/marketing/ApiPlayground.astro";
+import Authentication from "../components/marketing/Authentication.astro";
+import PlatformMetrics from "../components/marketing/PlatformMetrics.astro";
+import ApiAnalytics from "../components/marketing/ApiAnalytics.astro";
+import ApiMonitoring from "../components/marketing/ApiMonitoring.astro";
+import RateLimiting from "../components/marketing/RateLimiting.astro";
+import ApiVersioning from "../components/marketing/ApiVersioning.astro";
+import Webhooks from "../components/marketing/Webhooks.astro";
 // 14–17 · Enterprise, team, CLI, integrations
-import EnterpriseGrid from "../components/EnterpriseGrid.astro";
-import TeamCollaboration from "../components/TeamCollaboration.astro";
-import CliExperience from "../components/CliExperience.astro";
-import Integrations from "../components/Integrations.astro";
+import EnterpriseGrid from "../components/marketing/EnterpriseGrid.astro";
+import TeamCollaboration from "../components/marketing/TeamCollaboration.astro";
+import CliExperience from "../components/marketing/CliExperience.astro";
+import Integrations from "../components/marketing/Integrations.astro";
 // 19–22 · Social proof → conversion
-import Testimonials from "../components/Testimonials.astro";
-import PricingPreview from "../components/PricingPreview.astro";
-import FAQ from "../components/FAQ.astro";
-import CalloutCTA from "../components/CalloutCTA.astro";
+import PricingPreview from "../components/marketing/PricingPreview.astro";
+import FAQ from "../components/marketing/FAQ.astro";
+import CalloutCTA from "../components/marketing/CalloutCTA.astro";
 
 // --- Developer-experience quickstart (section 18) --------------------------
 const firstRequest = [
@@ -81,7 +79,7 @@ const steps = [
 ];
 ---
 
-<BaseLayout title="Qeet APIs — One platform for every API your business needs">
+<MarketingLayout title="Qeet APIs — One platform for every API your business needs">
   <!-- 1 · Hero -->
   <Hero />
 
@@ -144,10 +142,7 @@ const steps = [
   <!-- 7 · Authentication & Authorization -->
   <Authentication />
 
-  <!-- 8 · SDK Generation -->
-  <SdkGeneration />
-
-  <!-- 8b · Platform metrics (dark) -->
+  <!-- 8 · Platform metrics (dark) -->
   <PlatformMetrics />
 
   <!-- 9 · API Analytics -->
@@ -226,9 +221,6 @@ const steps = [
     </div>
   </section>
 
-  <!-- 19 · Testimonials -->
-  <Testimonials />
-
   <!-- 20 · Pricing preview -->
   <PricingPreview />
 
@@ -242,7 +234,7 @@ const steps = [
     primary={{ href: LINKS.reference, label: "Open the API Reference", icon: "book" }}
     secondary={{ href: LINKS.console, label: "Go to Console", icon: "arrow-up-right", external: true }}
   />
-</BaseLayout>
+</MarketingLayout>
 
 <script>
   // Dependency-free scroll choreography: reveal-on-view + count-up.

@@ -1,0 +1,34 @@
+---
+/**
+ * A slim footer for the developer workspace — one hairline row, not the
+ * marketing mega-footer. It exists to get a reader *out* (console, docs,
+ * GitHub, marketing site) without competing with the documentation.
+ *
+ * The reference page renders no footer at all, since Scalar owns the full
+ * viewport height there.
+ */
+import { LINKS, SITE } from "../../config/site";
+
+const year = new Date().getFullYear();
+---
+
+<footer class="border-t border-rule bg-surface px-4 py-5">
+  <div
+    class="mx-auto flex max-w-(--container-wide) flex-wrap items-center gap-x-6 gap-y-3 font-ui text-xs text-ink-subtle"
+  >
+    <span>© {year} Qeet Group</span>
+
+    <nav class="flex flex-wrap items-center gap-x-5 gap-y-2" aria-label="Footer">
+      <a href={LINKS.home} class="transition-colors hover:text-ink">Overview</a>
+      <a href={LINKS.reference} class="transition-colors hover:text-ink">API reference</a>
+      <a href={LINKS.changelog} class="transition-colors hover:text-ink">Changelog</a>
+      <a href={LINKS.docs} class="transition-colors hover:text-ink" rel="noopener">
+        Product docs
+      </a>
+      <a href={LINKS.console} class="transition-colors hover:text-ink" rel="noopener">Console</a>
+      <a href={LINKS.github} class="transition-colors hover:text-ink" rel="noopener">GitHub</a>
+    </nav>
+
+    <span class="ml-auto font-mono text-2xs text-ink-faint">{SITE.url.replace("https://", "")}</span>
+  </div>
+</footer>
