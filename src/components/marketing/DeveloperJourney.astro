@@ -1,0 +1,201 @@
+---
+import Icon from "../shared/Icon.astro";
+import CodeTabs from "../docs/CodeTabs.astro";
+import { LINKS } from "../../data/catalog";
+import { PRODUCTS } from "../../config/products";
+import { referenceHref } from "../../config/scalar";
+import { operationAnchor } from "../../lib/api/openapi";
+
+const product = PRODUCTS.find((entry) => entry.id === "qeet-id");
+const local = product?.environments.find((environment) => environment.name === "Local");
+if (!product || !local) throw new Error("The developer journey requires Qeet ID's local environment");
+const endpoint = "/v1/auth/me";
+const endpointHref = `${referenceHref(product.id)}#${operationAnchor(product.id, "Auth", "GET", endpoint)}`;
+const steps = [
+  { name: "Discover", text: "Choose a product and find your endpoint.", icon: "search", href: LINKS.reference },
+  { name: "Understand", text: "Read the contract, inputs, and responses.", icon: "book", href: endpointHref },
+  { name: "Authenticate", text: "Choose the credential your product expects.", icon: "key", href: LINKS.authentication },
+  { name: "Integrate", text: "Make your first request against your local stack.", icon: "code", href: LINKS.quickstart },
+  { name: "Verify", text: "Inspect the response and handle errors.", icon: "circle-check", href: LINKS.errors },
+] as const;
+const examples = [
+  {
+    label: "cURL",
+    lang: "bash",
+    code: [
+      "curl --include \\",
+      `  ${local.url}${endpoint} \\`,
+      '  -H "Authorization: Bearer $QEET_ID_TOKEN"',
+    ].join("\n"),
+  },
+  {
+    label: "JavaScript",
+    lang: "js",
+    code: `const token = process.env.QEET_ID_TOKEN;
+const response = await fetch(
+  "${local.url}${endpoint}",
+  { headers: { Authorization: \`Bearer \${token}\` } }
+);
+console.log(response.status, await response.json());`,
+  },
+  {
+    label: "Python",
+    lang: "python",
+    code: `import os
+import requests
+
+response = requests.get(
+    "${local.url}${endpoint}",
+    headers={"Authorization": f"Bearer {os.environ['QEET_ID_TOKEN']}"},
+)
+print(response.status_code, response.json())`,
+  },
+];
+---
+
+<section class="developer-journey" id="journey" aria-labelledby="journey-title">
+  <div class="container container-wide">
+    <div class="journey-intro" data-reveal>
+      <div class="journey-local-context">
+        <span class="journey-local-symbol"><Icon name="terminal" class="h-6 w-6" /></span>
+        <span class="journey-local-label">Your stack. Your environment.</span>
+        <code>{local.url}</code>
+        <a href={LINKS.quickstart}>Start with the quickstart <Icon name="arrow-up-right" class="h-4 w-4" /></a>
+      </div>
+      <header class="journey-heading">
+        <h2 id="journey-title">From endpoint to<br class="hidden sm:block" /> <span>working integration.</span></h2>
+        <p>A clear path from the API contract to a request you can run, inspect, and build on.</p>
+      </header>
+    </div>
+
+    <ol class="journey-steps" aria-label="Your integration journey">
+      {steps.map((step, index) => (
+        <li class:list={{ "journey-step-integrate": step.name === "Integrate" }}>
+          <a href={step.href}>
+            <span class="journey-step-top"><span class="journey-step-marker"><Icon name={step.icon} class="h-5 w-5" /></span><span class="journey-step-number">{String(index + 1).padStart(2, "0")}</span></span>
+            <span class="journey-step-copy"><strong>{step.name}</strong><small>{step.text}</small></span>
+          </a>
+        </li>
+      ))}
+    </ol>
+
+    <div class="journey-example" data-reveal>
+      <div class="journey-request">
+        <div class="journey-fragment-heading"><span><Icon name="terminal" class="h-4 w-4" />Your first request</span><span class="journey-environment"><Icon name="server" class="h-3.5 w-3.5" />Local</span></div>
+        <a class="journey-endpoint" href={endpointHref}><span>GET</span><code>{endpoint}</code><Icon name="arrow-up-right" class="h-4 w-4" /></a>
+        <div class="journey-code"><CodeTabs id="journey-request" tabs={examples} /></div>
+        <div class="journey-credential"><Icon name="lock" class="h-3.5 w-3.5" /><code>Authorization</code><span>Bearer token</span></div>
+      </div>
+      <span class="journey-bridge" aria-hidden="true"><Icon name="arrow-right" class="h-5 w-5" /></span>
+      <div class="journey-response">
+        <div class="journey-fragment-heading"><span><Icon name="braces" class="h-4 w-4" />The response contract</span><span class="journey-contract-label">Qeet ID</span></div>
+        <dl class="journey-outcomes">
+          <div class="journey-success-outcome"><dt class="journey-status-ok">200<span>OK</span></dt><dd><strong>Current principal</strong><span>User, tenant, session, and granted scopes.</span><code>application/json</code></dd></div>
+          <div><dt>401</dt><dd><strong>Unauthorized</strong><span>Check the credential and authorization header.</span></dd></div>
+        </dl>
+        <a class="journey-schema" href={endpointHref}><Icon name="braces" class="h-4 w-4" /><span>Principal</span><span>Response schema</span><Icon name="arrow-up-right" class="h-3.5 w-3.5" /></a>
+        <a class="journey-errors" href={LINKS.errors}>Handle errors &amp; rate limits <Icon name="arrow-right" class="h-4 w-4" /></a>
+      </div>
+    </div>
+
+    <div class="journey-bottom"><span><Icon name="server" class="h-4 w-4" />Local services. Product-specific credentials. No production requests.</span><a href={LINKS.quickstart}>Read Quickstart <Icon name="arrow-up-right" class="h-4 w-4" /></a></div>
+  </div>
+</section>
+
+<style>
+  .developer-journey { position: relative; isolation: isolate; overflow: clip; padding-block: 5rem; border-top: 1px solid var(--rule); background: var(--surface); scroll-margin-top: var(--header-h); }
+  .developer-journey::before { position: absolute; z-index: -1; inset: 0; content: ""; background-image: linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size: 72px 72px; mask-image: linear-gradient(180deg, transparent 25%, #0002, transparent 90%); pointer-events: none; }
+  .journey-intro { display: grid; align-items: center; gap: 1.5rem; }
+  .journey-local-context { display: none; }
+  .journey-local-symbol { display: grid; width: 3rem; height: 3rem; place-items: center; margin-bottom: 1rem; border: 1px solid var(--rule); border-radius: 0.75rem; background: var(--bg); box-shadow: var(--shadow-sm); color: var(--brand-deep); }
+  .journey-local-label { display: block; font-family: var(--font-ui); font-size: 0.875rem; font-weight: 500; color: var(--ink-muted); }
+  .journey-local-context > code { display: block; margin-top: 0.5rem; font-size: 0.75rem; color: var(--ink-subtle); }
+  .journey-local-context > a { display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.5rem; margin-top: 0.75rem; font-family: var(--font-ui); font-size: 0.75rem; color: var(--brand-deep); }
+  .journey-heading { max-width: 41rem; margin-left: auto; text-align: right; }
+  .journey-heading h2 { margin: 0; font-size: 2rem; line-height: 1.15; letter-spacing: 0; }
+  .journey-heading h2 > span { color: var(--brand-deep); }
+  .journey-heading p { max-width: 30rem; margin: 1rem 0 0 auto; font-size: 1rem; line-height: 1.65; color: var(--ink-muted); text-wrap: pretty; }
+  .journey-steps { display: grid; gap: 0.75rem; margin: 2.5rem 0; padding: 0; list-style: none; }
+  .journey-steps li { position: relative; min-width: 0; }
+  .journey-steps a { display: flex; position: relative; height: 100%; align-items: center; gap: 1rem; padding: 1rem; border: 1px solid var(--rule); border-radius: 0.5rem; background: var(--surface); color: var(--ink); box-shadow: 0 12px 24px -22px color-mix(in oklab, var(--ink) 32%, transparent); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+  .journey-steps a:hover { transform: translateY(-3px); border-color: var(--brand); }
+  .journey-step-top { display: flex; flex-shrink: 0; align-items: center; gap: 0.625rem; }
+  .journey-step-marker { display: grid; width: 2.625rem; height: 2.625rem; flex: none; place-items: center; border-radius: 0.5rem; background: var(--surface-2); color: var(--ink-muted); transition: color var(--dur) var(--ease); }
+  .journey-step-number { font-family: var(--font-mono); font-size: 0.625rem; color: var(--ink-subtle); }
+  .journey-step-integrate .journey-step-marker { background: var(--brand); color: var(--brand-ink); }
+  .journey-step-integrate a { border-color: color-mix(in oklab, var(--brand) 36%, var(--rule)); background: color-mix(in oklab, var(--brand) 3%, var(--surface)); }
+  .journey-step-copy strong { display: block; font-family: var(--font-ui); font-size: 0.9375rem; font-weight: 600; }
+  .journey-step-copy small { display: block; max-width: 25ch; margin-top: 0.375rem; font-size: 0.75rem; line-height: 1.55; color: var(--ink-subtle); }
+  .journey-steps a:hover .journey-step-marker { color: var(--brand-deep); }
+  .journey-step-integrate a:hover .journey-step-marker { color: var(--brand-ink); }
+  .journey-steps a:hover strong { color: var(--brand-deep); }
+  .journey-example { display: grid; position: relative; isolation: isolate; gap: 1.25rem; }
+  .journey-example::before { position: absolute; z-index: -1; inset: 0.25rem 1.5rem 1rem; border: 1px solid var(--rule); border-radius: 1rem; background: var(--brand-faint); transform: rotate(-1.5deg); content: ""; }
+  .journey-request, .journey-response { min-width: 0; padding: 1.5rem; border: 1px solid var(--rule); border-radius: 0.75rem; background: var(--surface); box-shadow: var(--shadow-bezel), 0 24px 40px -32px color-mix(in oklab, var(--ink) 26%, transparent); }
+  .journey-bridge { display: none; }
+  .journey-fragment-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.75rem; margin-bottom: 1.125rem; font-family: var(--font-ui); font-size: 0.8125rem; font-weight: 500; }
+  .journey-fragment-heading > span:first-child { display: flex; align-items: center; gap: 0.625rem; }
+  .journey-environment, .journey-contract-label { font-family: var(--font-mono); font-size: 0.625rem; font-weight: 400; color: var(--ink-subtle); }
+  .journey-environment { display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.3125rem 0.5rem; border: 1px solid var(--rule); border-radius: 0.375rem; background: var(--bg); }
+  .journey-code :global(.bezel), .journey-code :global(.bezel-core) { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .journey-code :global(.codetabs__bar) { padding: 0; background: transparent; gap: 0.5rem; }
+  .journey-code :global(.codetabs__tab) { min-height: 2.75rem; padding: 0.5rem 0.75rem; border-bottom: 2px solid transparent; border-radius: 0; font-size: 0.75rem; font-weight: 500; }
+  .journey-code :global(.codetabs__tab[aria-selected="true"]) { border-bottom-color: var(--brand); background: transparent; }
+  .journey-code :global(.codetabs__copy) { width: 2.75rem; height: 2.75rem; }
+  .journey-code :global(.codetabs__panel) { height: 10rem; overflow: auto; }
+  .journey-code :global(.codetabs__panel pre) { padding: 1rem 0; background: transparent !important; font-size: 0.75rem; line-height: 1.9; }
+  .journey-credential { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; padding-top: 0.875rem; border-top: 1px solid var(--rule); color: var(--ink-subtle); font-size: 0.6875rem; }
+  .journey-credential code { font-size: 0.625rem; }
+  .journey-credential > span { margin-left: auto; color: var(--ink-muted); }
+  .journey-response { background: color-mix(in oklab, var(--success) 2%, var(--surface)); }
+  .journey-endpoint { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; min-height: 2.75rem; margin-bottom: 0.75rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--rule); color: var(--ink); }
+  .journey-endpoint > span { color: var(--m-get); font-family: var(--font-mono); font-size: 0.75rem; font-weight: 500; }
+  .journey-endpoint code { font-size: 0.875rem; }
+  .journey-endpoint :global(svg) { margin-left: auto; color: var(--ink-subtle); }
+  .journey-outcomes { display: grid; gap: 1.25rem; margin: 1.75rem 0; }
+  .journey-outcomes > div { display: grid; grid-template-columns: 3rem minmax(0, 1fr); align-items: start; gap: 1rem; }
+  .journey-outcomes dt { padding: 0.375rem; border: 1px solid var(--rule); border-radius: 0.375rem; font-family: var(--font-mono); font-size: 0.75rem; text-align: center; color: var(--ink-subtle); }
+  .journey-outcomes .journey-success-outcome { grid-template-columns: 5rem minmax(0, 1fr); align-items: center; padding-bottom: 1.5rem; border-bottom: 1px solid color-mix(in oklab, var(--success) 12%, var(--rule)); }
+  .journey-outcomes .journey-status-ok { display: flex; align-items: flex-start; flex-direction: column; padding: 0; border: 0; font-size: 2.25rem; font-weight: 500; line-height: 1.1; color: var(--success); background: transparent; }
+  .journey-status-ok > span { margin-top: 0.5rem; font-size: 0.75rem; }
+  .journey-outcomes dd { margin: 0; }
+  .journey-outcomes strong { display: block; font-family: var(--font-ui); font-size: 0.8125rem; font-weight: 500; }
+  .journey-outcomes dd span { display: block; margin-top: 0.125rem; font-size: 0.75rem; line-height: 1.6; color: var(--ink-subtle); }
+  .journey-outcomes dd code { display: block; margin-top: 0.5rem; font-size: 0.625rem; color: var(--success); }
+  .journey-success-outcome dd strong { font-size: 1rem; }
+  .journey-schema { display: flex; align-items: center; gap: 0.625rem; min-height: 2.75rem; border-bottom: 1px solid var(--rule); font-family: var(--font-mono); font-size: 0.6875rem; color: var(--ink-muted); }
+  .journey-schema > span:nth-of-type(2) { margin-left: auto; font-family: var(--font-ui); font-size: 0.625rem; color: var(--ink-subtle); }
+  .journey-schema :global(svg) { flex-shrink: 0; }
+  .journey-errors { display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.625rem; margin-top: 0.625rem; font-size: 0.75rem; font-weight: 500; color: var(--ink-muted); }
+  .journey-bottom { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 0.5rem 2rem; padding-top: 1.5rem; }
+  .journey-bottom > span { display: inline-flex; align-items: center; gap: 0.625rem; font-size: 0.75rem; color: var(--ink-subtle); }
+  .journey-bottom :global(svg) { flex-shrink: 0; }
+  .journey-bottom a { display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.75rem; font-family: var(--font-ui); font-size: 0.875rem; font-weight: 600; color: var(--ink); }
+  .journey-bottom a:hover, .journey-errors:hover { color: var(--brand-deep); }
+  @media (min-width: 768px) {
+    .journey-heading h2 { font-size: 2.75rem; }
+    .journey-steps { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 0.875rem; margin-block: 2.75rem; }
+    .journey-steps li:not(:last-child)::before { position: absolute; left: 100%; top: 2.25rem; width: 0.875rem; height: 1px; background: var(--rule-strong); content: ""; }
+    .journey-steps a { align-items: flex-start; flex-direction: column; gap: 1rem; }
+    .journey-step-top { width: 100%; justify-content: space-between; }
+    .journey-step-copy strong { font-size: 0.8125rem; }
+    .journey-step-copy small { font-size: 0.6875rem; }
+    .journey-example { grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 2rem; }
+    .journey-bridge { display: grid; position: absolute; z-index: var(--z-raised); top: 50%; left: calc(60% - 1.7rem); width: 3rem; height: 3rem; place-items: center; border: 1px solid var(--rule); border-radius: 50%; background: var(--surface); color: var(--brand-deep); box-shadow: var(--shadow-sm); }
+  }
+  @media (min-width: 1100px) {
+    .journey-intro { grid-template-columns: 0.4fr 0.6fr; }
+    .journey-local-context { display: block; }
+    .journey-heading h2 { font-size: 3rem; }
+    .journey-step-copy strong { font-size: 1rem; }
+    .journey-step-copy small { font-size: 0.75rem; }
+    .journey-steps a { padding: 1.25rem; }
+  }
+  @media (max-width: 767px) { .journey-heading { text-align: left; } }
+  @media (max-width: 639px) {
+    .journey-request, .journey-response { padding: 1rem; }
+    .journey-code :global(.codetabs__bar) { gap: 0.125rem; }
+    .journey-code :global(.codetabs__tab) { flex: 1; padding-inline: 0.25rem; font-size: 0.6875rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .journey-steps a:hover { transform: none; } }
+</style>

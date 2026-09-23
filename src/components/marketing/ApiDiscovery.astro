@@ -7,14 +7,22 @@ import Icon from "../shared/Icon.astro";
 import { LINKS } from "../../data/catalog";
 
 const bullets = [
-  ["Unified search.", "One bar across every product — endpoints, parameters, schemas and error codes."],
+  [
+    "Unified search.",
+    "One bar across every product — endpoints, parameters, schemas and error codes.",
+  ],
   ["Command palette.", "Open ⌘K from anywhere and jump to any operation in a single keystroke."],
   ["Faceted filters.", "Narrow by product, HTTP method, tag or required scope as you type."],
-  ["Never stale.", "The index is generated from OpenAPI 3.1 — new endpoints appear the moment they ship."],
+  [
+    "Never stale.",
+    "The index is generated from OpenAPI 3.1 — new endpoints appear the moment they ship.",
+  ],
 ];
 
 const method = (m: string) =>
-  ({ GET: "--m-get", POST: "--m-post", PUT: "--m-put", PATCH: "--m-patch", DELETE: "--m-delete" })[m] ?? "--m-get";
+  ({ GET: "--m-get", POST: "--m-post", PUT: "--m-put", PATCH: "--m-patch", DELETE: "--m-delete" })[
+    m
+  ] ?? "--m-get";
 
 const results = [
   { m: "POST", path: "/v1/users", tag: "Qeet ID", active: true },

@@ -254,7 +254,9 @@ function declareUsedTags(doc, label) {
   const used = new Set(usedTagNames(doc));
   doc.tags = [...declared.values()].filter((t) => used.has(t.name));
   if (added.length) {
-    console.log(`[tags]  ${label}: declared ${added.length} used-but-undeclared tag(s): ${added.join(", ")}`);
+    console.log(
+      `[tags]  ${label}: declared ${added.length} used-but-undeclared tag(s): ${added.join(", ")}`,
+    );
   }
   return doc.tags;
 }
@@ -294,7 +296,9 @@ for (const product of PRODUCTS) {
   const docs = loaded[product.slug] ?? {};
   const present = product.groups.filter((g) => docs[g.spec]);
   if (present.length !== product.groups.length) {
-    console.error(`[bundle] SKIPPED ${product.slug}.yaml — ${product.groups.length - present.length} source spec(s) missing.`);
+    console.error(
+      `[bundle] SKIPPED ${product.slug}.yaml — ${product.groups.length - present.length} source spec(s) missing.`,
+    );
     continue;
   }
 
@@ -363,7 +367,9 @@ for (const product of PRODUCTS) {
       }
       for (const m of HTTP_METHODS) {
         if (item[m] && merged.paths[p][m]) {
-          console.warn(`[bundle] ${product.slug}: collision ${m.toUpperCase()} ${p} — keeping first`);
+          console.warn(
+            `[bundle] ${product.slug}: collision ${m.toUpperCase()} ${p} — keeping first`,
+          );
         } else if (item[m]) {
           merged.paths[p][m] = item[m];
         }
@@ -378,7 +384,9 @@ for (const product of PRODUCTS) {
         if (existing === undefined) {
           merged.components[section][key] = val;
         } else if (JSON.stringify(existing) !== JSON.stringify(val)) {
-          console.warn(`[bundle] ${product.slug}: components.${section}.${key} differs between specs — keeping first`);
+          console.warn(
+            `[bundle] ${product.slug}: components.${section}.${key} differs between specs — keeping first`,
+          );
         }
       }
     }
@@ -391,7 +399,9 @@ for (const product of PRODUCTS) {
     for (const name of usedTagNames(doc)) {
       if (claimed.has(name)) {
         if (claimed.get(name) !== group.name) {
-          console.log(`[bundle] ${product.slug}: tag "${name}" also used by "${group.name}" — kept in "${claimed.get(name)}"`);
+          console.log(
+            `[bundle] ${product.slug}: tag "${name}" also used by "${group.name}" — kept in "${claimed.get(name)}"`,
+          );
         }
         continue;
       }
@@ -402,7 +412,8 @@ for (const product of PRODUCTS) {
     // Carry descriptions across even when another folder claimed the tag first.
     for (const [name, decl] of declaredHere) {
       const existing = tagSeen.get(name);
-      if (existing && !existing.description && decl.description) existing.description = decl.description;
+      if (existing && !existing.description && decl.description)
+        existing.description = decl.description;
     }
     if (groupTags.length) merged["x-tagGroups"].push({ name: group.name, tags: groupTags });
   }
@@ -442,7 +453,10 @@ for (const product of PRODUCTS) {
   if (!pm) continue;
   const production = product.servers[0].url;
 
-  for (const [kind, file] of [["collection", pm.collection], ["environment", pm.environment]]) {
+  for (const [kind, file] of [
+    ["collection", pm.collection],
+    ["environment", pm.environment],
+  ]) {
     if (!file) continue;
     const src = join(root, pm.srcDir, file);
     if (!existsSync(src)) {

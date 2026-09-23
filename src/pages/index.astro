@@ -1,238 +1,33 @@
 ---
 import MarketingLayout from "../layouts/MarketingLayout.astro";
-import SectionHead from "../components/marketing/SectionHead.astro";
-import Icon from "../components/shared/Icon.astro";
-import CodeTabs from "../components/docs/CodeTabs.astro";
-import { LINKS } from "../data/catalog";
-
-// 1 · Hero + trust
 import Hero from "../components/marketing/Hero.astro";
-import TrustedBy from "../components/marketing/TrustedBy.astro";
-import LogoMarquee from "../components/marketing/LogoMarquee.astro";
-// 3 · Platform
-import PlatformOverview from "../components/marketing/PlatformOverview.astro";
 import ProductSuite from "../components/marketing/ProductSuite.astro";
-import MetricBand from "../components/marketing/MetricBand.astro";
-// 4–13 · Capabilities
-import ApiDiscovery from "../components/marketing/ApiDiscovery.astro";
-import DocsPreview from "../components/marketing/DocsPreview.astro";
-import ApiPlayground from "../components/marketing/ApiPlayground.astro";
-import Authentication from "../components/marketing/Authentication.astro";
-import PlatformMetrics from "../components/marketing/PlatformMetrics.astro";
-import ApiAnalytics from "../components/marketing/ApiAnalytics.astro";
-import ApiMonitoring from "../components/marketing/ApiMonitoring.astro";
-import RateLimiting from "../components/marketing/RateLimiting.astro";
-import ApiVersioning from "../components/marketing/ApiVersioning.astro";
-import Webhooks from "../components/marketing/Webhooks.astro";
-// 14–17 · Enterprise, team, CLI, integrations
-import EnterpriseGrid from "../components/marketing/EnterpriseGrid.astro";
-import TeamCollaboration from "../components/marketing/TeamCollaboration.astro";
-import CliExperience from "../components/marketing/CliExperience.astro";
-import Integrations from "../components/marketing/Integrations.astro";
-// 19–22 · Social proof → conversion
-import PricingPreview from "../components/marketing/PricingPreview.astro";
-import FAQ from "../components/marketing/FAQ.astro";
+import PlatformOverview from "../components/marketing/PlatformOverview.astro";
+import OpenStandards from "../components/marketing/Integrations.astro";
+import DeveloperJourney from "../components/marketing/DeveloperJourney.astro";
+import PlatformFoundations from "../components/marketing/PlatformMetrics.astro";
+import DeveloperResources from "../components/marketing/DocsPreview.astro";
 import CalloutCTA from "../components/marketing/CalloutCTA.astro";
-
-// --- Developer-experience quickstart (section 18) --------------------------
-const firstRequest = [
-  {
-    label: "cURL",
-    lang: "bash",
-    code: `curl https://api.id.qeet.in/v1/auth/me \\
-  -H "Authorization: ApiKey qk_live_..."`,
-  },
-  {
-    label: "JavaScript",
-    lang: "js",
-    code: `const res = await fetch("https://api.id.qeet.in/v1/auth/me", {
-  headers: { Authorization: "ApiKey qk_live_..." },
-});
-const principal = await res.json();`,
-  },
-  {
-    label: "Go",
-    lang: "go",
-    code: `req, _ := http.NewRequest("GET", "https://api.id.qeet.in/v1/auth/me", nil)
-req.Header.Set("Authorization", "ApiKey qk_live_...")
-res, _ := http.DefaultClient.Do(req)`,
-  },
-  {
-    label: "Python",
-    lang: "python",
-    code: `import requests
-
-res = requests.get(
-    "https://api.id.qeet.in/v1/auth/me",
-    headers={"Authorization": "ApiKey qk_live_..."},
-)
-print(res.json())`,
-  },
-];
-
-const codeChip =
-  "rounded border border-rule bg-surface-2 px-1 font-mono text-[0.82em] text-brand-deep";
-const steps = [
-  `<b class="text-ink font-semibold">Create an API key</b> in the Qeet console for the product you want to call.`,
-  `<b class="text-ink font-semibold">Send the key</b> as <code class="${codeChip}">Authorization: ApiKey &lt;key&gt;</code> (Qeet ID) or <code class="${codeChip}">X-Qeet-Api-Key</code> (Qeet Notify).`,
-  `<b class="text-ink font-semibold">Call any endpoint</b> — start with the authenticated principal, then explore the rest in the reference.`,
-];
+import { LINKS } from "../data/catalog";
 ---
 
-<MarketingLayout title="Qeet APIs — One platform for every API your business needs">
-  <!-- 1 · Hero -->
+<MarketingLayout
+  title="Qeet APIs - One developer platform for every Qeet product"
+  description="Explore Qeet API references, integration guides, OpenAPI specifications, and client tooling. One developer platform for a growing product ecosystem."
+>
   <Hero />
-
-  <!-- 2 · Trusted by developers -->
-  <TrustedBy />
-
-  <!-- 2b · Open standards marquee -->
-  <section class="border-y border-rule bg-surface/50 py-8">
-    <div class="container container-wide">
-      <p class="mb-5 text-center font-ui text-[0.8rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">
-        Speaks the open standards you already trust
-      </p>
-      <LogoMarquee />
-    </div>
-  </section>
-
-  <!-- 3 · Platform overview -->
+  <ProductSuite />
   <PlatformOverview />
-
-  <!-- 3b · Product suite -->
-  <section class="section-premium" id="products">
-    <div class="container container-wide">
-      <SectionHead
-        class="mb-11"
-        eyebrow="The suite"
-        title="Best-of-breed products, one integration."
-      >
-        Each product is independently useful and shares a single platform for
-        identity, notifications and audit. Two APIs are live today, with more on
-        the way.
-      </SectionHead>
-      <ProductSuite />
-    </div>
-  </section>
-
-  <!-- 3c · Reliability band (dark) -->
-  <MetricBand />
-
-  <!-- 4 · API Discovery -->
-  <ApiDiscovery />
-
-  <!-- 5 · API Documentation -->
-  <section class="section-premium border-y border-rule bg-surface" id="docs">
-    <div class="container container-wide">
-      <SectionHead
-        class="mb-11"
-        eyebrow="API Documentation"
-        title="Docs that read like a product."
-      >
-        Everything you need to go from first request to production — quickstart,
-        authentication, errors, SDKs and a live, runnable reference.
-      </SectionHead>
-      <DocsPreview />
-    </div>
-  </section>
-
-  <!-- 6 · API Playground -->
-  <ApiPlayground />
-
-  <!-- 7 · Authentication & Authorization -->
-  <Authentication />
-
-  <!-- 8 · Platform metrics (dark) -->
-  <PlatformMetrics />
-
-  <!-- 9 · API Analytics -->
-  <ApiAnalytics />
-
-  <!-- 10 · API Monitoring -->
-  <ApiMonitoring />
-
-  <!-- 11 · Rate Limiting -->
-  <RateLimiting />
-
-  <!-- 12 · API Versioning -->
-  <ApiVersioning />
-
-  <!-- 13 · Webhooks -->
-  <Webhooks />
-
-  <!-- 14 · Enterprise Security -->
-  <section class="section-premium border-y border-rule bg-surface" id="enterprise">
-    <div class="container container-wide">
-      <SectionHead
-        class="mb-11"
-        eyebrow="Enterprise Security"
-        title="Ready for your security review."
-      >
-        SSO, RBAC, audit and least-privilege access are first-class across the
-        platform — capabilities of the live specs, not bolt-on add-ons.
-      </SectionHead>
-      <EnterpriseGrid />
-    </div>
-  </section>
-
-  <!-- 15 · Team Collaboration -->
-  <TeamCollaboration />
-
-  <!-- 16 · CLI Experience (dark) -->
-  <CliExperience />
-
-  <!-- 17 · Integrations -->
-  <Integrations />
-
-  <!-- 18 · Developer Experience -->
-  <section class="section-premium" id="quickstart">
-    <div class="container container-wide grid items-start gap-12 lg:grid-cols-2">
-      <div>
-        <SectionHead eyebrow="Developer Experience" title="Your first request in under a minute.">
-          No SDK to install, no boilerplate. Grab a key, send a header, and you're
-          talking to production.
-        </SectionHead>
-        <ol class="m-0 mt-7 grid list-none gap-4 p-0">
-          {
-            steps.map((s, i) => (
-              <li class="flex gap-3 text-ink-muted" data-reveal>
-                <span class="grid h-[1.9rem] w-[1.9rem] flex-none place-items-center rounded-full bg-brand-soft font-ui text-[0.9rem] font-semibold text-brand-deep">
-                  {i + 1}
-                </span>
-                <span class="pt-0.5" set:html={s} />
-              </li>
-            ))
-          }
-        </ol>
-        <div class="mt-7 flex flex-wrap gap-3.5" data-reveal>
-          <a class="btn btn-primary pl-5 pr-2" href={LINKS.quickstart}>
-            Full quickstart
-            <span class="btn-island"><Icon name="arrow-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
-          </a>
-          <a class="btn pl-5 pr-2" href={LINKS.authentication}>
-            Authentication
-            <span class="btn-island"><Icon name="arrow-up-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
-          </a>
-        </div>
-      </div>
-      <div data-reveal style="transition-delay:120ms">
-        <CodeTabs tabs={firstRequest} />
-      </div>
-    </div>
-  </section>
-
-  <!-- 20 · Pricing preview -->
-  <PricingPreview />
-
-  <!-- 21 · FAQ -->
-  <FAQ />
-
-  <!-- 22 · Final CTA -->
+  <OpenStandards />
+  <DeveloperJourney />
+  <PlatformFoundations />
+  <DeveloperResources />
   <CalloutCTA
-    title="Build on Qeet APIs."
-    text="One platform for every API your business needs. Discover, integrate, secure, monitor and scale — starting with your first request today."
-    primary={{ href: LINKS.reference, label: "Open the API Reference", icon: "book" }}
-    secondary={{ href: LINKS.console, label: "Go to Console", icon: "arrow-up-right", external: true }}
+    title="Start building"
+    highlight="with Qeet APIs."
+    text="Explore the API reference, follow the quickstart, and start integrating in your local environment, all in one place."
+    primary={{ href: LINKS.reference, label: "Open API Reference", icon: "arrow-right" }}
+    secondary={{ href: LINKS.quickstart, label: "Read Quickstart", icon: "book" }}
   />
 </MarketingLayout>
 

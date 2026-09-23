@@ -21,32 +21,28 @@ export const SPECS: ApiSpec[] = [
     product: "Qeet ID",
     title: "Authentication & Access",
     url: "/specs/qeet-id/auth.yaml",
-    blurb:
-      "Login, signup, sessions and refresh, hosted-login SSO, passkeys and MFA.",
+    blurb: "Login, signup, sessions and refresh, hosted-login SSO, passkeys and MFA.",
   },
   {
     slug: "qeet-id-management",
     product: "Qeet ID",
     title: "Identity Management",
     url: "/specs/qeet-id/management.yaml",
-    blurb:
-      "Users, organizations, roles, permissions and authorization checks.",
+    blurb: "Users, organizations, roles, permissions and authorization checks.",
   },
   {
     slug: "qeet-id-federation",
     product: "Qeet ID",
     title: "Federation",
     url: "/specs/qeet-id/federation.yaml",
-    blurb:
-      "Enterprise SSO over OIDC, SAML, SCIM, LDAP and social connections.",
+    blurb: "Enterprise SSO over OIDC, SAML, SCIM, LDAP and social connections.",
   },
   {
     slug: "qeet-id-developer",
     product: "Qeet ID",
     title: "Developer",
     url: "/specs/qeet-id/developer.yaml",
-    blurb:
-      "API keys, webhooks, secrets, machine identities and AI agents.",
+    blurb: "API keys, webhooks, secrets, machine identities and AI agents.",
   },
   {
     slug: "qeet-id-operations",
@@ -224,8 +220,7 @@ export const PRODUCTS: Product[] = [
   {
     name: "Qeet Notify",
     kind: "Notifications",
-    blurb:
-      "Multi-channel transactional messaging — email, SMS, WhatsApp, in-app and webhooks.",
+    blurb: "Multi-channel transactional messaging — email, SMS, WhatsApp, in-app and webhooks.",
     status: "live",
     icon: "bell",
     href: "/reference/qeet-notify",
@@ -233,8 +228,7 @@ export const PRODUCTS: Product[] = [
   {
     name: "Qeet Logs",
     kind: "Observability",
-    blurb:
-      "Privacy-first, identity-aware log management — and the group's shared audit sink.",
+    blurb: "Privacy-first, identity-aware log management — and the group's shared audit sink.",
     status: "soon",
     icon: "activity",
     href: "https://docs.qeet.in/logs",
@@ -243,8 +237,7 @@ export const PRODUCTS: Product[] = [
   {
     name: "Qeet Pay",
     kind: "Payments & Billing",
-    blurb:
-      "Payments, subscriptions and billing — India-first, with UPI and GST built in.",
+    blurb: "Payments, subscriptions and billing — India-first, with UPI and GST built in.",
     status: "live",
     icon: "credit-card",
     href: "/reference/qeet-pay",
@@ -252,8 +245,7 @@ export const PRODUCTS: Product[] = [
   {
     name: "Qeet People",
     kind: "Human Capital",
-    blurb:
-      "HCM for the modern org — directory, workforce records and people workflows.",
+    blurb: "HCM for the modern org — directory, workforce records and people workflows.",
     status: "soon",
     icon: "users",
     href: "https://docs.qeet.in/people",
@@ -262,8 +254,7 @@ export const PRODUCTS: Product[] = [
   {
     name: "Qeet News",
     kind: "News & Media",
-    blurb:
-      "AI-first global news platform — multi-perspective, multilingual and trust-first.",
+    blurb: "AI-first global news platform — multi-perspective, multilingual and trust-first.",
     status: "soon",
     icon: "newspaper",
     href: "https://docs.qeet.in/",

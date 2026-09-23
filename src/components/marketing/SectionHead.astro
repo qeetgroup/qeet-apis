@@ -9,13 +9,7 @@ interface Props {
   tone?: "light" | "dark";
   class?: string;
 }
-const {
-  eyebrow,
-  title,
-  align = "left",
-  tone = "light",
-  class: className,
-} = Astro.props;
+const { eyebrow, title, align = "left", tone = "light", class: className } = Astro.props;
 const dark = tone === "dark";
 const center = align === "center";
 ---

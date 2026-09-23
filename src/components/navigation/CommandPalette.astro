@@ -1,4 +1,5 @@
 ---
+import Icon from "../shared/Icon.astro";
 /**
  * The ⌘K command palette — Qeet's own search across guides, headings, API tags
  * and all 780 operations (O3).
@@ -44,10 +45,13 @@
       aria-controls="palette-results"
       data-palette-input
     />
-    <kbd
-      class="rounded-xs border border-rule bg-surface-2 px-1.5 py-0.5 font-mono text-2xs text-ink-faint"
-      >esc</kbd
-    >
+    <button
+      type="button"
+      class="grid h-11 w-11 shrink-0 cursor-pointer place-items-center rounded-md text-ink-subtle hover:bg-surface-2 hover:text-ink"
+      data-palette-close
+      aria-label="Close search"
+      title="Close search"
+    ><Icon name="x" class="h-4 w-4" /></button>
   </div>
 
   <div
@@ -76,9 +80,17 @@
      input stays where the eye already is. */
   .palette {
     margin-top: min(12vh, 7rem);
+    max-height: calc(100dvh - 2rem);
   }
   .palette[open] {
+    display: flex;
+    flex-direction: column;
     animation: palette-in var(--dur-fast) var(--ease);
+  }
+  .palette > div:first-child, .palette > div:last-child { flex-shrink: 0; }
+  .palette > #palette-results { min-height: 0; }
+  @media (max-height: 500px), (max-width: 639px) {
+    .palette { width: calc(100% - 1.5rem); margin-top: 1rem; }
   }
   @keyframes palette-in {
     from {
@@ -242,6 +254,7 @@
       input.value = "";
       render("");
       await load();
+      if (dialog.open) render(input.value);
     }
 
     document.addEventListener("keydown", (e) => {
@@ -253,6 +266,7 @@
     for (const trigger of document.querySelectorAll("[data-search-trigger]")) {
       trigger.addEventListener("click", () => void open());
     }
+    dialog.querySelector("[data-palette-close]")?.addEventListener("click", () => dialog.close());
 
     input.addEventListener("input", () => render(input.value));
     input.addEventListener("keydown", (e) => {

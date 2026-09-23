@@ -1,141 +1,165 @@
 ---
+import Logo from "../brand/Logo.astro";
 import Icon from "../shared/Icon.astro";
+import { PRODUCTS } from "../../config/products";
+import { referenceHref } from "../../config/scalar";
 import { LINKS } from "../../data/catalog";
 const year = new Date().getFullYear();
-const logo = "h-[1.75rem] w-[1.75rem] rounded-[7px]";
-const head = "mb-4 font-ui text-[0.68rem] font-semibold uppercase tracking-[0.2em] text-ink-faint";
-const link = "text-[0.9rem] text-ink-muted transition-colors duration-500 ease-(--ease-spring) hover:text-brand-deep";
+const developerLinks = [
+  { label: "API Reference", href: LINKS.reference },
+  { label: "Quickstart", href: LINKS.quickstart },
+  { label: "Authentication", href: LINKS.authentication },
+  { label: "SDKs & Clients", href: LINKS.sdks },
+  { label: "Errors & Rate Limits", href: LINKS.errors },
+  { label: "Changelog", href: LINKS.changelog },
+];
+const platformLinks = [
+  { label: "Developer platform", href: "/#platform" },
+  { label: "Open standards", href: "/#standards" },
+  { label: "Developer journey", href: "/#journey" },
+  { label: "Engineering foundations", href: "/#engineering" },
+  { label: "Developer resources", href: "/#resources" },
+];
+const postmanProducts = PRODUCTS.filter((product) => product.postman);
 ---
 
-<footer class="relative border-t border-rule bg-bg pb-8 pt-4">
-  <div class="container container-wide">
-    <div class="bezel">
-      <div class="bezel-core overflow-hidden">
-        <div class="grid gap-px bg-rule lg:grid-cols-[1.05fr_1.65fr]">
-          <!-- Brand col -->
-          <div class="bg-surface p-6 sm:p-8">
-            <a href="/" class="flex items-center gap-2.5 font-display font-semibold leading-none text-ink" aria-label="Qeet APIs — home">
-              <img src="/brand/logo-light.svg" alt="" width="28" height="28" class={`${logo} block dark:hidden`} />
-              <img src="/brand/logo-dark.svg" alt="" width="28" height="28" class={`${logo} hidden dark:block`} />
-              <span class="text-[1.18rem] leading-none tracking-tight">Q.E.E.T</span>
-              <span class="inline-flex items-center rounded-full bg-brand-soft px-2 py-1 font-mono text-[0.68rem] font-medium leading-none text-brand-deep">APIs</span>
-            </a>
-            <h2 class="mt-8 max-w-[11ch] text-[clamp(2rem,4vw,3.4rem)] leading-[0.98] tracking-[-0.04em]">
-              Infrastructure developers love.
-            </h2>
-            <p class="mt-4 max-w-[34ch] text-[0.98rem] leading-relaxed text-ink-muted">
-              One branded home for Qeet APIs, generated from OpenAPI and ready for production integrations.
-            </p>
-
-            <div class="mt-7 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 xl:grid-cols-2">
-              <a
-                href="https://status.qeet.in"
-                target="_blank"
-                rel="noopener"
-                class="rounded-[1.25rem] border border-rule bg-surface-2 p-4 transition duration-700 ease-(--ease-spring) hover:-translate-y-1 hover:border-rule-strong"
-              >
-                <span class="inline-flex items-center gap-2 font-ui text-[0.82rem] font-semibold text-success">
-                  <span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span>
-                  Status operational
-                </span>
-                <p class="m-0 mt-2 font-mono text-[0.72rem] text-ink-faint">status.qeet.in</p>
-              </a>
-              <a
-                href={LINKS.github}
-                target="_blank"
-                rel="noopener"
-                class="rounded-[1.25rem] border border-rule bg-surface-2 p-4 transition duration-700 ease-(--ease-spring) hover:-translate-y-1 hover:border-rule-strong"
-              >
-                <span class="inline-flex items-center gap-2 font-ui text-[0.82rem] font-semibold text-ink">
-                  <Icon name="github" class="h-4 w-4" />
-                  Source and SDKs
-                </span>
-                <p class="m-0 mt-2 font-mono text-[0.72rem] text-ink-faint">github.com/qeetgroup</p>
-              </a>
-            </div>
-          </div>
-
-          <div class="bg-surface p-6 sm:p-8">
-            <div class="grid gap-8 sm:grid-cols-2 xl:grid-cols-4">
-              <!-- Developers col -->
-              <div>
-                <h3 class={head}>Developers</h3>
-                <ul class="m-0 grid list-none gap-2.5 p-0">
-                  <li><a class={link} href={LINKS.reference}>API Reference</a></li>
-                  <li><a class={link} href={LINKS.quickstart}>Quickstart</a></li>
-                  <li><a class={link} href={LINKS.authentication}>Authentication</a></li>
-                  <li><a class={link} href={LINKS.sdks}>SDKs</a></li>
-                  <li><a class={link} href={LINKS.errors}>Errors &amp; rate limits</a></li>
-                  <li><a class={link} href={LINKS.changelog}>Changelog</a></li>
-                  <li><a class={link} href={LINKS.postman} download>Postman collection</a></li>
-                </ul>
-              </div>
-
-              <!-- Products col -->
-              <div>
-                <h3 class={head}>Products</h3>
-                <ul class="m-0 grid list-none gap-2.5 p-0">
-                  <li><a class={link} href="/reference#qeet-id">Qeet ID</a></li>
-                  <li><a class={link} href="/reference#qeet-notify">Qeet Notify</a></li>
-                  <li><a class={link} href={LINKS.docs + "/logs"} target="_blank" rel="noopener">Qeet Logs</a></li>
-                  <li><a class={link} href={LINKS.docs + "/pay"} target="_blank" rel="noopener">Qeet Pay</a></li>
-                  <li><a class={link} href={LINKS.docs} target="_blank" rel="noopener">All products ↗</a></li>
-                </ul>
-              </div>
-
-              <!-- Company col -->
-              <div>
-                <h3 class={head}>Company</h3>
-                <ul class="m-0 grid list-none gap-2.5 p-0">
-                  <li><a class={link} href={LINKS.docs} target="_blank" rel="noopener">About</a></li>
-                  <li><a class={link} href={LINKS.docs} target="_blank" rel="noopener">Blog</a></li>
-                  <li><a class={link} href="https://status.qeet.in" target="_blank" rel="noopener">Status</a></li>
-                  <li><a class={link} href={LINKS.github} target="_blank" rel="noopener">GitHub</a></li>
-                  <li><a class={link} href="mailto:security@qeet.in">Security</a></li>
-                  <li><a class={link} href={LINKS.console} target="_blank" rel="noopener">Console ↗</a></li>
-                </ul>
-              </div>
-
-              <!-- Legal col -->
-              <div>
-                <h3 class={head}>Legal</h3>
-                <ul class="m-0 grid list-none gap-2.5 p-0">
-                  <li><a class={link} href="/privacy">Privacy</a></li>
-                  <li><a class={link} href="/terms">Terms</a></li>
-                  <li><a class={link} href="/security">Security</a></li>
-                  <li><a class={link} href="/gdpr">GDPR</a></li>
-                  <li><a class={link} href="/soc2">SOC 2</a></li>
-                </ul>
-              </div>
-            </div>
-
-            <div class="mt-10 grid gap-3 rounded-[1.4rem] border border-rule bg-surface-2 p-3 sm:grid-cols-3">
-              <div class="rounded-[1rem] bg-surface px-4 py-3">
-                <p class="m-0 font-mono text-[0.68rem] text-ink-faint">schema</p>
-                <p class="m-0 font-ui text-[0.9rem] font-semibold text-ink">OpenAPI 3.1</p>
-              </div>
-              <div class="rounded-[1rem] bg-surface px-4 py-3">
-                <p class="m-0 font-mono text-[0.68rem] text-ink-faint">runtime</p>
-                <p class="m-0 font-ui text-[0.9rem] font-semibold text-ink">Scalar console</p>
-              </div>
-              <div class="rounded-[1rem] bg-surface px-4 py-3">
-                <p class="m-0 font-mono text-[0.68rem] text-ink-faint">portal</p>
-                <p class="m-0 font-ui text-[0.9rem] font-semibold text-ink">api.qeet.in</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Bottom bar -->
-        <div class="flex flex-wrap items-center justify-between gap-4 border-t border-rule bg-surface-2 px-6 py-4 text-[0.82rem] text-ink-faint sm:px-8">
-          <span>© {year} Qeet Group. All rights reserved.</span>
-          <div class="flex items-center gap-4">
-            <a href="https://status.qeet.in" class="transition-colors hover:text-ink-muted" target="_blank" rel="noopener">Status</a>
-            <a href={LINKS.github} class="transition-colors hover:text-ink-muted" target="_blank" rel="noopener">GitHub</a>
-            <a href="mailto:support@qeet.in" class="transition-colors hover:text-ink-muted">Support</a>
-          </div>
-        </div>
+<footer class="portal-footer">
+  <div class="footer-container container container-wide">
+    <div class="footer-main">
+      <div class="footer-brand">
+        <Logo context="apis" size={36} class="footer-brand-logo" />
+        <p>The developer platform for everything Qeet builds. Explore APIs, find answers, and build across products.</p>
+        <nav class="footer-shortcuts" aria-label="Qeet developer links">
+          <a href={LINKS.github} target="_blank" rel="noopener noreferrer" aria-label="Qeet on GitHub (opens in a new tab)" title="Qeet on GitHub"><Icon name="github" class="h-5 w-5" /></a>
+          <a href="/#specifications" aria-label="Browse OpenAPI specifications" title="OpenAPI specifications"><Icon name="braces" class="h-5 w-5" /></a>
+          <a href={LINKS.quickstart} aria-label="Read Quickstart" title="Quickstart"><Icon name="book" class="h-5 w-5" /></a>
+        </nav>
       </div>
+
+      <nav class="footer-column" aria-labelledby="footer-developers">
+        <h2 id="footer-developers">Developers</h2>
+        <ul>{developerLinks.map((link) => <li><a href={link.href}>{link.label}</a></li>)}</ul>
+      </nav>
+
+      <nav class="footer-column" aria-labelledby="footer-products">
+        <h2 id="footer-products">Products</h2>
+        <ul>
+          {PRODUCTS.slice(0, 5).map((product) => (
+            <li><a href={referenceHref(product.id)}>{product.name}</a></li>
+          ))}
+          <li><a class="footer-all-apis" href={LINKS.reference}>All APIs <Icon name="arrow-right" class="h-3.5 w-3.5" /></a></li>
+        </ul>
+      </nav>
+
+      <nav class="footer-column" aria-labelledby="footer-platform">
+        <h2 id="footer-platform">Platform</h2>
+        <ul>{platformLinks.map((link) => <li><a href={link.href}>{link.label}</a></li>)}</ul>
+      </nav>
+
+      <nav class="footer-column" aria-labelledby="footer-resources">
+        <h2 id="footer-resources">Resources</h2>
+        <ul>
+          <li><a href={LINKS.docs} target="_blank" rel="noopener noreferrer">Product documentation</a></li>
+          <li><button class="footer-search" type="button" data-search-trigger aria-haspopup="dialog">Search documentation <Icon name="search" class="h-3.5 w-3.5" /></button></li>
+          <li><a href={LINKS.github} target="_blank" rel="noopener noreferrer">GitHub</a></li>
+          <li>
+            <details class="footer-downloads" name="footer-assets">
+              <summary>OpenAPI assets <Icon name="chevron-down" class="h-3 w-3" /></summary>
+              <ul>
+                {PRODUCTS.map((product) => (
+                  <li><a href={product.bundleUrl} download>{product.name}<Icon name="download" class="h-3.5 w-3.5" /></a></li>
+                ))}
+              </ul>
+            </details>
+          </li>
+          {postmanProducts.length > 0 && (
+            <li>
+              <details class="footer-downloads" name="footer-assets">
+                <summary>Postman collections <Icon name="chevron-down" class="h-3 w-3" /></summary>
+                <ul>
+                  {postmanProducts.map((product) => (
+                    <li><a href={product.postman} download>{product.name}<Icon name="download" class="h-3.5 w-3.5" /></a></li>
+                  ))}
+                </ul>
+              </details>
+            </li>
+          )}
+        </ul>
+      </nav>
+    </div>
+
+    <div class="footer-bottom">
+      <p class="footer-principle"><span aria-hidden="true"></span>One platform for every Qeet API.</p>
+      <p>&copy; {year} Qeet Group. All rights reserved.</p>
     </div>
   </div>
 </footer>
+
+<script>
+  document.querySelectorAll<HTMLDetailsElement>(".footer-downloads").forEach((menu) => {
+    menu.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      menu.open = false;
+      menu.querySelector("summary")?.focus();
+    });
+    menu.addEventListener("focusout", (event) => {
+      if (!menu.contains(event.relatedTarget as Node | null)) menu.open = false;
+    });
+    document.addEventListener("click", (event) => {
+      if (event.target instanceof Node && !menu.contains(event.target)) menu.open = false;
+    });
+  });
+</script>
+
+<style>
+  .portal-footer { border-top: 1px solid var(--rule); background: var(--bg); color: var(--ink); letter-spacing: 0; }
+  .footer-main { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2.5rem 1.5rem; padding-block: 3rem; }
+  .footer-brand { grid-column: 1 / -1; min-width: 0; }
+  .footer-brand :global(.footer-brand-logo) { gap: 0.75rem; width: fit-content; min-height: 2.75rem; }
+  .footer-brand :global(.footer-brand-logo > span:first-of-type) { font-size: 1.375rem; letter-spacing: 0; }
+  .footer-brand :global(.footer-brand-logo > span:last-of-type) { display: inline-flex; }
+  .footer-brand > p { max-width: 18rem; margin: 1.25rem 0 0; font-size: 0.9375rem; line-height: 1.55; color: var(--ink-muted); }
+  .footer-shortcuts { display: flex; gap: 1rem; margin-top: 1.5rem; }
+  .footer-shortcuts a { display: grid; width: 2.75rem; height: 2.75rem; place-items: center; border: 1px solid transparent; border-radius: 0.5rem; background: var(--surface-2); color: var(--ink-muted); transition: color var(--dur) var(--ease), border-color var(--dur) var(--ease), transform var(--dur) var(--ease); }
+  .footer-shortcuts a:hover { transform: translateY(-2px); border-color: var(--rule); color: var(--brand-deep); }
+  .footer-column { min-width: 0; }
+  .footer-column h2 { margin: 0 0 0.875rem; font-family: var(--font-ui); font-size: 0.625rem; font-weight: 600; line-height: 1.5; letter-spacing: 0; text-transform: uppercase; color: var(--ink-subtle); }
+  .footer-column ul { display: grid; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }
+  .footer-column li { min-width: 0; }
+  .footer-column a, .footer-downloads summary, .footer-search { font-family: var(--font-ui); font-size: 0.8125rem; line-height: 1.6; color: var(--ink-muted); transition: color var(--dur) var(--ease); }
+  .footer-column a:hover, .footer-downloads summary:hover, .footer-search:hover { color: var(--brand-deep); }
+  .footer-search { display: flex; align-items: center; gap: 0.5rem; text-align: left; cursor: pointer; }
+  .footer-search :global(svg) { flex-shrink: 0; }
+  .footer-all-apis { display: inline-flex; align-items: center; gap: 0.5rem; }
+  .footer-downloads { position: relative; }
+  .footer-downloads summary { display: flex; width: fit-content; align-items: center; gap: 0.375rem; list-style: none; cursor: pointer; }
+  .footer-downloads summary::-webkit-details-marker { display: none; }
+  .footer-downloads summary :global(svg) { flex-shrink: 0; transition: transform var(--dur) var(--ease); }
+  .footer-downloads[open] summary :global(svg) { transform: rotate(180deg); }
+  .footer-downloads > ul { position: absolute; z-index: var(--z-popover); right: 0; bottom: calc(100% + 0.5rem); width: min(16rem, calc(100vw - 3rem)); max-height: 16rem; gap: 0.125rem; overflow-y: auto; padding: 0.375rem; border: 1px solid var(--rule); border-radius: 0.5rem; background: var(--surface); box-shadow: var(--shadow-lg); }
+  .footer-downloads > ul a { display: flex; min-height: 2.75rem; align-items: center; justify-content: space-between; gap: 1rem; padding: 0.5rem 0.75rem; border-radius: 0.25rem; }
+  .footer-downloads > ul a:hover { background: var(--surface-2); }
+  .footer-bottom { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 1rem; padding-block: 1rem 1.75rem; border-top: 1px solid var(--rule); }
+  .footer-bottom p { margin: 0; font-size: 0.75rem; line-height: 1.5; color: var(--ink-subtle); }
+  .footer-bottom .footer-principle { display: flex; align-items: center; gap: 1.5rem; font-family: var(--font-ui); font-size: 0.625rem; font-weight: 500; text-transform: uppercase; }
+  .footer-principle > span { width: 2.25rem; height: 1px; flex-shrink: 0; background: var(--ink-subtle); }
+
+  @media (min-width: 768px) {
+    .footer-main { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    .footer-brand > p { max-width: 32rem; }
+  }
+  @media (min-width: 1200px) {
+    .footer-main { grid-template-columns: minmax(0, 1.9fr) minmax(0, 1fr) minmax(0, 0.8fr) minmax(0, 1.2fr) minmax(0, 1.3fr); gap: 2rem; padding-block: 3rem; }
+    .footer-brand { grid-column: auto; }
+    .footer-brand > p { max-width: 18rem; }
+    .footer-downloads > ul { right: 0; left: auto; }
+  }
+  @media (max-width: 639px) {
+    .footer-column > ul { gap: 0; }
+    .footer-column > ul > li > a, .footer-downloads summary, .footer-search { display: flex; min-height: 2.75rem; align-items: center; }
+    .footer-bottom { align-items: flex-start; flex-direction: column; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .footer-shortcuts a:hover { transform: none; }
+  }
+</style>

@@ -8,15 +8,45 @@ import { LINKS } from "../../data/catalog";
 
 const bullets = [
   ["Shared workspaces.", "Organize API keys, environments and specs by team, not by spreadsheet."],
-  ["Roles that map to reality.", "Owner, admin, developer and read-only — plus custom roles when you need them."],
-  ["Provisioned automatically.", "SCIM syncs new members and deprovisions access the instant someone leaves."],
-  ["Audited by default.", "Every key rotation, scope change and environment access is logged and queryable."],
+  [
+    "Roles that map to reality.",
+    "Owner, admin, developer and read-only — plus custom roles when you need them.",
+  ],
+  [
+    "Provisioned automatically.",
+    "SCIM syncs new members and deprovisions access the instant someone leaves.",
+  ],
+  [
+    "Audited by default.",
+    "Every key rotation, scope change and environment access is logged and queryable.",
+  ],
 ];
 
 const members = [
-  { initials: "AM", name: "Ada Mehta", email: "ada@acme.com", role: "Owner", access: "All products", tint: "var(--brand)" },
-  { initials: "PS", name: "Priya Sundaram", email: "priya@acme.com", role: "Admin", access: "ID · Notify", tint: "var(--info)" },
-  { initials: "TG", name: "Tomás García", email: "tomas@acme.com", role: "Developer", access: "ID · read/write", tint: "var(--success)" },
+  {
+    initials: "AM",
+    name: "Ada Mehta",
+    email: "ada@acme.com",
+    role: "Owner",
+    access: "All products",
+    tint: "var(--brand)",
+  },
+  {
+    initials: "PS",
+    name: "Priya Sundaram",
+    email: "priya@acme.com",
+    role: "Admin",
+    access: "ID · Notify",
+    tint: "var(--info)",
+  },
+  {
+    initials: "TG",
+    name: "Tomás García",
+    email: "tomas@acme.com",
+    role: "Developer",
+    access: "ID · read/write",
+    tint: "var(--success)",
+  },
 ];
 
 const roleTone: Record<string, string> = {

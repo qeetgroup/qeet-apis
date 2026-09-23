@@ -7,9 +7,15 @@ import Icon from "../shared/Icon.astro";
 import { LINKS } from "../../data/catalog";
 
 const bullets = [
-  ["Signed, always.", "Every delivery carries an HMAC signature — verify authenticity before you trust it."],
+  [
+    "Signed, always.",
+    "Every delivery carries an HMAC signature — verify authenticity before you trust it.",
+  ],
   ["No polling, ever.", "Subscribe to the events you care about and react the moment they happen."],
-  ["Reliable delivery.", "Automatic retries with exponential backoff, plus one-click replay from the console."],
+  [
+    "Reliable delivery.",
+    "Automatic retries with exponential backoff, plus one-click replay from the console.",
+  ],
   ["Full visibility.", "Inspect every attempt, payload and response — no black boxes."],
 ];
 
@@ -18,7 +24,14 @@ const events = ["user.created", "message.delivered", "invoice.paid", "payment.fa
 const log = [
   { ev: "user.created", status: "200", label: "OK", attempt: "1", time: "38ms", tone: "ok" },
   { ev: "message.delivered", status: "200", label: "OK", attempt: "1", time: "44ms", tone: "ok" },
-  { ev: "invoice.paid", status: "—", label: "retrying", attempt: "2", time: "backoff", tone: "warn" },
+  {
+    ev: "invoice.paid",
+    status: "—",
+    label: "retrying",
+    attempt: "2",
+    time: "backoff",
+    tone: "warn",
+  },
   { ev: "payment.failed", status: "200", label: "OK", attempt: "1", time: "51ms", tone: "ok" },
 ];
 ---

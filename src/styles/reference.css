@@ -104,7 +104,9 @@
   text-align: left;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
 }
 .ref-tag-toggle:hover {
   color: var(--ink);
@@ -132,7 +134,9 @@
   border-left: 2px solid transparent;
   color: var(--ink-subtle);
   font-size: var(--text-sm);
-  transition: color var(--dur-fast) var(--ease), background-color var(--dur-fast) var(--ease);
+  transition:
+    color var(--dur-fast) var(--ease),
+    background-color var(--dur-fast) var(--ease);
 }
 .ref-op:hover {
   color: var(--ink);
@@ -165,11 +169,23 @@
 }
 
 /* Method colours come from the bridged tokens (--m-get … --m-delete). */
-.ref-op-method[data-method="get"] { color: var(--m-get); }
-.ref-op-method[data-method="post"] { color: var(--m-post); }
-.ref-op-method[data-method="put"] { color: var(--m-put); }
-.ref-op-method[data-method="patch"] { color: var(--m-patch); }
-.ref-op-method[data-method="delete"] { color: var(--m-delete); }
+.ref-op-method[data-method="get"] {
+  color: var(--m-get);
+}
+.ref-op-method[data-method="post"] {
+  color: var(--m-post);
+}
+.ref-op-method[data-method="put"] {
+  color: var(--m-put);
+}
+.ref-op-method[data-method="patch"] {
+  color: var(--m-patch);
+}
+.ref-op-method[data-method="delete"] {
+  color: var(--m-delete);
+}
 .ref-op-method[data-method="head"],
 .ref-op-method[data-method="options"],
-.ref-op-method[data-method="trace"] { color: var(--ink-faint); }
+.ref-op-method[data-method="trace"] {
+  color: var(--ink-faint);
+}
