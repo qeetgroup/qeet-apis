@@ -1,33 +1,93 @@
 /* Qeet design tokens for api.qeet.in.
  *
- * Type system is the Qeet brand face from @qeetrix/ui (Cal Sans Display / Text /
- * UI + Fira Code), self-hosted here so this portal stays a standalone repo
+ * Type system is the Qeet brand face from @qeetrix/ui (Cal Sans UI / Text +
+ * Fira Code), self-hosted here so this portal stays a standalone repo
  * (mirrors how qeet-group vendors the same family). Palette is the shared brand
  * orange (#F26D0E) over a warm-neutral canvas, with a full light + dark scale.
  * Toggle by setting `data-theme="dark"` on <html>. */
 
-/* ---- Cal Sans Display — large headlines, hero ---- */
-@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoRegular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoMedium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoSemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans Display"; src: url("/fonts/CalSansUI-GeoBold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
-
 /* ---- Cal Sans Text — body copy ---- */
-@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Regular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Medium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-SemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans Text"; src: url("/fonts/CalSansText-Bold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face {
+  font-family: "Cal Sans Text";
+  src: url("/fonts/CalSansText-Regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cal Sans Text";
+  src: url("/fonts/CalSansText-Medium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cal Sans Text";
+  src: url("/fonts/CalSansText-SemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cal Sans Text";
+  src: url("/fonts/CalSansText-Bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* ---- Cal Sans UI — controls, labels, nav ---- */
-@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UIRegular.woff2") format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UIMedium.woff2") format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UISemiBold.woff2") format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Cal Sans UI"; src: url("/fonts/CalSansUI-UIBold.woff2") format("woff2"); font-weight: 700; font-style: normal; font-display: swap; }
+@font-face {
+  font-family: "Cal Sans UI";
+  src: url("/fonts/CalSansUI-UIRegular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cal Sans UI";
+  src: url("/fonts/CalSansUI-UIMedium.woff2") format("woff2");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cal Sans UI";
+  src: url("/fonts/CalSansUI-UISemiBold.woff2") format("woff2");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Cal Sans UI";
+  src: url("/fonts/CalSansUI-UIBold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
 
 /* ---- Fira Code — monospace (SIL OFL 1.1, see /fonts/FiraCode-OFL.txt) ---- */
-@font-face { font-family: "Fira Code"; src: url("/fonts/FiraCode-Regular.ttf") format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Fira Code"; src: url("/fonts/FiraCode-Medium.ttf") format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Fira Code"; src: url("/fonts/FiraCode-SemiBold.ttf") format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face {
+  font-family: "Fira Code";
+  src: url("/fonts/FiraCode-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fira Code";
+  src: url("/fonts/FiraCode-Medium.ttf") format("truetype");
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Fira Code";
+  src: url("/fonts/FiraCode-SemiBold.ttf") format("truetype");
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
 
 :root {
   /* type */
@@ -72,10 +132,16 @@
 
   /* elevation */
   --shadow-sm: 0 1px 2px 0 color-mix(in oklab, var(--ink) 6%, transparent);
-  --shadow-md: 0 12px 30px -18px color-mix(in oklab, var(--ink) 24%, transparent), 0 2px 8px -4px color-mix(in oklab, var(--ink) 10%, transparent);
-  --shadow-lg: 0 32px 90px -42px color-mix(in oklab, var(--ink) 24%, transparent), 0 14px 34px -24px color-mix(in oklab, var(--ink) 18%, transparent);
+  --shadow-md:
+    0 12px 30px -18px color-mix(in oklab, var(--ink) 24%, transparent),
+    0 2px 8px -4px color-mix(in oklab, var(--ink) 10%, transparent);
+  --shadow-lg:
+    0 32px 90px -42px color-mix(in oklab, var(--ink) 24%, transparent),
+    0 14px 34px -24px color-mix(in oklab, var(--ink) 18%, transparent);
   --shadow-ambient: 0 36px 120px -60px color-mix(in oklab, var(--ink) 26%, transparent);
-  --shadow-bezel: inset 0 1px 0 color-mix(in oklab, white 88%, transparent), inset 0 -1px 0 color-mix(in oklab, var(--ink) 5%, transparent);
+  --shadow-bezel:
+    inset 0 1px 0 color-mix(in oklab, white 88%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, var(--ink) 5%, transparent);
   --shadow-glow: 0 18px 58px -28px color-mix(in oklab, var(--brand) 58%, transparent);
 
   /* rhythm (radii + type scale are in @theme) */
@@ -89,12 +155,12 @@
    * The marketing header is a floating pill; the developer workspace header is
    * a compact bar. Both are declared here so scroll-padding, sticky offsets and
    * full-height panes can be derived instead of guessed. */
-  --header-h: 5.5rem;        /* marketing (/) — the floating pill */
-  --dev-header-h: 4rem;      /* developer workspace — 64px, enterprise-compact */
-  --sidebar-w: 17rem;        /* docs + reference left navigation (272px) */
-  --panel-w: 27rem;          /* reference right rail (432px) */
-  --content-w: 48rem;        /* docs measure (768px ≈ 75ch at 16px) */
-  --toc-w: 15rem;            /* docs right table of contents */
+  --header-h: 5.5rem; /* marketing (/) — the floating pill */
+  --dev-header-h: 4rem; /* developer workspace — 64px, enterprise-compact */
+  --sidebar-w: 17rem; /* docs + reference left navigation (272px) */
+  --panel-w: 27rem; /* reference right rail (432px) */
+  --content-w: 48rem; /* docs measure (768px ≈ 75ch at 16px) */
+  --toc-w: 15rem; /* docs right table of contents */
 
   /* ---- spacing scale (4/8-based) -----------------------------------------
    * Section rhythm was a `py-[clamp(3.5rem,8vw,6.5rem)]` copy-pasted 13×.
@@ -113,7 +179,7 @@
   --z-drawer: 180;
   --z-header: 190;
   --z-popover: 300;
-  --z-skip: 400;   /* must beat the sticky header, or focus is invisible */
+  --z-skip: 400; /* must beat the sticky header, or focus is invisible */
 
   /* ---- focus ring ---------------------------------------------------------*/
   --focus-ring-w: 2px;
@@ -163,6 +229,8 @@
   --shadow-md: 0 12px 32px -18px rgba(0, 0, 0, 0.75);
   --shadow-lg: 0 34px 100px -44px rgba(0, 0, 0, 0.88), 0 16px 42px -28px rgba(0, 0, 0, 0.72);
   --shadow-ambient: 0 34px 120px -58px rgba(0, 0, 0, 0.9);
-  --shadow-bezel: inset 0 1px 0 color-mix(in oklab, white 12%, transparent), inset 0 -1px 0 color-mix(in oklab, black 48%, transparent);
+  --shadow-bezel:
+    inset 0 1px 0 color-mix(in oklab, white 12%, transparent),
+    inset 0 -1px 0 color-mix(in oklab, black 48%, transparent);
   --shadow-glow: 0 18px 58px -28px color-mix(in oklab, var(--brand) 48%, transparent);
 }

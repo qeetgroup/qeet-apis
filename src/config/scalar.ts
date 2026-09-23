@@ -115,11 +115,9 @@ export const SCALAR_CDN = `https://cdn.jsdelivr.net/npm/@scalar/api-reference@${
  * requests carry live API keys, which must not transit a third party.
  */
 const BUILT_ON_VERCEL =
-  (typeof process !== "undefined" && process.env?.VERCEL === "1") ||
-  import.meta.env.VERCEL === "1";
+  (typeof process !== "undefined" && process.env?.VERCEL === "1") || import.meta.env.VERCEL === "1";
 
-const PROXY_URL =
-  import.meta.env.PUBLIC_QEET_PROXY_URL ?? (BUILT_ON_VERCEL ? "" : "/api/proxy");
+const PROXY_URL = import.meta.env.PUBLIC_QEET_PROXY_URL ?? (BUILT_ON_VERCEL ? "" : "/api/proxy");
 
 const BASE_CONFIG = {
   cdn: SCALAR_CDN,

@@ -64,7 +64,6 @@
   --scalar-color-danger: var(--danger);
   --scalar-color-alert: var(--warning);
 
-
   /* the API client's primary action (Send) */
   --scalar-button-1: var(--brand);
   --scalar-button-1-color: var(--brand-ink);
@@ -125,7 +124,6 @@
   --scalar-color-orange: var(--warning);
   --scalar-color-danger: var(--danger);
   --scalar-color-alert: var(--warning);
-
 
   /* the API client's primary action (Send) */
   --scalar-button-1: var(--brand);

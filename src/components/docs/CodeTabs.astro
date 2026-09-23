@@ -9,8 +9,9 @@ interface Tab {
 }
 interface Props {
   tabs: Tab[];
+  id?: string;
 }
-const { tabs } = Astro.props;
+const { tabs, id: providedId } = Astro.props;
 
 /**
  * Tabs need stable, unique ids to wire `aria-controls` / `aria-labelledby`.
@@ -18,7 +19,8 @@ const { tabs } = Astro.props;
  * suffix, which would churn the output on every run).
  */
 let instance = 0;
-const id = `codetabs-${(instance += 1)}`;
+instance += 1;
+const id = providedId ?? `codetabs-${instance}`;
 ---
 
 <div class="codetabs bezel not-prose">

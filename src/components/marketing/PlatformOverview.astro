@@ -1,149 +1,111 @@
 ---
-// Platform overview — the mental model of Qeet APIs in one diagram: any client,
-// through one unified gateway (auth · limits · routing · versioning · webhooks),
-// to every product. Full-width, centered head, layered "stack" architecture.
-import SectionHead from "./SectionHead.astro";
 import Icon from "../shared/Icon.astro";
+import { LINKS } from "../../data/catalog";
+import { PRODUCTS } from "../../config/products";
+import { referenceHref } from "../../config/scalar";
 
-const verbs = [
-  { icon: "search", label: "Discover" },
-  { icon: "waypoints", label: "Integrate" },
-  { icon: "blocks", label: "Manage" },
-  { icon: "shield", label: "Secure" },
-  { icon: "activity", label: "Monitor" },
-  { icon: "trending-up", label: "Scale" },
-] as const;
-
-const clients = [
-  { icon: "globe", label: "Web app" },
-  { icon: "code", label: "Backend" },
-  { icon: "bolt", label: "AI agent" },
-  { icon: "terminal", label: "CLI" },
-] as const;
-
-const gateway = [
-  "Authentication",
-  "Rate limiting",
-  "Smart routing",
-  "Versioning",
-  "Observability",
-  "Webhooks",
-];
-
-const products = [
-  { icon: "fingerprint", name: "Qeet ID", kind: "Identity", live: true },
-  { icon: "bell", name: "Qeet Notify", kind: "Messaging", live: true },
-  { icon: "activity", name: "Qeet Logs", kind: "Observability", live: false },
-  { icon: "credit-card", name: "Qeet Pay", kind: "Payments", live: false },
-  { icon: "users", name: "Qeet People", kind: "HCM", live: false },
-  { icon: "newspaper", name: "Qeet News", kind: "Media", live: false },
+const capabilities = [
+  { title: "API Reference", text: "Endpoints, schemas, and the details that matter.", icon: "braces", href: LINKS.reference, side: "left" },
+  { title: "Guides", text: "A clear path from setup to your first request.", icon: "book", href: LINKS.quickstart, side: "left" },
+  { title: "Global search", text: "Find guides and endpoints across products.", icon: "search", side: "left" },
+  { title: "SDKs & Clients", text: "Client options and SDK source repositories.", icon: "terminal", href: LINKS.sdks, side: "right" },
+  { title: "Code examples", text: "Start with cURL. Continue in your language.", icon: "code", href: LINKS.reference, side: "right" },
+  { title: "OpenAPI contracts", text: "Download a specification for each product.", icon: "git-branch", href: "#engineering", side: "right" },
 ] as const;
 ---
 
-<section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="platform">
+<section class="platform-overview" id="platform" aria-labelledby="platform-title">
   <div class="container container-wide">
-    <SectionHead
-      align="center"
-      eyebrow="The platform"
-      title="Everything an API needs, in one platform."
-    >
-      Discover, integrate, manage, secure, monitor and scale every API your
-      business runs — from a single control plane, behind a single credential.
-    </SectionHead>
+    <header class="platform-heading" data-reveal>
+      <h2 id="platform-title">Everything you need to build,<br class="hidden md:block" /> in one place.</h2>
+      <p>Different products. Familiar tools. One developer home that keeps the context with you.</p>
+    </header>
 
-    <!-- Six verbs -->
-    <div class="mx-auto mt-9 flex max-w-3xl flex-wrap justify-center gap-2.5" data-reveal>
-      {
-        verbs.map((v) => (
-          <span class="inline-flex items-center gap-2 rounded-full border border-rule bg-bg px-3.5 py-1.5 font-ui text-[0.85rem] font-medium text-ink-muted">
-            <Icon name={v.icon} class="h-4 w-4 text-brand-deep" />
-            {v.label}
-          </span>
-        ))
-      }
+    <div class="platform-map" data-reveal>
+      <div class="platform-hub">
+        <div class="platform-hub-mark">
+          <img src="/brand/logo-light.svg" width="64" height="64" alt="" class="block dark:hidden" />
+          <img src="/brand/logo-dark.svg" width="64" height="64" alt="" class="hidden dark:block" />
+        </div>
+        <strong>Qeet APIs</strong>
+        <span class="platform-address">api.qeet.in</span>
+        <span class="platform-hub-label">One developer experience</span>
+      </div>
+      {(["left", "right"] as const).map((side) => (
+        <div class:list={["platform-branches", `platform-branches-${side}`]}>
+          {capabilities.filter((capability) => capability.side === side).map((capability) => (
+            "href" in capability ? (
+              <a class="platform-node" href={capability.href}>
+                <span class="platform-node-icon"><Icon name={capability.icon} class="h-5 w-5" /></span>
+                <span><strong>{capability.title}</strong><small>{capability.text}</small></span>
+                <Icon name="arrow-up-right" class="platform-node-arrow h-4 w-4" />
+              </a>
+            ) : (
+              <button class="platform-node" type="button" data-search-trigger aria-haspopup="dialog">
+                <span class="platform-node-icon"><Icon name={capability.icon} class="h-5 w-5" /></span>
+                <span><strong>{capability.title}</strong><small>{capability.text}</small></span>
+                <Icon name="search" class="platform-node-arrow h-4 w-4" />
+              </button>
+            )
+          ))}
+        </div>
+      ))}
     </div>
 
-    <!-- Architecture stack -->
-    <div class="mx-auto mt-12 max-w-3xl" data-reveal style="transition-delay:80ms">
-      <!-- Clients layer -->
-      <div class="rounded-2xl border border-rule bg-bg p-4 sm:p-5">
-        <p class="mb-3.5 text-center font-ui text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">
-          Any client
-        </p>
-        <div class="flex flex-wrap justify-center gap-2.5">
-          {
-            clients.map((c) => (
-              <span class="inline-flex items-center gap-2 rounded-lg border border-rule bg-surface px-3 py-2 font-ui text-[0.82rem] font-medium text-ink">
-                <Icon name={c.icon} class="h-4 w-4 text-ink-subtle" />
-                {c.label}
-              </span>
-            ))
-          }
-        </div>
-      </div>
-
-      <!-- Connector -->
-      <div class="mx-auto flex h-9 w-px items-center justify-center bg-gradient-to-b from-rule via-brand/40 to-brand/60"></div>
-
-      <!-- Gateway layer -->
-      <div
-        class="relative overflow-hidden rounded-2xl border border-brand/25 bg-brand-faint p-4 shadow-(--shadow-md) sm:p-5"
-      >
-        <div
-          class="pointer-events-none absolute inset-0 opacity-60"
-          style="background:radial-gradient(60% 120% at 50% -20%, var(--brand-soft), transparent 70%)"
-          aria-hidden="true"
-        >
-        </div>
-        <div class="relative flex flex-wrap items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5">
-            <span class="grid h-8 w-8 place-items-center rounded-lg bg-brand text-brand-ink">
-              <Icon name="waypoints" class="h-4 w-4" />
-            </span>
-            <div class="leading-tight">
-              <p class="font-ui text-[0.9rem] font-semibold text-ink">Unified API Gateway</p>
-              <p class="font-mono text-[0.72rem] text-ink-subtle">api.qeet.in</p>
-            </div>
-          </div>
-          <span class="pill pill--brand">
-            <Icon name="key" class="h-3 w-3" /> one credential
-          </span>
-        </div>
-        <div class="relative mt-4 flex flex-wrap gap-2">
-          {
-            gateway.map((g) => (
-              <span class="rounded-md border border-brand/20 bg-surface/70 px-2.5 py-1 font-mono text-[0.72rem] text-brand-deep">
-                {g}
-              </span>
-            ))
-          }
-        </div>
-      </div>
-
-      <!-- Connector -->
-      <div class="mx-auto flex h-9 w-px items-center justify-center bg-gradient-to-b from-brand/60 via-brand/40 to-rule"></div>
-
-      <!-- Products layer -->
-      <div class="grid grid-cols-2 gap-2.5 sm:grid-cols-3">
-        {
-          products.map((p) => (
-            <div class="group flex items-center gap-2.5 rounded-xl border border-rule bg-bg p-3 transition-colors hover:border-rule-strong">
-              <span class="grid h-8 w-8 flex-none place-items-center rounded-lg bg-surface text-brand-deep ring-1 ring-rule">
-                <Icon name={p.icon as any} class="h-4 w-4" />
-              </span>
-              <div class="min-w-0 leading-tight">
-                <p class="truncate font-ui text-[0.85rem] font-semibold text-ink">{p.name}</p>
-                <p class="flex items-center gap-1.5 text-[0.72rem] text-ink-subtle">
-                  <span
-                    class={`h-1.5 w-1.5 rounded-full ${p.live ? "bg-success" : "bg-ink-faint/60"}`}
-                  />
-                  {p.live ? "Live API" : p.kind}
-                </p>
-              </div>
-            </div>
-          ))
-        }
-      </div>
+    <div class="platform-product-rail">
+      <span class="platform-rail-label"><Icon name="layers" class="h-4 w-4" />Switch products. Keep your bearings.</span>
+      <nav aria-label="Product API references">
+        {PRODUCTS.slice(0, 4).map((product) => (
+          <a href={referenceHref(product.id)}><Icon name={product.icon} class="h-4 w-4" />{product.name}</a>
+        ))}
+        <a href="#products">All APIs <Icon name="arrow-right" class="h-3.5 w-3.5" /></a>
+      </nav>
     </div>
   </div>
 </section>
+
+<style>
+  .platform-overview { padding-block: 5rem; border-block: 1px solid var(--rule); background: var(--surface); letter-spacing: 0; scroll-margin-top: var(--header-h); }
+  .platform-heading { max-width: 49rem; margin-inline: auto; text-align: center; }
+  .platform-heading h2 { margin: 0; font-family: var(--font-ui); font-size: 2rem; line-height: 1.14; letter-spacing: 0; }
+  .platform-heading p { max-width: 35rem; margin: 1.125rem auto 0; font-size: 1rem; line-height: 1.65; color: var(--ink-muted); text-wrap: pretty; }
+  .platform-map { display: grid; grid-template-areas: "hub" "left" "right"; gap: 1rem; max-width: 72rem; margin: 2.75rem auto; }
+  .platform-hub { grid-area: hub; display: flex; position: relative; min-height: 14rem; align-items: center; justify-content: center; flex-direction: column; isolation: isolate; }
+  .platform-hub::before { position: absolute; z-index: -1; width: 12rem; height: 12rem; border: 1px solid var(--rule); border-radius: 1.5rem; background: var(--bg); content: ""; transform: rotate(-10deg); }
+  .platform-hub-mark { display: grid; width: 5rem; height: 5rem; place-items: center; border: 1px solid var(--rule); border-radius: 1rem; background: var(--surface); box-shadow: var(--shadow-bezel), var(--shadow-md); }
+  .platform-hub strong { margin-top: 1rem; font-family: var(--font-ui); font-size: 1.5rem; font-weight: 600; }
+  .platform-address { margin-top: 0.125rem; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--ink-subtle); }
+  .platform-hub-label { margin-top: 1rem; font-family: var(--font-ui); font-size: 0.6875rem; color: var(--brand-deep); }
+  .platform-branches { display: grid; gap: 0.875rem; position: relative; min-width: 0; }
+  .platform-branches-left { grid-area: left; }
+  .platform-branches-right { grid-area: right; }
+  .platform-node { display: flex; position: relative; align-items: center; gap: 0.875rem; min-height: 5.375rem; padding: 1rem; border: 1px solid var(--rule); border-radius: 0.5rem; background: var(--surface); color: var(--ink); text-align: left; cursor: pointer; box-shadow: 0 9px 22px -20px color-mix(in oklab, var(--ink) 35%, transparent); transition: border-color var(--dur) var(--ease), transform var(--dur) var(--ease), box-shadow var(--dur) var(--ease); }
+  .platform-node:hover { border-color: color-mix(in oklab, var(--brand) 45%, var(--rule)); color: var(--ink); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+  .platform-node-icon { display: grid; flex: none; width: 2.625rem; height: 2.625rem; place-items: center; border-radius: 0.5rem; background: var(--surface-2); color: var(--brand-deep); }
+  .platform-node strong { display: block; font-family: var(--font-ui); font-size: 0.9375rem; font-weight: 600; line-height: 1.4; }
+  .platform-node small { display: block; max-width: 25ch; margin-top: 0.25rem; font-size: 0.75rem; line-height: 1.5; color: var(--ink-subtle); }
+  .platform-node-arrow { flex-shrink: 0; margin-left: auto; color: var(--ink-subtle); }
+  .platform-product-rail { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 1rem 2.5rem; padding-top: 1.5rem; border-top: 1px solid var(--rule); }
+  .platform-rail-label { display: flex; align-items: center; gap: 0.625rem; font-family: var(--font-ui); font-size: 0.8125rem; color: var(--ink-subtle); }
+  .platform-product-rail nav { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.25rem 1.375rem; }
+  .platform-product-rail a { display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.5rem; font-family: var(--font-ui); font-size: 0.8125rem; color: var(--ink-muted); }
+  .platform-product-rail a:hover { color: var(--brand-deep); }
+  @media (min-width: 768px) {
+    .platform-heading h2 { font-size: 2.75rem; }
+    .platform-map { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-areas: "hub hub" "left right"; }
+  }
+  @media (min-width: 1100px) {
+    .platform-map { grid-template-columns: minmax(0, 1fr) 15rem minmax(0, 1fr); grid-template-areas: "left hub right"; gap: 4rem; margin-block: 3.5rem; }
+    .platform-hub::before { width: 14rem; height: 15rem; }
+    .platform-branches::before { position: absolute; top: 2.6875rem; bottom: 2.6875rem; width: 2rem; content: ""; border: 1px solid var(--rule-strong); }
+    .platform-branches-left::before { right: -2rem; border-left: 0; border-radius: 0 0.5rem 0.5rem 0; }
+    .platform-branches-right::before { left: -2rem; border-right: 0; border-radius: 0.5rem 0 0 0.5rem; }
+    .platform-node::before { position: absolute; top: 50%; width: 2rem; height: 1px; content: ""; background: var(--rule-strong); }
+    .platform-branches-left .platform-node::before { left: 100%; }
+    .platform-branches-right .platform-node::before { right: 100%; }
+    .platform-branches::after { position: absolute; top: 50%; width: 2rem; height: 1px; content: ""; background: var(--brand); }
+    .platform-branches-left::after { right: -4rem; }
+    .platform-branches-right::after { left: -4rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .platform-node:hover { transform: none; } }
+</style>

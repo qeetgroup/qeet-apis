@@ -1,234 +1,251 @@
-# qeet-apis
+<div align="center">
 
-The **Qeet Group developer portal** — every product's API in one branded,
-interactive home, deployed at **`api.qeet.in`**.
+# 🛰️ qeet-apis
 
-It's a static **Astro** site. The interactive API reference is rendered with
-**[Scalar](https://scalar.com)** (search, live request console, multi-language
-code samples, dark mode); the surrounding portal (landing, quickstart, auth,
-errors, SDKs, changelog) is hand-authored. OpenAPI specs are **vendored** under
-[`public/specs/`](public/specs/) and switched via Scalar's built-in document
-selector; each spec carries **Production / Staging / Local** servers.
+### The Qeet Group developer portal
 
-## Specs
+**One branded, interactive home for every Qeet product's API** — live at **[api.qeet.in](https://api.qeet.in)**
 
-| Product | Specs | Source repo |
+[![Live](https://img.shields.io/badge/live-api.qeet.in-6b4eff?style=flat-square)](https://api.qeet.in)
+[![Astro](https://img.shields.io/badge/Astro-7-BC52EE?style=flat-square&logo=astro&logoColor=white)](https://astro.build)
+[![Scalar](https://img.shields.io/badge/Scalar-reference-1a1a1a?style=flat-square)](https://scalar.com)
+[![Bun](https://img.shields.io/badge/Bun-1.3-000000?style=flat-square&logo=bun&logoColor=white)](https://bun.sh)
+[![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Deploy](https://img.shields.io/badge/deploy-Vercel-000000?style=flat-square&logo=vercel&logoColor=white)](https://vercel.com)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.1-6BA539?style=flat-square&logo=openapiinitiative&logoColor=white)](https://spec.openapis.org/oas/v3.1.0)
+
+**780** operations · **16** areas · **3** live product APIs · **100%** vendored from the servers
+
+</div>
+
+---
+
+**qeet-apis** is a static **[Astro](https://astro.build)** site whose interactive API reference is
+rendered with **[Scalar](https://scalar.com)** (`@scalar/astro`) and wrapped in a hand-authored,
+branded portal — landing, quickstart, authentication, errors, SDKs and changelog. It is the single
+home for interactive API docs across the [Qeet Group](https://github.com/qeetgroup) suite; the product
+docs at [docs.qeet.in](https://docs.qeet.in) link here rather than embedding specs of their own.
+
+> One philosophy, many products. Each authenticates with **Qeet ID**, is built from **Qeetrix**,
+> notifies through **Qeet Notify**, and logs to **Qeet Logs**.
+
+## ✨ Highlights
+
+- 🔎 **Full interactive reference** — search, live request console (Try It), schemas and multi-language
+  code samples for all **780** operations, powered by Scalar.
+- 📦 **The spec is the source of truth** — every OpenAPI 3.1 document is vendored straight from the
+  service that implements it and validated in CI, so the reference **cannot drift** from the API.
+- 🗂️ **One product per page, one switcher** — Scalar's own document selector is removed; the only
+  product switcher on screen is Qeet's, with a Postman-style folder sidebar per product.
+- 🎨 **Branded, dual-theme, no-FOUC** — the `@qeetrix/ui` type system (Cal Sans + Fira Code) and Qeet
+  tokens, with a light/dark toggle that drives both the portal and the Scalar pane.
+- ⚡ **Static + exactly one server route** — every page is prerendered; a single on-demand proxy powers
+  Try It locally.
+- 🚀 **Gate → deploy → tag** — every merge to `main` runs the full gate, ships to `api.qeet.in`, then
+  tags the version that actually went live.
+
+## 🧭 The APIs
+
+Three products are live in the reference today; the rest of the platform is shown honestly as
+*"coming to the API."* Counts and areas come from the vendored specs (re-check with `bun run validate:specs`).
+
+| Product | Reference | Operations | Areas | Auth |
+| --- | --- | ---: | ---: | --- |
+| 🆔 **Qeet ID** — identity & access | [`/reference`](https://api.qeet.in/reference) | 395 | 5 | Bearer · API key · OAuth 2.1 · SCIM · session |
+| 🔔 **Qeet Notify** — notifications | [`/reference/qeet-notify`](https://api.qeet.in/reference/qeet-notify) | 112 | 4 | API key (`X-Qeet-Api-Key`) |
+| 💳 **Qeet Pay** — payments & billing | [`/reference/qeet-pay`](https://api.qeet.in/reference/qeet-pay) | 273 | 7 | API key (`X-Api-Key`) |
+
+Each product's per-area specs live under [`public/specs/`](public/specs/); `bun run sync` merges them
+into a single per-product bundle (`public/specs/<product>.yaml`) with `x-tagGroups` that render as the
+folder sidebar. Source specs come from the sibling server repos:
+
+| Product | Source repo (`../`) | Merged from |
 | --- | --- | --- |
-| Qeet ID | auth, management, federation, developer, operations | `../qeet-servers/qeet-id-server/api/openapi/` |
-| Qeet Notify | v1 | `../qeet-notify/api/openapi/` |
+| Qeet ID | `qeet-id/qeet-id-server/api/openapi/` | auth · management · federation · developer · operations |
+| Qeet Notify | `qeet-notify/qeet-notify-server/api/openapi/` | messaging · subscribers · deliverability · operations |
+| Qeet Pay | `qeet-pay/qeet-pay-server/api/openapi/` | payments · payouts · billing · tax · commerce · risk · platform |
 
-> **Upstream note:** the qeet-notify source spec uses the non-standard
-> `notify.api.qeet.in`; `bun run sync` rewrites it to the standard
-> `api.notify.qeet.in`. Reconcile it in the qeet-notify repo separately.
+> **Upstream note:** the qeet-notify source spec uses the non-standard `notify.api.qeet.in`;
+> `bun run sync` rewrites it to the canonical `api.notify.qeet.in`. Reconcile the running service in the
+> qeet-notify repo separately (it's a DNS/deploy change, not a docs one).
 
-## Commands
+## 🚀 Quickstart
 
-Bun ≥ 1.3 (`bun@1.3.14` is pinned via `packageManager`). Node ≥ 20 for the Astro CLI.
+Bun ≥ 1.3 (`bun@1.3.14` is pinned via `packageManager`) and Node ≥ 20 for the Astro CLI.
 
 ```bash
 bun install
-bun run sync      # re-vendor specs from the sibling repos + apply local/stage/prod servers
-bun run dev       # Astro dev server on http://localhost:3005
-bun run build     # static site → dist/
-bun run preview   # serve the built dist/
+bun run dev            # → http://localhost:3005  (rebuilds the search catalog first)
 ```
 
-`bun run sync` reads the sibling repos (`../qeet-id`, `../qeet-notify`), rewrites each
-spec's `servers:` to the canonical hosts, and writes the vendored copy. It also
-**merges the 5 Qeet ID specs into `public/specs/qeet-id.yaml` with `x-tagGroups`**
-(so the reference sidebar shows a Postman-style folder tree) and **vendors the
-qeet-id Postman collection** into `public/postman/`. **Build/CI never needs the
-sibling repos** — everything generated is committed and copied into `dist/` as-is.
-## Deploying
-
-| Workflow | Trigger | Does |
-|---|---|---|
-| [ci.yml](.github/workflows/ci.yml) | pull requests | specs · typecheck · lint · tests |
-| [deploy.yml](.github/workflows/deploy.yml) | push to `main`, or manual | the same gate, deploys to `api.qeet.in` via the Vercel CLI, then tags and releases |
-
-Every merge to `main` gates, deploys, then tags — the same convention as
-`qeet-id-website`, `qeet-id-server` and `qeet-id-console`.
-
-### Versions and releases
-
-The tag is pushed **after** Vercel reports success, so every tag corresponds to
-a version that is actually live and a failed deploy leaves no tag behind.
-
-The first release is **v0.0.1** — the lookup defaults to `v0.0.0` when no `v*`
-tag exists.
-
-- Merging to `main` bumps the **patch** number.
-- For a minor or major bump, run the workflow manually and pick `bump`
-  (`patch` / `minor` / `major`).
-- Release notes come from `gh release create --generate-notes`.
-
-Tag lookup uses `git tag --sort=-version:refname`, so `v0.0.10` follows
-`v0.0.9` rather than sorting before it. The workflow checks out with
-`fetch-depth: 0`; a shallow clone would see no tags and every release would be
-v0.0.1.
-
-### Setup
-
-**Settings → Secrets and variables → Actions**
-
-| Kind | Name | Where from |
-|---|---|---|
-| Secret | `VERCEL_TOKEN` | Vercel → Account Settings → Tokens, scoped to the Qeet Group team |
-| Variable | `VERCEL_ORG_ID` | `vercel link`, then `.vercel/project.json` |
-| Variable | `VERCEL_PROJECT_ID` | same file |
+Build/CI never needs the sibling repos — every generated spec is committed and copied into `dist/`
+verbatim. You only need the siblings (`../qeet-id`, `../qeet-notify`, `../qeet-pay`) to re-sync:
 
 ```bash
-vercel link                # writes .vercel/project.json (gitignored)
-cat .vercel/project.json   # orgId and projectId
+bun run sync           # re-vendor + bundle specs from the sibling server repos
 ```
 
-The Vercel project is **`qeet-api`** → `api.qeet.in`.
+## 🛠️ Commands
 
-`vercel build` + `vercel deploy --prebuilt` build in the Action and upload the
-finished output, so Vercel never clones the repository. The deployment is
-therefore pinned to the commit the gate actually ran against, and the
-repository's visibility is irrelevant to deploying.
+| Command | What it does |
+| --- | --- |
+| `bun install` | Install dependencies (Vercel uses `--frozen-lockfile`; add deps with `bun add`). |
+| `bun run sync` | Re-vendor + bundle OpenAPI specs from the sibling server repos; vendor Postman. |
+| `bun run catalog` | Rebuild `public/search-index.json` (runs automatically inside `dev`/`build`). |
+| `bun run validate:specs` | OpenAPI gate — **ERRORs fail**, doc-quality gaps warn. |
+| `bun run typecheck` | `astro check`. |
+| `bun run lint` | Biome. |
+| `bun test` | Unit tests. |
+| `bun run test:browser` | 6 browser smoke checks (needs a running preview server). |
+| `bun run dev` | Astro dev server on **:3005**. |
+| `bun run build` | Static site → `dist/` (+ the one Vercel function). |
+| `bun run preview` | Serve the built output on **:3005**. |
 
-If Vercel's Git integration is also connected to this repo it will deploy
-pushes to `main` by itself and double up with this workflow — pick one path.
+## 🏗️ Architecture
 
-## Environments
+**Ownership split** is the whole point of the layout stack. Qeet owns the shell, header, product
+switching, the left API navigation, theming, search and SEO. Scalar owns OpenAPI rendering, schemas,
+request building, code samples and the API client.
 
-The reference offers **Local only**. This portal is an internal developer tool:
-the people using it run the services on their own machines, so the Servers
-dropdown points at your stack.
+```
+┌──────────────────────────── Qeet portal (Astro) ────────────────────────────┐
+│  header · product switcher · left API nav · theming · search · SEO           │
+│  ┌───────────────────────── Scalar (@scalar/astro) ────────────────────────┐ │
+│  │  OpenAPI rendering · schemas · request builder · code samples · Try It  │ │
+│  └─────────────────────────────────────────────────────────────────────────┘ │
+└──────────────────────────────────────────────────────────────────────────────┘
+```
+
+**Layout stack** — `BaseLayout` is `<head>` + theming + skip-link only. On top of it:
+
+```
+BaseLayout
+├── MarketingLayout   → floating pill header · serves "/"
+└── DeveloperLayout   → compact 64px bar · serves everything else
+    ├── DocsLayout       sidebar · content · TOC     (guides: quickstart, auth, errors, sdks, changelog)
+    └── ReferenceLayout  sidebar · Scalar pane        (the API reference)
+```
+
+**One product per reference page.** `/reference` renders Qeet ID; `/reference/qeet-notify` and
+`/reference/qeet-pay` are generated from config. Each page hands Scalar a **single** `source`, which
+is what removes Scalar's own document selector — so the Qeet product switcher is the only one on screen.
+
+**Static, plus exactly one server route.** `output: "static"` prerenders every page; only
+[`src/pages/api/proxy.ts`](src/pages/api/proxy.ts) sets `prerender = false`. That's why `@astrojs/vercel`
+is configured — the adapter emits the Build Output API to `.vercel/output`.
+
+**Config is the source of truth.** [`src/config/products.ts`](src/config/products.ts) holds every
+product's version, lifecycle, specs, environments, auth, SDKs and Postman assets;
+[`src/config/environments.ts`](src/config/environments.ts) gates which environments are published; and
+[`src/config/scalar.ts`](src/config/scalar.ts) holds all Scalar options. The landing page and reference
+switcher derive from [`src/data/catalog.ts`](src/data/catalog.ts).
+
+## 🌐 Environments & Try It
+
+The reference offers **Local only** — this is an internal developer tool, so the Servers dropdown points
+at the stack running on your machine.
 
 | Product | Local |
-|---|---|
+| --- | --- |
 | Qeet ID | `http://localhost:4001` |
 | Qeet Notify | `http://localhost:8080` |
 | Qeet Pay | `http://localhost:4201` |
 
-Production is deliberately **not** a Try-It target — a one-click Send against
-the live APIs makes it too easy to mutate production data while reading the
-docs. The production hostnames are still in the downloadable OpenAPI documents,
-which is where they belong.
+Production is deliberately **not** a Try-It target — a one-click Send against the live APIs makes it too
+easy to mutate production data while reading the docs. The production hostnames still live in the
+downloadable OpenAPI documents, which is where they belong. There is **no staging, test or sandbox tier**
+today.
 
-There is no staging, test or sandbox tier today: `api.<product>.staging.qeet.in`
-does not resolve.
-
-**Adding one later:** add the entry to `envs()` in
-[src/config/products.ts](src/config/products.ts). The Servers dropdown, the
-environments table on the guides, and the API-client proxy's allow-list all
-derive from it. For a remote host also set `PUBLIC_QEET_PROXY_URL=/api/proxy`,
-because the Qeet APIs send no CORS headers.
-
-**If Send fails with "Failed to fetch":** your local service is not allowing the
-portal's origin. Add CORS there — the portal calls it directly, by design.
-
-### Deployed vs run locally
-
-**Try It only works when you run the portal locally.** The request proxy is
-server-side, so on a deployed instance `localhost` is *Vercel's* loopback, not
-your machine:
+**Try It only works when you run the portal locally.** The request proxy is server-side, so on a deployed
+instance `localhost` is *Vercel's* loopback, not your machine:
 
 ```
-deployed:   browser ─▶ api.qeet.in/api/proxy ─▶ fetch(localhost) ─▶ Vercel's own loopback ✗
-local:      browser ─▶ localhost:3005/api/proxy ─▶ fetch(localhost) ─▶ your API ✓
+deployed:  browser ─▶ api.qeet.in/api/proxy ─▶ fetch(localhost) ─▶ Vercel's own loopback  ✗
+local:     browser ─▶ localhost:3005/api/proxy ─▶ fetch(localhost) ─▶ your API             ✓
 ```
 
-The deployed portal detects this and returns a 502 explaining it rather than
-timing out. So:
+|  | Read the docs | Try It |
+| --- | :---: | :---: |
+| Deployed (`api.qeet.in`) | ✅ | ❌ — run locally |
+| Local (`bun run dev`) | ✅ | ✅ |
 
-| | Read the docs | Try It |
-|---|---|---|
-| Deployed (`api.qeet.in`) | yes | no — see below |
-| Local (`bun run dev`) | yes | yes |
+A deployed instance is still the right way to *read* the reference — all operations, schemas, code
+samples, spec and Postman downloads. For *sending* requests, run it locally. Making Try It work from the
+deployed portal means allowing its origin (CORS + Private Network Access) on each local service — see
+[`CLAUDE.md`](CLAUDE.md) for the full recipe.
 
-A deployed instance is still the right way to *read* the reference — all 780
-operations, schemas, code samples, spec and Postman downloads. For sending
-requests, run it locally.
-
-**If you need Try It from the deployed portal**, the local services have to
-allow its origin — then set `PUBLIC_QEET_PROXY_URL=` (empty) so the browser
-calls them directly instead of going through the server. That needs, on each
-local service: `Access-Control-Allow-Origin` for the portal origin, the auth
-headers in `Access-Control-Allow-Headers`, and — because Chrome treats a public
-page calling loopback as Private Network Access — `Access-Control-Allow-Private-Network: true`
-on the preflight. The portal side is already prepared: `connect-src` permits
-`http://localhost:*` and `upgrade-insecure-requests` is deliberately absent, so
-`http://localhost` is not rewritten to `https://`.
-
-### Making Try It work from the deployed portal
-
-Postman can call `http://localhost:8080` because it is a native app with no
-same-origin policy. A web page cannot, unless the service allows the page's
-origin — that is the entire difference, and the fix is one setting per service.
-
-Verified, with two identical mock APIs on loopback:
-
-```
-                       curl        browser page
-without CORS headers   200         BLOCKED — "Failed to fetch"
-with CORS headers      200         200
-```
-
-**Qeet ID and Qeet Notify (Go)** both run `go-chi/cors` and now read the origin
-list from one environment variable:
-
-```bash
-ALLOWED_ORIGINS=https://api.qeet.in,http://localhost:3005
-```
-
-`qeet-id-server` already worked this way and rejects `*` on purpose — it
-enables credentialed CORS, where a wildcard is unsafe. `qeet-notify-server`
-previously hard-coded `https://*` / `http://*` *with* `AllowCredentials: true`,
-which let any website make authenticated requests to it; it is now
-config-driven and drops wildcard entries at load time.
-
-**Qeet Pay (Spring Boot)** needs the equivalent `CorsConfiguration`:
-allowed origins as above, methods `GET,POST,PUT,PATCH,DELETE,OPTIONS`, and
-allowed headers including `Authorization`, `Content-Type` and its API-key
-header (`X-Api-Key`; Notify uses `X-Qeet-Api-Key`).
-
-Only set this for local/dev instances. Allowing a browser origin against a
-production service is a separate decision with its own review.
-
-**One caveat we could not verify locally:** Chrome treats a request from a
-public HTTPS page to a loopback address as Private Network Access and may
-additionally require `Access-Control-Allow-Private-Network: true` on the
-preflight, which `go-chi/cors` does not send. The test above used a local page,
-which is not subject to PNA. If Send still fails from the deployed portal after
-setting `ALLOWED_ORIGINS`, that header is the next thing to add.
-
-The portal side needs nothing: a Vercel build automatically calls APIs directly
-(no proxy), and a local build uses the proxy, which needs no CORS at all.
-
-## Structure
+## 📁 Project structure
 
 ```
 public/
-  specs/        vendored OpenAPI specs + the generated qeet-id.yaml bundle (run bun run sync; don't hand-edit)
-  postman/      vendored qeet-id Postman collection (run bun run sync)
-  fonts/        Cal Sans + Fira Code (the @qeetrix/ui brand faces, self-hosted)
+  specs/        vendored OpenAPI specs + generated <product>.yaml bundles  (run `bun run sync`; don't hand-edit)
+  postman/      vendored Postman collections + environments               (run `bun run sync`)
+  fonts/        Cal Sans + Fira Code — the @qeetrix/ui brand faces, self-hosted
   brand/        logos, favicon, OG image
 src/
-  data/catalog.ts        single source of truth: specs, environments, links
-  styles/                tokens.css (brand + fonts) + global.css
-  layouts/               BaseLayout (chrome/SEO) + DocLayout (MDX content)
-  components/            Header, Footer, Hero, ApiCatalog, CodeTabs, …
+  config/       products.ts · environments.ts · scalar.ts · site.ts · navigation.ts  (source of truth)
+  data/         catalog.ts — specs, product suite, stats, pricing, FAQ (landing + reference)
+  layouts/      BaseLayout → Marketing / Developer → Docs / Reference
+  components/    marketing/ · layout/ · navigation/ · docs/ · api/ · brand/
+  lib/          api/openapi.ts (anchors) · api/navigation.ts · seo/metadata.ts
+  styles/       tokens.css (brand + fonts) · global.css · docs.css · reference.css · scalar.css
   pages/
-    index.astro          landing
-    quickstart.mdx  authentication.mdx  errors.mdx  sdks.mdx  changelog.mdx
-    reference/index.astro  Scalar reference (all specs via `sources`)
+    index.astro                      marketing landing
+    quickstart · authentication · errors · sdks · changelog   (MDX guides)
+    reference/index.astro            Qeet ID reference
+    reference/[product].astro        Qeet Notify · Qeet Pay references
+    api/proxy.ts                     the only server-rendered route (Try It proxy)
+scripts/
+  sync-specs.mjs · build-catalog.mjs · validate-specs.mjs · smoke.mjs
 ```
 
-## Adding a product
+## 📦 Deploying
 
-1. Add the product to `PRODUCTS` in [`scripts/sync-specs.mjs`](scripts/sync-specs.mjs)
-   (slug, srcDir, specs, 3-env servers).
-2. Add it to `SPECS` (catalog cards + spec downloads) **and** `SCALAR_SOURCES` (the
-   reference switcher) in [`src/data/catalog.ts`](src/data/catalog.ts). For a
-   multi-spec product, add a bundle step in `sync-specs.mjs` (see `QEET_ID_GROUPS`).
+| Workflow | Trigger | Does |
+| --- | --- | --- |
+| [`ci.yml`](.github/workflows/ci.yml) | pull requests | validate specs · typecheck · lint · unit tests · build · browser smoke |
+| [`deploy.yml`](.github/workflows/deploy.yml) | push to `main`, or manual | the same gate, deploys to `api.qeet.in` via the Vercel CLI, then tags + releases |
+
+Every merge to `main` **gates → deploys → tags**, the same convention as `qeet-id-website`,
+`qeet-id-server` and `qeet-id-console`. `ci.yml` is pull-request-only so a merge doesn't run the gate twice.
+
+**Versions & releases.** The tag is created **after** Vercel reports success, so every tag corresponds to
+a version that is actually live and a failed deploy leaves no tag behind. Merging to `main` bumps the
+**patch** number; run the workflow manually and pick `bump` (`patch`/`minor`/`major`) for a larger bump.
+The tag is created through the **GitHub Releases API** with `--target` (server-side), which is not subject
+to branch protection. Tag lookup uses `git tag --sort=-version:refname` (numeric order, so `v0.0.10`
+follows `v0.0.9`); the first release is `v0.0.1`.
+
+> **Why the Vercel CLI, not Git integration:** `vercel build` + `vercel deploy --prebuilt --prod` build in
+> the Action and upload the finished output, so Vercel never clones the repo. The deployment is pinned to
+> the exact commit the gate ran against, and repository visibility is irrelevant. If Vercel's Git
+> integration is *also* connected it will double-deploy — pick one path. `--prod` is not optional on the
+> Hobby plan. Full deploy nuances (including why tagging is done last) live in [`CLAUDE.md`](CLAUDE.md).
+
+## ➕ Adding a product
+
+1. Add the product to `PRODUCTS` in [`scripts/sync-specs.mjs`](scripts/sync-specs.mjs) — slug, `srcDir`,
+   specs and 3-env servers. For a multi-spec product, add its area→folder mapping so the specs merge into
+   one `x-tagGroups` bundle.
+2. Add it to `SPECS` (catalog cards + spec downloads) **and** `SCALAR_SOURCES` (the switcher) in
+   [`src/data/catalog.ts`](src/data/catalog.ts), plus a `PRODUCTS` entry in
+   [`src/config/products.ts`](src/config/products.ts).
 3. `bun run sync && bun run dev` to verify.
 
-## Fonts & licenses
+## 🎨 Brand & fonts
 
-Brand fonts are the Qeet faces from `@qeetrix/ui`, self-hosted under
-`public/fonts/`: **Cal Sans** (Display / Text / UI cuts) and **Fira Code** for
-monospace (SIL OFL 1.1, see `public/fonts/FiraCode-OFL.txt`).
+The type system is the `@qeetrix/ui` brand family — **Cal Sans** (Text + UI cuts) and **Fira Code** for
+monospace — self-hosted under [`public/fonts/`](public/fonts/) (this stays a standalone repo,
+so the faces are copied rather than depending on the unpublished `@qeetrix/ui`). Tokens live in
+[`src/styles/tokens.css`](src/styles/tokens.css); logos, favicon and OG image in `public/brand/`. Fira
+Code ships under SIL OFL 1.1 (`public/fonts/FiraCode-OFL.txt`).
+
+---
+
+<div align="center">
+
+Part of the **[Qeet Group](https://github.com/qeetgroup)** suite ·
+Contributor notes in **[`CLAUDE.md`](CLAUDE.md)** ·
+Read the docs at **[api.qeet.in](https://api.qeet.in)**
+
+</div>

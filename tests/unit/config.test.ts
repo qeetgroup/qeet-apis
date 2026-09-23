@@ -69,7 +69,9 @@ describe("buildMetadata", () => {
   });
 
   it("does not repeat the site name", () => {
-    expect(buildMetadata({ title: "Qeet Developers", pathname: "/" }).title).toBe("Qeet Developers");
+    expect(buildMetadata({ title: "Qeet Developers", pathname: "/" }).title).toBe(
+      "Qeet Developers",
+    );
   });
 
   it("canonicalises with a single trailing slash", () => {

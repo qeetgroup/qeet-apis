@@ -92,8 +92,7 @@ const isLocalhost = (hostname: string) =>
  * request time — which also keeps it testable without module-cache tricks.
  */
 const onVercel = () =>
-  (typeof process !== "undefined" && process.env?.VERCEL === "1") ||
-  import.meta.env.VERCEL === "1";
+  (typeof process !== "undefined" && process.env?.VERCEL === "1") || import.meta.env.VERCEL === "1";
 
 /** True when a loopback host is actually allow-listed for this build. */
 const LOCAL_ALLOWED = [...ALLOWED_HOSTS].some(isLocalhost);

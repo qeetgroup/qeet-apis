@@ -7,7 +7,10 @@ import Icon from "../shared/Icon.astro";
 import { LINKS } from "../../data/catalog";
 
 const bullets = [
-  ["Every call, measured.", "Volume, latency, error rate and status-code mix — per endpoint, in real time."],
+  [
+    "Every call, measured.",
+    "Volume, latency, error rate and status-code mix — per endpoint, in real time.",
+  ],
   ["Slice any dimension.", "Break down by product, API key, route, region or version on the fly."],
   ["Live and historical.", "Sub-second counters for now, plus retained series for trend analysis."],
   ["Export anywhere.", "Stream metrics to Datadog, Grafana or your own warehouse."],
@@ -26,7 +29,8 @@ const top = [
   { path: "GET /v1/audit/events", pct: 12 },
 ];
 
-const line = "M0,92 L29,80 L58,86 L87,63 L116,70 L145,50 L174,58 L203,41 L232,47 L261,29 L290,33 L320,16";
+const line =
+  "M0,92 L29,80 L58,86 L87,63 L116,70 L145,50 L174,58 L203,41 L232,47 L261,29 L290,33 L320,16";
 const area = `${line} L320,120 L0,120 Z`;
 ---
 

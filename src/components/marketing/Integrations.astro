@@ -1,79 +1,94 @@
 ---
-// Integrations — a monochrome logo grid of the stack Qeet plugs into. Centered
-// head, single bordered panel. Canvas background. Marks render as inline
-// simple-icons (currentColor → brand on hover), so no raster assets ship.
-import SectionHead from "./SectionHead.astro";
-import ArrowLink from "./ArrowLink.astro";
+import { siOpenapiinitiative, siOpenid, siPostman } from "simple-icons";
+import Icon from "../shared/Icon.astro";
 import { LINKS } from "../../data/catalog";
-import {
-  siNodedotjs, siPython, siGo, siTypescript, siReact, siNextdotjs,
-  siGithub, siGitlab, siDocker, siKubernetes, siTerraform, siCloudflare,
-  siDatadog, siGrafana, siSentry, siPagerduty, siPostman, siZapier,
-} from "simple-icons";
+import type { IconName } from "../../types/icon";
 
-const logos = [
-  siNodedotjs, siPython, siGo, siTypescript, siReact, siNextdotjs,
-  siGithub, siGitlab, siDocker, siKubernetes, siTerraform, siCloudflare,
-  siDatadog, siGrafana, siSentry, siPagerduty, siPostman, siZapier,
+interface Foundation {
+  name: string;
+  detail: string;
+  scope: string;
+  href: string;
+  icon: IconName;
+  tone: string;
+  logo?: { path: string };
+}
+
+const foundations: Foundation[] = [
+  { name: "OpenAPI 3.1", detail: "A contract you can read, download, and build against.", scope: "Every product specification", href: LINKS.reference, icon: "braces", tone: "green", logo: siOpenapiinitiative },
+  { name: "OAuth & OIDC", detail: "Token-based identity", scope: "Qeet ID", href: LINKS.authentication, icon: "key", tone: "orange", logo: siOpenid },
+  { name: "SAML 2.0", detail: "Enterprise federation", scope: "Qeet ID", href: LINKS.authentication, icon: "shield", tone: "blue" },
+  { name: "SCIM 2.0", detail: "Identity provisioning", scope: "Qeet ID", href: LINKS.reference, icon: "users", tone: "teal" },
+  { name: "WebAuthn", detail: "Passkeys & strong auth", scope: "Qeet ID", href: LINKS.authentication, icon: "fingerprint", tone: "violet" },
+  { name: "Webhooks", detail: "Event-driven workflows", scope: "Product-specific events", href: LINKS.reference, icon: "webhook", tone: "orange" },
+  { name: "Postman", detail: "Importable collections", scope: "Ready for your workspace", href: LINKS.sdks, icon: "send", tone: "orange", logo: siPostman },
+  { name: "API clients", detail: "cURL, code & SDK sources", scope: "Choose your tooling", href: LINKS.sdks, icon: "terminal", tone: "ink" },
 ];
-
-const cats = ["Languages & frameworks", "CI/CD & infrastructure", "Observability & tooling"];
 ---
 
-<section class="border-y border-rule bg-surface py-[clamp(3.5rem,8vw,6.5rem)]" id="integrations">
-  <div class="container container-wide">
-    <SectionHead
-      align="center"
-      eyebrow="Integrations"
-      title="Plug into everything you already run."
-    >
-      Qeet meets your stack where it is — native SDKs, first-class observability
-      exports, and open webhooks that connect to anything else.
-    </SectionHead>
+<section class="standards-section" id="standards" aria-labelledby="standards-title">
+  <div class="standards-layout container container-wide">
+    <div class="standards-copy" data-reveal>
+      <div class="standards-emblem" aria-hidden="true"><Icon name="braces" class="h-7 w-7" /><span>Open by design</span></div>
+      <h2 id="standards-title">Built on standards developers already trust.</h2>
+      <p>Open specifications. Established identity protocols. Familiar tools that meet you where you build.</p>
+      <a class="standards-guide" href={LINKS.authentication}>Explore authentication <Icon name="arrow-up-right" class="h-4 w-4" /></a>
+      <span class="standards-footnote">Identity protocols are provided by Qeet ID.</span>
+    </div>
 
-    <div class="mx-auto mt-8 flex max-w-2xl flex-wrap justify-center gap-2.5" data-reveal>
-      {
-        cats.map((c) => (
-          <span class="rounded-full border border-rule bg-surface px-3 py-1 font-ui text-[0.76rem] font-medium text-ink-subtle">
-            {c}
+    <div class="standards-grid" data-reveal>
+      {foundations.map((foundation, index) => (
+        <a class:list={["standard-tile", { "standard-tile-contract": index === 0 }]} href={foundation.href} data-tone={foundation.tone}>
+          <span class="standard-mark">
+            {foundation.logo ? (
+              <svg viewBox="0 0 24 24" width="25" height="25" fill="currentColor" aria-hidden="true"><path d={foundation.logo.path} /></svg>
+            ) : <Icon name={foundation.icon} class="h-6 w-6" />}
           </span>
-        ))
-      }
-    </div>
-
-    <div
-      class="mx-auto mt-9 overflow-hidden rounded-2xl border border-rule bg-surface shadow-(--shadow-sm)"
-      data-reveal
-      style="transition-delay:80ms"
-    >
-      <div class="grid grid-cols-3 gap-px bg-rule sm:grid-cols-6">
-        {
-          logos.map((logo) => (
-            <div
-              class="group grid aspect-[1.6] place-items-center bg-surface text-ink-subtle transition-colors duration-300 hover:text-brand"
-              title={logo.title}
-            >
-              <svg
-                viewBox="0 0 24 24"
-                class="h-7 w-7 transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-110"
-                fill="currentColor"
-                role="img"
-                aria-label={logo.title}
-              >
-                <path d={logo.path} />
-              </svg>
-            </div>
-          ))
-        }
-      </div>
-    </div>
-
-    <div class="mt-8 flex flex-col items-center gap-4 text-center" data-reveal>
-      <p class="max-w-[52ch] text-[0.95rem] text-ink-subtle">
-        Don't see yours? Every event and metric can stream out over signed
-        webhooks and the REST API — so you can wire Qeet into anything.
-      </p>
-      <ArrowLink href={LINKS.reference} label="Explore the API" />
+          <span class="standard-text"><strong>{foundation.name}</strong><span>{foundation.detail}</span><small>{foundation.scope}</small></span>
+          <Icon name="arrow-up-right" class="standard-arrow h-3.5 w-3.5" />
+        </a>
+      ))}
     </div>
   </div>
 </section>
+
+<style>
+  .standards-section { position: relative; isolation: isolate; overflow: clip; padding-block: 5.5rem; scroll-margin-top: var(--header-h); }
+  .standards-layout { display: grid; align-items: center; gap: 3rem; }
+  .standards-copy { min-width: 0; max-width: 35rem; }
+  .standards-emblem { display: inline-flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; font-family: var(--font-mono); font-size: 0.6875rem; color: var(--brand-deep); }
+  .standards-copy h2 { margin: 0; max-width: 18ch; font-size: 2rem; line-height: 1.15; letter-spacing: 0; }
+  .standards-copy > p { max-width: 34ch; margin: 1.25rem 0 0; font-size: 1rem; line-height: 1.65; color: var(--ink-muted); }
+  .standards-guide { display: inline-flex; min-height: 2.75rem; align-items: center; gap: 0.625rem; margin-top: 1.25rem; font-family: var(--font-ui); font-size: 0.875rem; font-weight: 600; color: var(--ink); }
+  .standards-guide:hover { color: var(--brand-deep); }
+  .standards-footnote { display: block; margin-top: 1.125rem; font-size: 0.75rem; color: var(--ink-subtle); }
+  .standards-grid { display: grid; position: relative; isolation: isolate; grid-template-columns: minmax(0, 1fr); gap: 0.875rem; }
+  .standards-grid::before { position: absolute; z-index: -1; inset: 1.5rem 2rem; content: ""; border: 1px solid var(--rule); border-radius: 1.5rem; background: var(--brand-faint); transform: rotate(-5deg); }
+  .standard-tile { --standard-accent: var(--brand-deep); display: flex; min-width: 0; position: relative; align-items: flex-start; gap: 1rem; padding: 1.25rem; border: 1px solid var(--rule); border-radius: 0.5rem; background: var(--surface); color: var(--ink); box-shadow: var(--shadow-sm); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+  .standard-tile:hover { color: var(--ink); border-color: var(--standard-accent); transform: translateY(-3px); }
+  .standard-tile[data-tone="green"] { --standard-accent: var(--success); }
+  .standard-tile[data-tone="blue"] { --standard-accent: var(--info); }
+  .standard-tile[data-tone="teal"] { --standard-accent: var(--m-get); }
+  .standard-tile[data-tone="violet"] { --standard-accent: var(--m-patch); }
+  .standard-tile[data-tone="ink"] { --standard-accent: var(--ink-muted); }
+  .standard-mark { display: grid; width: 2.75rem; height: 2.75rem; flex-shrink: 0; place-items: center; border-radius: 0.5rem; background: color-mix(in oklab, var(--standard-accent) 9%, var(--surface)); color: var(--standard-accent); }
+  .standard-text { min-width: 0; }
+  .standard-text strong { display: block; font-family: var(--font-ui); font-size: 1rem; font-weight: 600; line-height: 1.3; }
+  .standard-text > span { display: block; margin-top: 0.5rem; font-size: 0.75rem; line-height: 1.5; color: var(--ink-muted); }
+  .standard-text small { display: block; margin-top: 0.625rem; font-family: var(--font-mono); font-size: 0.625rem; line-height: 1.5; color: var(--ink-subtle); }
+  .standard-arrow { position: absolute; top: 0.75rem; right: 0.75rem; color: var(--ink-subtle); }
+  .standard-tile-contract { background: color-mix(in oklab, var(--success) 3%, var(--surface)); }
+  @media (min-width: 600px) {
+    .standards-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .standard-tile { flex-direction: column; min-height: 10.5rem; gap: 0.875rem; }
+    .standard-tile-contract { grid-column: span 2; flex-direction: row; align-items: center; gap: 1.5rem; padding: 1.75rem; }
+    .standard-tile-contract .standard-mark { width: 4rem; height: 4rem; }
+    .standard-tile-contract .standard-text strong { font-size: 1.75rem; }
+    .standard-tile-contract .standard-text > span { max-width: 30ch; font-size: 0.8125rem; }
+  }
+  @media (min-width: 1100px) {
+    .standards-layout { grid-template-columns: minmax(0, 0.36fr) minmax(0, 0.64fr); gap: 4rem; }
+    .standards-copy h2 { font-size: 2.75rem; }
+  }
+  @media (prefers-reduced-motion: reduce) { .standard-tile:hover { transform: none; } }
+</style>

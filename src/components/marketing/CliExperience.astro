@@ -8,15 +8,21 @@ import Icon from "../shared/Icon.astro";
 import { LINKS } from "../../data/catalog";
 
 const bullets = [
-  ["One binary, the whole platform.", "Auth, keys, live calls, codegen and logs — all from your shell."],
+  [
+    "One binary, the whole platform.",
+    "Auth, keys, live calls, codegen and logs — all from your shell.",
+  ],
   ["Scriptable by design.", "Clean JSON output and honest exit codes, made for CI and pipelines."],
   ["Instant context switching.", "Flip between environments and workspaces with a single flag."],
   ["Live tails.", "Stream logs and webhook deliveries in real time as they happen."],
 ];
 
-const p = (t: string) => `<span style="color:var(--brand-bright)">$</span> <span style="color:#fafafa">${t}</span>`;
-const ok = (t: string) => `<span style="color:#5bbd7a">✓</span> <span style="color:color-mix(in oklab,#fff 62%,transparent)">${t}</span>`;
-const out = (t: string) => `<span style="color:color-mix(in oklab,#fff 52%,transparent)">${t}</span>`;
+const p = (t: string) =>
+  `<span style="color:var(--brand-bright)">$</span> <span style="color:#fafafa">${t}</span>`;
+const ok = (t: string) =>
+  `<span style="color:#5bbd7a">✓</span> <span style="color:color-mix(in oklab,#fff 62%,transparent)">${t}</span>`;
+const out = (t: string) =>
+  `<span style="color:color-mix(in oklab,#fff 52%,transparent)">${t}</span>`;
 
 const term = [
   p("qeet login"),
@@ -26,13 +32,17 @@ const term = [
   ok("qk_live_9f2c… · copied to clipboard"),
   "",
   p("qeet api GET /v1/users/usr_8f1c"),
-  out(`{ <span style="color:var(--brand-bright)">"id"</span>: <span style="color:#7fd6a0">"usr_8f1c"</span>, <span style="color:var(--brand-bright)">"status"</span>: <span style="color:#7fd6a0">"active"</span> }`),
+  out(
+    `{ <span style="color:var(--brand-bright)">"id"</span>: <span style="color:#7fd6a0">"usr_8f1c"</span>, <span style="color:var(--brand-bright)">"status"</span>: <span style="color:#7fd6a0">"active"</span> }`,
+  ),
   "",
   p("qeet sdk generate --lang go"),
   ok("Generated qeet-go in 1.2s"),
   "",
-  p('qeet logs tail --product id'),
-  out(`2026-07-06T09:14Z  <span style="color:#5bbd7a">200</span>  POST /v1/messages  41ms<span class="caret"></span>`),
+  p("qeet logs tail --product id"),
+  out(
+    `2026-07-06T09:14Z  <span style="color:#5bbd7a">200</span>  POST /v1/messages  41ms<span class="caret"></span>`,
+  ),
 ].join("\n");
 ---
 

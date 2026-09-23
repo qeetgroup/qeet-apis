@@ -82,8 +82,8 @@ function validate(file, doc) {
     err(rel, `missing or unsupported "openapi" version (got ${JSON.stringify(doc?.openapi)})`);
     return;
   }
-  if (!doc.info?.title) err(rel, 'info.title is required');
-  if (!doc.info?.version) err(rel, 'info.version is required');
+  if (!doc.info?.title) err(rel, "info.title is required");
+  if (!doc.info?.version) err(rel, "info.version is required");
   if (!doc.paths || Object.keys(doc.paths).length === 0) err(rel, "document declares no paths");
 
   // ---- servers -------------------------------------------------------------
@@ -129,7 +129,10 @@ function validate(file, doc) {
       continue;
     }
     if (seen.has(op.operationId)) {
-      err(rel, `duplicate operationId "${op.operationId}" (${seen.get(op.operationId)} and ${method} ${path})`);
+      err(
+        rel,
+        `duplicate operationId "${op.operationId}" (${seen.get(op.operationId)} and ${method} ${path})`,
+      );
     } else {
       seen.set(op.operationId, `${method} ${path}`);
     }
@@ -160,13 +163,15 @@ function validate(file, doc) {
     for (const g of groups) {
       if (!g?.name) err(rel, "x-tagGroups: a group is missing a name");
       for (const t of g?.tags ?? []) {
-        if (!declared.has(t)) err(rel, `x-tagGroups: group "${g.name}" references undeclared tag "${t}"`);
+        if (!declared.has(t))
+          err(rel, `x-tagGroups: group "${g.name}" references undeclared tag "${t}"`);
         if (grouped.has(t)) err(rel, `x-tagGroups: tag "${t}" appears in more than one group`);
         grouped.add(t);
       }
     }
     for (const name of declared.keys()) {
-      if (!grouped.has(name)) err(rel, `tag "${name}" is not in any x-tagGroup (it would render ungrouped)`);
+      if (!grouped.has(name))
+        err(rel, `tag "${name}" is not in any x-tagGroup (it would render ungrouped)`);
     }
   }
 
@@ -245,10 +250,18 @@ function checkAggregateParity(docs) {
 
   const rel = "public/specs/qeet-id.yaml";
   for (const k of splitOps.keys()) {
-    if (!aggOps.has(k)) err(rel, `aggregate drift: ${k} exists in the split specs but not in the aggregate — re-run \`bun run sync\``);
+    if (!aggOps.has(k))
+      err(
+        rel,
+        `aggregate drift: ${k} exists in the split specs but not in the aggregate — re-run \`bun run sync\``,
+      );
   }
   for (const k of aggOps) {
-    if (!splitOps.has(k)) err(rel, `aggregate drift: ${k} exists in the aggregate but in no split spec — re-run \`bun run sync\``);
+    if (!splitOps.has(k))
+      err(
+        rel,
+        `aggregate drift: ${k} exists in the aggregate but in no split spec — re-run \`bun run sync\``,
+      );
   }
   if (aggOps.size === splitOps.size && [...splitOps.keys()].every((k) => aggOps.has(k))) {
     console.log(`[parity] qeet-id.yaml matches its 5 split specs (${aggOps.size} operations)`);
