@@ -1,272 +1,532 @@
 ---
+import { Code } from "astro:components";
+import ArrowDownRight from "@lucide/astro/icons/arrow-down-right";
+import ArrowUpLeft from "@lucide/astro/icons/arrow-up-left";
+import ChevronRight from "@lucide/astro/icons/chevron-right";
+import Ellipsis from "@lucide/astro/icons/ellipsis";
+import LockKeyhole from "@lucide/astro/icons/lock-keyhole";
+import Search from "@lucide/astro/icons/search";
+import Sparkles from "@lucide/astro/icons/sparkles";
 import Icon from "../shared/Icon.astro";
-import StatRow from "./StatRow.astro";
-import { LINKS } from "../../data/catalog";
+import CodeTabs from "../docs/CodeTabs.astro";
+import { PRODUCTS } from "../../config/products";
+import { referenceHref } from "../../config/scalar";
+import { LINKS, PRODUCTS as CATALOG_PRODUCTS } from "../../data/catalog";
+import { buildAllNavigation } from "../../lib/api/navigation";
+import type { IconName } from "../../types/icon";
 
-const reqHtml = `<span class="text-ink-faint">$</span> curl https://api.id.qeet.in/v1/auth/me \
-  -H <span class="text-brand-deep">"Authorization: ApiKey qk_live_..."</span> \
-  -H <span class="text-brand-deep">"X-Qeet-Env: production"</span> <span class="caret"></span>`;
+const navigation = buildAllNavigation();
+const operationCount = navigation.reduce((total, product) => total + product.operationCount, 0);
+const areaCount = PRODUCTS.reduce((total, product) => total + product.specs.length, 0);
+const featuredProduct = PRODUCTS[0];
+const localEnvironment = featuredProduct.environments.find((environment) => environment.name === "Local");
+if (!localEnvironment) throw new Error(`Missing local environment for ${featuredProduct.name}`);
+const endpoint = "/v1/auth/me";
+const operation = navigation[0].groups
+  .flatMap((group) => group.tags.flatMap((tag) => tag.operations))
+  .find((entry) => entry.path === endpoint && entry.method === "GET");
+const endpointHref = `${referenceHref(featuredProduct.id)}${operation ? `#${operation.slug}` : ""}`;
+const requestUrl = `${localEnvironment.url}${endpoint}`;
 
-const resHtml = `{
-  <span class="text-brand-deep">"principal"</span>: <span class="text-success">"usr_8f1c2a9e"</span>,
-  <span class="text-brand-deep">"tenant"</span>:    <span class="text-success">"org_ace19f2c"</span>,
-  <span class="text-brand-deep">"scopes"</span>:    [<span class="text-success">"identity.read"</span>, <span class="text-success">"openid"</span>],
-  <span class="text-brand-deep">"trace"</span>:     <span class="text-success">"qtr_4b7d9a"</span>
+const products = [
+  ...PRODUCTS.map((product) => ({
+    id: product.id,
+    name: product.name,
+    icon: product.icon,
+    kind: product.kind,
+    href: referenceHref(product.id),
+    availability: product.lifecycle === "development" ? "In development" : "API reference",
+  })),
+  ...CATALOG_PRODUCTS.filter(
+    (product) => product.status === "soon" && !PRODUCTS.some((entry) => entry.name === product.name),
+  ).map((product) => ({
+    id: product.name.toLowerCase().replaceAll(" ", "-"),
+    name: product.name,
+    icon: (product.name === "Qeet Logs" ? "chart-column" : product.icon) as IconName,
+    kind: product.kind,
+    href: "/#products",
+    availability: "Coming soon",
+  })),
+].slice(0, 4);
+
+const requestTabs = [
+  {
+    label: "cURL",
+    lang: "bash",
+    code: `curl ${requestUrl} \\\n  -H "Authorization: ApiKey <your-key>" \\\n  -H "Accept: application/json"`,
+  },
+  {
+    label: "JavaScript",
+    lang: "js",
+    code: `const response = await fetch(
+  "${requestUrl}",
+  { headers: {
+    Authorization: "ApiKey <your-key>"
+  }}
+);
+const principal = await response.json();`,
+  },
+  {
+    label: "Go",
+    lang: "go",
+    code: `req, err := http.NewRequest(
+  "GET", "${requestUrl}", nil,
+)
+if err != nil { log.Fatal(err) }
+req.Header.Set("Authorization", "ApiKey <your-key>")
+res, err := http.DefaultClient.Do(req)`,
+  },
+  {
+    label: "Python",
+    lang: "python",
+    code: `response = requests.get(
+    "${requestUrl}",
+    headers={
+        "Authorization": "ApiKey <your-key>"
+    },
+)
+print(response.json())`,
+  },
+];
+
+const sampleResponse = {
+  principal: "usr_8f1c2a9e",
+  tenant: "org_ace19f2c",
+  scopes: ["identity.read", "openid"],
+  authenticated: true,
+};
+const prettyResponse = `{
+${Object.entries(sampleResponse).map(([key, value]) => `  ${JSON.stringify(key)}: ${JSON.stringify(value)}`).join(",\n")}
 }`;
-
-const environments = ["production"];
-const scopes = ["identity.read", "notify.send", "webhooks.write"];
-const lifecycle = ["Discover", "Authenticate", "Run", "Observe"];
+const authOptions = ["API key", "Bearer token", "OAuth / OIDC", "SAML / SCIM"];
+const requestSteps = ["Discover", "Authenticate", "Run locally", "Inspect response"];
+const resources = [
+  { label: "SDKs", icon: "code", href: LINKS.sdks },
+  { label: "Guides", icon: "book", href: LINKS.quickstart },
+  { label: "Examples", icon: "terminal", href: endpointHref },
+  { label: "OpenAPI", icon: "package", href: featuredProduct.bundleUrl },
+] as const;
 ---
 
-<section class="soft-band relative overflow-hidden">
-  <!-- Structural grid, intentionally faint. -->
-  <div
-    class="pointer-events-none absolute inset-0 opacity-[0.28] dark:opacity-[0.16]"
-    style="background-image:linear-gradient(var(--rule) 1px, transparent 1px), linear-gradient(90deg, var(--rule) 1px, transparent 1px); background-size:56px 56px; -webkit-mask-image:radial-gradient(72% 56% at 50% 0%, #000, transparent 76%); mask-image:radial-gradient(72% 56% at 50% 0%, #000, transparent 76%)"
-    aria-hidden="true"
-  >
-  </div>
-  <div
-    class="pointer-events-none absolute left-1/2 top-20 h-80 w-176 -translate-x-1/2 rounded-full opacity-70 blur-3xl dark:opacity-30"
-    style="background:radial-gradient(closest-side, var(--brand-faint), transparent 72%)"
-    aria-hidden="true"
-  >
-  </div>
-
-  <div class="container container-wide relative grid min-h-[calc(100dvh-var(--header-h))] items-center gap-12 pb-16 pt-10 md:pb-20 lg:grid-cols-[0.94fr_1.06fr] lg:gap-16">
-    <!-- copy -->
-    <div class="min-w-0">
-      <span
-        class="eyebrow gap-2"
-        data-reveal
-      >
-        <span class="h-1.5 w-1.5 rounded-full bg-brand"></span>
-        Qeet Group · API Platform
+<section class="platform-hero" aria-labelledby="platform-hero-title">
+  <div class="hero-grid container">
+    <div class="hero-copy">
+      <span class="eyebrow hero-eyebrow" data-reveal>
+        <span class="hero-dot" aria-hidden="true"></span>
+        Qeet Group &middot; API Platform
       </span>
-      <h1 class="mt-6 max-w-[11ch] text-[clamp(3.2rem,7.6vw,6.4rem)] leading-[0.94] tracking-[-0.045em]" data-reveal style="transition-delay:60ms">
-        Every Qeet API, composed for shipping.
+      <h1 id="platform-hero-title" class="hero-title" data-reveal>
+        <span>One platform</span>
+        <span>for every</span>
+        <span>Qeet API.</span>
       </h1>
-      <p
-        class="mt-6 max-w-[48ch] text-[clamp(1.05rem,2.1vw,1.32rem)] leading-relaxed text-ink-muted"
-        data-reveal
-        style="transition-delay:120ms"
-      >
-        Discover, test, secure, and operate Qeet ID, Qeet Notify and Qeet Pay from one
-        OpenAPI-first workspace, with live references, generated code, and
-        production-ready auth flows.
+      <p class="hero-description" data-reveal>
+        The unified developer platform for current and future Qeet products.
+        Explore API references, guides, SDKs, search, and OpenAPI-first workflows
+        from one workspace.
       </p>
-      <div class="mt-8 flex flex-wrap gap-3" data-reveal style="transition-delay:180ms">
-        <a class="btn btn-primary btn-lg" href={LINKS.reference}>
-          Open reference
-          <span class="btn-island"><Icon name="arrow-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
+
+      <nav class="hero-products" aria-label="Explore Qeet product APIs" data-reveal>
+        {products.map((product) => (
+          <a class="hero-product-chip" href={product.href} title={`${product.name}: ${product.availability}`}>
+            <span class="hero-product-icon" data-product={product.id}>
+              {product.id === "qeet-id" ? (
+                <>
+                  <img src="/brand/logo-light.svg" alt="" width="24" height="24" class="block dark:hidden" />
+                  <img src="/brand/logo-dark.svg" alt="" width="24" height="24" class="hidden dark:block" />
+                </>
+              ) : <Icon name={product.icon} class="h-4 w-4" />}
+            </span>
+            {product.name}
+          </a>
+        ))}
+        <a class="hero-product-chip" href="/#products">
+          <span class="hero-product-icon"><Ellipsis size={19} aria-hidden="true" /></span>
+          More APIs
         </a>
-        <a class="btn btn-lg" href={LINKS.quickstart}>
-          View quickstart
-          <span class="btn-island"><Icon name="arrow-up-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
+      </nav>
+
+      <div class="hero-actions" data-reveal>
+        <a class="btn btn-primary hero-action" href={LINKS.reference}>
+          Open API Reference
+          <span class="btn-island"><Icon name="arrow-right" class="h-4 w-4" /></span>
+        </a>
+        <a class="btn hero-action" href={LINKS.quickstart}>
+          View Quickstart
+          <span class="btn-island"><Icon name="arrow-up-right" class="h-4 w-4" /></span>
         </a>
       </div>
-      <div class="mt-10" data-reveal style="transition-delay:240ms">
-        <StatRow class="max-w-140" />
-      </div>
+
+      <dl class="hero-stats">
+        <div><dt>API operations</dt><dd>{operationCount.toLocaleString("en-US")}</dd></div>
+        <div><dt>API areas</dt><dd>{areaCount}</dd></div>
+        <div><dt>Published specs</dt><dd>OpenAPI 3.1</dd></div>
+        <div><dt>Build. Test. Integrate.</dt><dd>Unified workspace</dd></div>
+      </dl>
     </div>
 
-    <!-- API system visual -->
-    <div class="relative mx-auto min-w-0 max-w-full lg:max-w-176" data-reveal style="transition-delay:150ms">
-      <div class="hero-depth-card hero-depth-card--left hidden lg:block" aria-hidden="true"></div>
-      <div class="hero-depth-card hero-depth-card--right hidden lg:block" aria-hidden="true"></div>
+    <div class="hero-stage" aria-label="Qeet API developer workspace preview" data-reveal>
+      <div class="hero-backplate" aria-hidden="true"></div>
+      <div class="hero-backplate hero-backplate-secondary" aria-hidden="true"></div>
+      <p class="hero-note hero-note-products" aria-hidden="true">
+        Multiple products.<br />One workspace.
+        <ArrowDownRight size={34} stroke-width={1} />
+      </p>
+      <p class="hero-note hero-note-build" aria-hidden="true">
+        <Sparkles size={24} stroke-width={1} />Build. Test. Integrate.
+      </p>
 
-      <div class="bezel relative">
-        <div class="bezel-core overflow-hidden">
-          <div class="flex flex-wrap items-center gap-2 border-b border-rule bg-surface-2/80 px-4 py-3 sm:px-5">
-            <span class="font-mono text-[0.72rem] text-ink-faint">api.qeet.in</span>
-            <span class="mx-1 hidden h-1 w-1 rounded-full bg-rule-strong sm:block"></span>
-            <div class="flex flex-wrap gap-1.5">
-              {
-                environments.map((env, i) => (
-                  <span
-                    class:list={[
-                      "rounded-full px-2.5 py-1 font-ui text-[0.7rem] font-semibold",
-                      i === 0 ? "bg-brand-soft text-brand-deep" : "bg-surface text-ink-subtle",
-                    ]}
-                  >
-                    {env}
-                  </span>
-                ))
-              }
-            </div>
-            <span class="ml-auto inline-flex items-center gap-1.5 rounded-full bg-surface px-2.5 py-1 font-mono text-[0.68rem] text-ink-subtle">
-              <span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span>
-              live console
-            </span>
-          </div>
-
-          <div class="grid min-w-0 gap-4 p-4 sm:p-5 lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-            <div class="grid min-w-0 gap-4">
-              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-3 shadow-(--shadow-bezel)">
-                <div class="flex min-w-0 items-center gap-2.5">
-                  <span class="method-chip text-m-get" style="background:color-mix(in oklab, var(--m-get) 14%, transparent)">GET</span>
-                  <code class="min-w-0 truncate font-mono text-[0.82rem] text-ink">/v1/auth/me</code>
-                  <span class="ml-auto rounded-full bg-ink px-3 py-1 font-ui text-[0.72rem] font-semibold text-bg">Send</span>
-                </div>
-                <pre class="m-0 mt-3 overflow-x-auto rounded-[1.1rem] bg-surface-2 px-3.5 py-3 font-mono text-[0.74rem] leading-relaxed text-ink" set:html={reqHtml}></pre>
-              </div>
-
-              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-3 shadow-(--shadow-bezel)">
-                <div class="mb-3 flex min-w-0 items-center gap-2 font-mono text-[0.72rem]">
-                  <span class="rounded-full px-2.5 py-1 font-semibold text-m-get" style="background:color-mix(in oklab, var(--m-get) 14%, transparent)">200 OK</span>
-                  <span class="text-ink-faint">application/json</span>
-                  <span class="ml-auto text-ink-faint">42ms</span>
-                </div>
-                <pre class="m-0 overflow-x-auto rounded-[1.1rem] bg-surface-2 px-3.5 py-3 font-mono text-[0.74rem] leading-relaxed text-ink-muted" set:html={resHtml}></pre>
-              </div>
-            </div>
-
-            <div class="grid min-w-0 gap-4">
-              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
-                <div class="mb-3 flex min-w-0 items-center justify-between gap-3">
-                  <span class="font-ui text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">Auth scope</span>
-                  <span class="rounded-full bg-brand-soft px-2.5 py-1 font-mono text-[0.68rem] font-semibold text-brand-deep">ApiKey</span>
-                </div>
-                <div class="grid gap-2">
-                  {
-                    scopes.map((scope, i) => (
-                      <div class="flex items-center gap-2 rounded-full bg-surface-2 px-3 py-2">
-                        <span class:list={["h-1.5 w-1.5 rounded-full", i === 0 ? "bg-brand" : "bg-ink-faint"]}></span>
-                        <span class="font-mono text-[0.72rem] text-ink-muted">{scope}</span>
-                      </div>
-                    ))
-                  }
-                </div>
-              </div>
-
-              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
-                <div class="mb-4 flex items-center justify-between">
-                  <span class="font-ui text-[0.78rem] font-semibold uppercase tracking-[0.16em] text-ink-faint">Request path</span>
-                  <span class="font-mono text-[0.68rem] text-success">healthy</span>
-                </div>
-                <div class="hero-lifecycle">
-                  {
-                    lifecycle.map((item, i) => (
-                      <div class="hero-lifecycle__step">
-                        <span class:list={["hero-lifecycle__dot", i === 2 ? "is-active" : ""]}></span>
-                        <span>{item}</span>
-                      </div>
-                    ))
-                  }
-                </div>
-              </div>
-
-              <div class="min-w-0 rounded-[1.45rem] border border-rule bg-surface p-4 shadow-(--shadow-bezel)">
-                <div class="flex items-center gap-3">
-                  <span class="grid h-9 w-9 place-items-center rounded-full bg-brand-soft font-mono text-[0.7rem] font-semibold text-brand-deep">sig</span>
-                  <div>
-                    <p class="m-0 font-ui text-[0.86rem] font-semibold text-ink">webhook.delivered</p>
-                    <p class="m-0 font-mono text-[0.68rem] text-ink-faint">hmac verified · retry 0</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="grid gap-px bg-rule px-4 pb-4 sm:px-5 sm:pb-5 md:grid-cols-3">
-            <div class="bg-surface px-4 py-3">
-              <p class="m-0 font-mono text-[0.7rem] text-ink-faint">schema</p>
-              <p class="m-0 font-ui text-[0.88rem] font-semibold text-ink">OpenAPI 3.1</p>
-            </div>
-            <div class="bg-surface px-4 py-3">
-              <p class="m-0 font-mono text-[0.7rem] text-ink-faint">audit</p>
-              <p class="m-0 font-ui text-[0.88rem] font-semibold text-ink">trace persisted</p>
-            </div>
-            <div class="bg-surface px-4 py-3">
-              <p class="m-0 font-mono text-[0.7rem] text-ink-faint">codegen</p>
-              <p class="m-0 font-ui text-[0.88rem] font-semibold text-ink">JS · Go · Python</p>
-            </div>
-          </div>
+      <nav class="workspace-switcher" aria-label="Workspace products">
+        <button class="workspace-search" type="button" data-search-trigger aria-label="Search APIs and guides" aria-haspopup="dialog">
+          <Search size={13} aria-hidden="true" />
+          <span>Search products...</span>
+        </button>
+        <p class="workspace-label">All products</p>
+        <div class="workspace-products">
+          {products.map((product) => (
+            <a
+              class:list={["workspace-product", { "is-featured": product.id === featuredProduct.id }]}
+              href={product.href}
+              title={`${product.name}: ${product.availability}`}
+            >
+              <span class="hero-product-icon" data-product={product.id}>
+                {product.id === "qeet-id" ? (
+                  <>
+                    <img src="/brand/logo-light.svg" alt="" width="26" height="26" class="block dark:hidden" />
+                    <img src="/brand/logo-dark.svg" alt="" width="26" height="26" class="hidden dark:block" />
+                  </>
+                ) : <Icon name={product.icon} class="h-5 w-5" />}
+              </span>
+              <span class="workspace-product-text">
+                <strong>{product.name}</strong>
+                <small>{product.availability === "API reference" ? product.kind : product.availability}</small>
+              </span>
+            </a>
+          ))}
+          <a class="workspace-product" href={LINKS.sdks}>
+            <span class="hero-product-icon hero-product-icon-tools"><Icon name="terminal" class="h-5 w-5" /></span>
+            <span class="workspace-product-text"><strong>SDKs &amp; Clients</strong><small>Developer tools</small></span>
+          </a>
+          <a class="workspace-product" href="/#products">
+            <span class="hero-product-icon"><Ellipsis size={23} aria-hidden="true" /></span>
+            <span class="workspace-product-text"><strong>More APIs</strong><small>Growing ecosystem</small></span>
+          </a>
         </div>
+      </nav>
+
+      <div class="workspace-topbar">
+        <span class="workspace-domain">api.qeet.in</span>
+        <LockKeyhole size={11} aria-hidden="true" />
+        <span class="workspace-local">{localEnvironment.name.toLowerCase()}</span>
+        <a class="workspace-schema" href={featuredProduct.bundleUrl} title="Download the Qeet ID OpenAPI specification" download>
+          <span class="hero-dot" aria-hidden="true"></span>
+          OpenAPI 3.1
+          <Icon name="chevron-down" class="h-3 w-3" />
+        </a>
       </div>
 
-      <div class="hero-float hero-float--top hidden sm:block" aria-hidden="true">
-        <span class="live-dot h-1.5 w-1.5 rounded-full bg-success"></span>
-        <span class="font-ui text-[0.72rem] font-medium text-ink-muted">Qeet Notify event signed</span>
+      <div class="workspace-window">
+        <div class="workspace-main">
+          <section class="workspace-request" aria-label="Example local API request">
+            <div class="workspace-request-bar">
+              <span class="workspace-method">GET</span>
+              <code>{endpoint}</code>
+              <a class="workspace-send" href={endpointHref} title="Open this request in API Reference" aria-label="Open this request in API Reference">Send</a>
+            </div>
+            <div class="hero-request-code"><CodeTabs id="hero-request" tabs={requestTabs} /></div>
+          </section>
+
+          <section class="workspace-response" aria-label="Example API response">
+            <div class="workspace-response-bar">
+              <span class="workspace-method">200 OK</span>
+              <span class="workspace-response-example">Example</span>
+              <span class="workspace-content-type">application/json</span>
+              <label class="workspace-format">
+                <span class="sr-only">Response format</span>
+                <select data-hero-response-format>
+                  <option value="pretty">Pretty</option>
+                  <option value="raw">Raw</option>
+                </select>
+                <Icon name="chevron-down" class="h-3 w-3" />
+              </label>
+            </div>
+            <div class="workspace-response-code" data-hero-response="pretty" tabindex="0" aria-label="Formatted example JSON response">
+              <Code code={prettyResponse} lang="json" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
+            </div>
+            <div class="workspace-response-code" data-hero-response="raw" tabindex="0" aria-label="Raw example JSON response" hidden>
+              <Code code={JSON.stringify(sampleResponse)} lang="json" themes={{ light: "github-light", dark: "github-dark" }} defaultColor={false} />
+            </div>
+          </section>
+        </div>
+
+        <aside class="workspace-context" aria-label="Request context">
+          <div class="workspace-auth">
+            <div class="workspace-panel-heading">
+              <span class="workspace-label">Authentication</span>
+              <a href={LINKS.authentication} class="workspace-local">ApiKey</a>
+            </div>
+            <ul class="workspace-auth-options">
+              {authOptions.map((option, index) => (
+                <li class:list={{ "is-selected": index === 0 }}><span class="hero-dot" aria-hidden="true"></span>{option}</li>
+              ))}
+            </ul>
+          </div>
+
+          <div class="workspace-environment">
+            <p class="workspace-label">Environment</p>
+            <a href={LINKS.quickstart} class="workspace-environment-value" title={localEnvironment.url}>
+              <span class="hero-dot" aria-hidden="true"></span>
+              {localEnvironment.name.toLowerCase()}
+              <span class="workspace-loopback">localhost</span>
+            </a>
+          </div>
+
+          <div class="workspace-workflow">
+            <p class="workspace-panel-heading"><span class="workspace-label">Request path</span><span class="workspace-workflow-state">local</span></p>
+            <ol>
+              {requestSteps.map((step, index) => <li class:list={{ "is-selected": index === 1 }}><span aria-hidden="true"></span>{step}</li>)}
+            </ol>
+          </div>
+
+          <a class="workspace-webhook" href={LINKS.reference}>
+            <span class="workspace-webhook-icon"><Icon name="webhook" class="h-5 w-5" /></span>
+            <span><strong>Signed webhooks</strong><small>HMAC signatures</small></span>
+            <ChevronRight class="h-3 w-3" aria-hidden="true" />
+          </a>
+        </aside>
       </div>
-      <div class="hero-float hero-float--bottom hidden md:block" aria-hidden="true">
-        <span class="font-mono text-[0.68rem] text-ink-faint">api.id.qeet.in</span>
-        <span class="h-1 w-1 rounded-full bg-rule-strong"></span>
-        <span class="font-mono text-[0.68rem] text-success">p95 42ms</span>
-      </div>
+
+      <nav class="workspace-dock" aria-label="Developer workspace resources">
+        {resources.map((resource) => (
+          <a href={resource.href} download={resource.label === "OpenAPI" ? true : undefined}>
+            <Icon name={resource.icon} class="h-4.5 w-4.5" />
+            {resource.label}
+          </a>
+        ))}
+      </nav>
+      <p class="hero-note hero-note-integration" aria-hidden="true">
+        <ArrowUpLeft size={32} stroke-width={1} />
+        From idea<br />to integration.
+      </p>
     </div>
   </div>
 </section>
 
-<style>
-  .hero-depth-card {
-    position: absolute;
-    border: 1px solid var(--rule);
-    background: var(--surface);
-    border-radius: 2rem;
-    box-shadow: var(--shadow-lg);
-    opacity: 0.62;
-  }
-  .hero-depth-card--left {
-    inset: 10% auto auto -4%;
-    width: 36%;
-    height: 42%;
-    transform: rotate(-3deg);
-  }
-  .hero-depth-card--right {
-    inset: auto -5% 7% auto;
-    width: 34%;
-    height: 38%;
-    transform: rotate(2.5deg);
-  }
-  .hero-float {
-    position: absolute;
-    z-index: 1;
-    display: flex;
-    align-items: center;
-    gap: 0.55rem;
-    border: 1px solid var(--rule);
-    border-radius: 999px;
-    background: color-mix(in oklab, var(--surface) 88%, transparent);
-    padding: 0.52rem 0.78rem;
-    box-shadow: var(--shadow-bezel), var(--shadow-md);
-  }
-  .hero-float--top {
-    right: -0.75rem;
-    top: 1rem;
-  }
-  .hero-float--bottom {
-    bottom: -0.7rem;
-    left: 2rem;
-  }
-  .hero-lifecycle {
-    display: grid;
-    gap: 0.55rem;
-  }
-  .hero-lifecycle__step {
-    display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    font-family: var(--font-ui);
-    font-size: 0.82rem;
-    color: var(--ink-muted);
-  }
-  .hero-lifecycle__dot {
-    width: 0.52rem;
-    height: 0.52rem;
-    border-radius: 999px;
-    background: var(--rule-strong);
-    box-shadow: 0 0 0 4px var(--surface-2);
-  }
-  .hero-lifecycle__dot.is-active {
-    background: var(--brand);
-    box-shadow: 0 0 0 4px var(--brand-soft);
-  }
-
-  @media (max-width: 767px) {
-    .hero-float {
-      display: none;
+<script>
+  document.querySelector<HTMLSelectElement>("[data-hero-response-format]")?.addEventListener("change", (event) => {
+    const format = (event.currentTarget as HTMLSelectElement).value;
+    for (const panel of document.querySelectorAll<HTMLElement>("[data-hero-response]")) {
+      panel.hidden = panel.dataset.heroResponse !== format;
     }
+  });
+</script>
+
+<style>
+  .platform-hero {
+    --hero-rule: color-mix(in oklab, var(--ink) 7%, var(--surface));
+    --hero-muted: color-mix(in oklab, var(--ink) 60%, var(--surface));
+    --hero-wash: color-mix(in oklab, var(--ink) 2.5%, var(--surface));
+    --hero-blue: #0879ef;
+    --hero-green: #009e52;
+    --hero-violet: #813ee5;
+    position: relative;
+    isolation: isolate;
+    overflow: clip;
+    letter-spacing: 0;
+  }
+  .platform-hero::before {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    content: "";
+    background-image: linear-gradient(var(--hero-rule) 1px, transparent 1px), linear-gradient(90deg, var(--hero-rule) 1px, transparent 1px);
+    background-size: 50px 50px;
+    mask-image: linear-gradient(#0006, transparent 82%);
+    pointer-events: none;
+  }
+  .hero-grid {
+    display: grid;
+    gap: 3.5rem;
+    max-width: 76.75rem;
+    padding-top: 2.5rem;
+    padding-bottom: 2.5rem;
+  }
+  .hero-copy { min-width: 0; }
+  .hero-eyebrow { gap: 0.5rem; letter-spacing: 0; }
+  .hero-dot { display: inline-block; width: 0.4375rem; height: 0.4375rem; flex-shrink: 0; border-radius: 50%; background: var(--brand); }
+  .hero-title { margin: 1.25rem 0 0; font-size: 2.5rem; font-weight: 600; line-height: 0.96; letter-spacing: 0; }
+  .hero-title span { display: block; }
+  .hero-description { max-width: 30rem; margin: 1.4rem 0 0; font-size: 1.0625rem; line-height: 1.55; color: var(--ink-muted); text-wrap: pretty; }
+  .hero-products { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; margin-top: 1.375rem; }
+  .hero-product-chip { display: inline-flex; min-height: 2.5rem; align-items: center; gap: 0.3125rem; border: 1px solid var(--hero-rule); border-radius: 999px; padding: 0.3125rem 0.375rem 0.3125rem 0.25rem; background: var(--surface); font-family: var(--font-ui); font-size: 0.6875rem; font-weight: 500; color: var(--ink); box-shadow: 0 3px 8px -5px var(--rule-strong); transition: transform var(--dur) var(--ease), border-color var(--dur) var(--ease); }
+  .hero-product-chip:hover { transform: translateY(-2px); border-color: var(--brand); color: var(--ink); }
+  .hero-product-icon { display: grid; width: 1.625rem; height: 1.625rem; flex-shrink: 0; place-items: center; border-radius: 0.5rem; background: var(--hero-wash); color: var(--ink-muted); }
+  .hero-product-icon[data-product="qeet-id"] { background: var(--brand-faint); }
+  .hero-product-icon[data-product="qeet-notify"] { background: color-mix(in oklab, var(--hero-blue) 9%, var(--surface)); color: var(--hero-blue); }
+  .hero-product-icon[data-product="qeet-pay"] { background: color-mix(in oklab, var(--hero-green) 10%, var(--surface)); color: var(--hero-green); }
+  .hero-product-icon[data-product="qeet-logs"] { background: color-mix(in oklab, var(--hero-violet) 10%, var(--surface)); color: var(--hero-violet); }
+  .hero-actions { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.125rem; }
+  .hero-action { min-height: 3rem; padding: 0.5rem 0.5rem 0.5rem 1.25rem; font-size: 0.8125rem; }
+  .hero-action:not(.btn-primary) { border-color: var(--hero-rule); }
+  .hero-action .btn-island { width: 1.875rem; height: 1.875rem; }
+  .hero-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1.25rem 0; margin: 2.5rem 0 0; }
+  .hero-stats > div { display: flex; min-width: 0; flex-direction: column-reverse; justify-content: flex-end; gap: 0.25rem; padding-inline: 1rem; border-left: 1px solid var(--hero-rule); }
+  .hero-stats > div:first-child { padding-left: 0; border: 0; }
+  .hero-stats dt { font-size: 0.75rem; line-height: 1.4; color: var(--hero-muted); }
+  .hero-stats dd { display: flex; min-height: 2.25rem; align-items: center; margin: 0; font-family: var(--font-display); font-size: 1.1875rem; font-weight: 500; line-height: 1.2; white-space: nowrap; }
+  .hero-stats > div:nth-child(-n + 2) dd { font-size: 1.8125rem; font-variant-numeric: tabular-nums; }
+  .hero-stage { position: relative; isolation: isolate; min-width: 0; width: 100%; max-width: 43rem; margin-inline: auto; font-family: var(--font-ui); }
+  .hero-backplate { position: absolute; z-index: -1; top: 7rem; left: -3.5rem; width: 30rem; height: 23rem; border-radius: 2rem; background: color-mix(in oklab, var(--brand) 19%, var(--bg)); transform: rotate(-20deg); transform-origin: top left; pointer-events: none; }
+  .hero-backplate-secondary { top: 4rem; left: auto; right: -0.625rem; width: 22rem; height: 15rem; transform: rotate(-16deg); transform-origin: center; }
+  .hero-note { display: none; position: absolute; margin: 0; font-family: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive; font-size: 1rem; font-weight: 400; line-height: 1.05; color: var(--hero-muted); pointer-events: none; }
+  .hero-note-products { top: -3.25rem; left: -2rem; transform: rotate(-12deg); }
+  .hero-note-products :global(svg) { display: block; margin: 0.375rem 0 0 2.5rem; transform: rotate(24deg); }
+  .hero-note-build { top: -2.75rem; right: -1.5rem; display: none; align-items: center; gap: 0.375rem; transform: rotate(-9deg); }
+  .hero-note-build :global(svg) { color: var(--brand); }
+  .hero-note-integration { right: -1.25rem; bottom: -2.5rem; transform: rotate(-11deg); }
+  .hero-note-integration :global(svg) { display: block; margin-bottom: 0.125rem; }
+  .workspace-switcher { position: relative; margin: 0 0 0.75rem; padding: 0.5rem; border: 1px solid var(--hero-rule); border-radius: 1rem; background: var(--surface); box-shadow: var(--shadow-lg), inset 0 1px 0 var(--surface); }
+  .workspace-search { display: flex; width: 100%; min-height: 2.5rem; align-items: center; gap: 0.375rem; padding: 0.5rem; border: 1px solid var(--hero-rule); border-radius: 0.625rem; background: var(--surface); font-size: 0.6875rem; color: var(--hero-muted); cursor: pointer; text-align: left; }
+  .workspace-label { margin: 0; font-size: 0.5625rem; font-weight: 600; line-height: 1.4; text-transform: uppercase; color: var(--hero-muted); }
+  .workspace-switcher > .workspace-label { margin: 1rem 0 0.5rem 0.25rem; }
+  .workspace-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.125rem; }
+  .workspace-product { display: flex; min-width: 0; min-height: 3.0625rem; align-items: center; gap: 0.5rem; padding: 0.4375rem; border-radius: 0.625rem; color: var(--ink); transition: background var(--dur) var(--ease); }
+  .workspace-product:hover { background: var(--hero-wash); color: var(--ink); }
+  .workspace-product.is-featured { background: color-mix(in oklab, var(--brand) 5%, var(--surface)); }
+  .workspace-product .hero-product-icon { width: 2rem; height: 2rem; }
+  .workspace-product-text { min-width: 0; }
+  .workspace-product strong { display: block; font-size: 0.625rem; font-weight: 600; line-height: 1.5; }
+  .workspace-product small { display: block; font-size: 0.5625rem; line-height: 1.6; color: var(--hero-muted); }
+  .workspace-product :global(.shrink-0) { margin-left: auto; color: var(--ink-subtle); }
+  .hero-product-icon-tools { background: var(--ink); color: var(--bg); }
+  .workspace-topbar { position: relative; z-index: var(--z-raised); display: flex; min-height: 2.5rem; align-items: center; gap: 0.6875rem; padding: 0.375rem 0.75rem; border: 1px solid var(--hero-rule); border-radius: 0.875rem 0.875rem 0 0; background: var(--hero-wash); color: var(--hero-muted); box-shadow: 0 -5px 0 1px color-mix(in oklab, var(--surface) 70%, transparent); }
+  .workspace-domain { font-family: var(--font-mono); font-size: 0.625rem; }
+  .workspace-local { display: inline-flex; align-items: center; border-radius: 999px; padding: 0.1875rem 0.5rem; background: var(--brand-faint); font-size: 0.625rem; color: var(--brand-deep); }
+  .workspace-schema { display: inline-flex; align-items: center; gap: 0.375rem; margin-left: auto; padding: 0.3125rem 0.5rem; border: 1px solid var(--hero-rule); border-radius: 999px; background: var(--surface); font-size: 0.5625rem; font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .workspace-schema .hero-dot { background: var(--hero-green); }
+  .workspace-window { position: relative; z-index: var(--z-raised); display: grid; gap: 0.75rem; padding: 0.75rem; border: 1px solid var(--hero-rule); border-top: 0; border-radius: 0 0 0.875rem 0.875rem; background: var(--surface); box-shadow: 0 24px 55px -30px color-mix(in oklab, var(--ink) 24%, transparent), 0 0 0 5px color-mix(in oklab, var(--surface) 65%, transparent); }
+  .workspace-main { display: grid; min-width: 0; gap: 0.75rem; grid-template-rows: 11.25rem 13.625rem; }
+  .workspace-request, .workspace-response, .workspace-auth, .workspace-environment, .workspace-workflow, .workspace-webhook { min-width: 0; border: 1px solid var(--hero-rule); border-radius: 0.75rem; padding: 0.625rem; background: var(--surface); }
+  .workspace-request-bar { display: flex; align-items: center; gap: 0.625rem; min-height: 2rem; padding-bottom: 0.4375rem; border-bottom: 1px solid var(--hero-rule); }
+  .workspace-method { display: inline-flex; flex-shrink: 0; align-items: center; justify-content: center; padding: 0.3125rem 0.625rem; border-radius: 0.5rem; background: color-mix(in oklab, var(--hero-green) 10%, var(--surface)); font-family: var(--font-mono); font-size: 0.625rem; font-weight: 600; line-height: 1.4; color: var(--hero-green); }
+  .workspace-request-bar > code { min-width: 0; font-size: 0.6875rem; font-weight: 500; color: var(--ink); }
+  .workspace-send { display: grid; min-width: 3.625rem; min-height: 1.875rem; place-items: center; margin-left: auto; border: 1px solid color-mix(in oklab, var(--ink) 75%, var(--surface)); border-radius: 0.4375rem; background: var(--ink); font-size: 0.6875rem; color: var(--bg); box-shadow: inset 0 1px 2px color-mix(in oklab, var(--surface) 30%, transparent); transition: transform var(--dur) var(--ease); }
+  .workspace-send:hover { color: var(--bg); transform: translateY(-1px); }
+  .hero-request-code { min-width: 0; }
+  .hero-request-code :global(.codetabs), .hero-request-code :global(.bezel-core) { padding: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
+  .hero-request-code :global(.codetabs__bar) { position: relative; gap: 0.25rem; padding: 0; overflow: visible; background: transparent; border: 0; }
+  .hero-request-code :global(.codetabs__tab) { min-height: 2rem; flex: 1; padding: 0.4375rem 0.1875rem; border-bottom: 2px solid transparent; border-radius: 0; font-size: 0.5625rem; font-weight: 400; color: var(--hero-muted); }
+  .hero-request-code :global(.codetabs__tab[aria-selected="true"]) { border-bottom-color: var(--brand); background: transparent; color: var(--ink); font-weight: 600; }
+  .hero-request-code :global(.codetabs__copy) { position: absolute; top: 2.25rem; right: 0.125rem; z-index: var(--z-raised); width: 1.5rem; height: 1.5rem; border-radius: 0.375rem; background: var(--hero-wash); }
+  .hero-request-code :global(.codetabs__copy svg) { width: 0.6875rem; height: 0.6875rem; }
+  .hero-request-code :global(.codetabs__panel) { height: 6.0625rem; overflow: auto; border-radius: 0.5rem; background: var(--hero-wash); }
+  .hero-request-code :global(.codetabs__panel pre) { min-height: 100%; padding: 0.8125rem 1.5rem 0.625rem 0.625rem; background: transparent !important; font-size: 0.625rem; line-height: 1.8; }
+  .hero-request-code :global(.codetabs__panel code) { white-space: pre; }
+  .workspace-response-bar { display: flex; align-items: center; gap: 0.5rem; min-height: 1.875rem; margin-bottom: 0.5625rem; color: var(--hero-muted); font-size: 0.5625rem; }
+  .workspace-response-example { font-size: 0.5625rem; }
+  .workspace-content-type { font-size: 0.5rem; }
+  .workspace-format { display: flex; position: relative; min-width: 3.6875rem; align-items: center; margin-left: auto; }
+  .workspace-format select { width: 100%; min-height: 1.6875rem; appearance: none; padding: 0.1875rem 1.125rem 0.1875rem 0.5rem; border: 1px solid var(--hero-rule); border-radius: 0.5rem; background: var(--surface); font-size: 0.5625rem; color: var(--ink); cursor: pointer; }
+  .workspace-format :global(svg) { position: absolute; right: 0.3125rem; pointer-events: none; }
+  .workspace-response-code { height: 9.625rem; overflow: auto; border-radius: 0.5rem; background: var(--hero-wash); }
+  .workspace-response-code :global(pre) { margin: 0; padding: 0.625rem 0.625rem 0.625rem 2rem; background: transparent !important; font-size: 0.625rem; line-height: 1.8; counter-reset: response-line; }
+  .workspace-response-code :global(.line) { position: relative; }
+  .workspace-response-code :global(.line)::before { position: absolute; right: calc(100% + 0.625rem); color: var(--hero-muted); counter-increment: response-line; content: counter(response-line); }
+  .workspace-response-code[data-hero-response="raw"] :global(pre) { padding-left: 0.625rem; }
+  .workspace-response-code[data-hero-response="raw"] :global(.line)::before { content: none; }
+  .workspace-context { display: grid; min-width: 0; gap: 0.5625rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .workspace-panel-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0.25rem; margin: 0; }
+  .workspace-auth-options { display: grid; gap: 0.3125rem; margin: 0.5rem 0 0; padding: 0; list-style: none; }
+  .workspace-auth-options li { display: flex; align-items: center; gap: 0.5rem; padding: 0.25rem 0.4375rem; border-radius: 999px; background: var(--hero-wash); font-family: var(--font-mono); font-size: 0.5625rem; line-height: 1.3; }
+  .workspace-auth-options .hero-dot { background: var(--rule-strong); }
+  .workspace-auth-options .is-selected .hero-dot { background: var(--brand); }
+  .workspace-environment-value { display: flex; align-items: center; gap: 0.375rem; margin-top: 0.4375rem; padding: 0.375rem; border: 1px solid var(--hero-rule); border-radius: 0.4375rem; font-size: 0.6875rem; color: var(--ink); }
+  .workspace-environment-value .hero-dot { background: var(--hero-green); }
+  .workspace-loopback { margin-left: auto; font-family: var(--font-mono); font-size: 0.5rem; color: var(--hero-muted); }
+  .workspace-workflow-state { font-family: var(--font-mono); font-size: 0.5625rem; color: var(--hero-green); }
+  .workspace-workflow ol { display: grid; gap: 0.375rem; margin: 0.625rem 0 0; padding: 0; list-style: none; }
+  .workspace-workflow li { display: flex; align-items: center; gap: 0.625rem; font-size: 0.625rem; line-height: 1.4; color: var(--ink-muted); }
+  .workspace-workflow li > span { width: 0.375rem; height: 0.375rem; border-radius: 50%; background: var(--rule-strong); box-shadow: 0 0 0 3px var(--hero-wash); }
+  .workspace-workflow .is-selected > span { background: var(--brand); box-shadow: 0 0 0 3px var(--brand-faint); }
+  .workspace-webhook { display: flex; align-items: center; gap: 0.5rem; color: var(--ink); }
+  .workspace-webhook-icon { display: grid; width: 2rem; height: 2rem; flex-shrink: 0; place-items: center; border-radius: 50%; background: var(--brand-faint); color: var(--brand); }
+  .workspace-webhook strong { display: block; font-size: 0.5625rem; font-weight: 600; }
+  .workspace-webhook small { display: block; margin-top: 0.125rem; font-family: var(--font-mono); font-size: 0.5rem; color: var(--hero-muted); }
+  .workspace-webhook > :global(svg) { margin-left: auto; color: var(--hero-muted); }
+  .workspace-dock { position: relative; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.375rem; margin: 0 0.75rem; padding: 0.5rem; border: 1px solid var(--hero-rule); border-top: 0; border-radius: 0 0 1rem 1rem; background: var(--surface); box-shadow: 0 15px 35px -22px color-mix(in oklab, var(--ink) 25%, transparent); }
+  .workspace-dock a { display: flex; min-height: 1.5rem; align-items: center; justify-content: center; gap: 0.4375rem; font-size: 0.625rem; color: var(--ink-muted); transition: color var(--dur) var(--ease); }
+  .workspace-dock a:hover { color: var(--brand); }
+
+  :global([data-theme="dark"]) .platform-hero { --hero-blue: #65b1ff; --hero-green: #57c88c; --hero-violet: #bb97ff; }
+  :global([data-theme="dark"]) .hero-backplate { background: color-mix(in oklab, var(--brand) 12%, var(--bg)); }
+
+  @media (min-width: 375px) {
+    .hero-title { font-size: 3rem; }
+  }
+  @media (min-width: 640px) {
+    .hero-title { font-size: 4.5rem; }
+    .hero-stats { width: 35.75rem; grid-template-columns: 6.5rem 6.25rem 10.25rem 1fr; }
+    .hero-stats > div:last-child dd { font-size: 1.0625rem; }
+    .hero-stage { margin-top: 1.25rem; }
+    .workspace-switcher { position: absolute; top: 2.125rem; left: 0; width: 9.375rem; min-height: 25.5rem; padding: 0.5625rem; }
+    .workspace-search { font-size: 0.5625rem; }
+    .workspace-products { grid-template-columns: minmax(0, 1fr); }
+    .workspace-topbar { margin-left: 7.375rem; }
+    .workspace-window { margin-left: 8.875rem; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); }
+    .workspace-context { grid-template-columns: minmax(0, 1fr); grid-template-rows: 9.25rem 4rem 8.125rem 3.5rem; }
+    .workspace-dock { margin-left: 10.5rem; margin-right: 5rem; }
+  }
+  @media (min-width: 640px) and (max-width: 767px) {
+    .hero-stage { max-width: 38rem; }
+    .workspace-window { grid-template-columns: minmax(0, 1fr); }
+    .workspace-context { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: auto auto; }
+    .workspace-dock { margin-right: 1rem; }
+  }
+  @media (min-width: 1200px) {
+    .hero-grid { grid-template-columns: minmax(0, 0.43fr) minmax(0, 0.57fr); gap: 1rem; padding-top: 3.5rem; padding-bottom: 1.5rem; }
+    .hero-title { font-size: 4.5rem; line-height: 1.02; }
+    .hero-stage { width: calc(100% + 1.5rem); max-width: none; margin-top: 1.1875rem; align-self: start; }
+    .hero-note { display: block; }
+    .hero-note-build { display: flex; }
+    .hero-products { margin-top: 1.125rem; }
+    .hero-stats { margin-top: 2.75rem; }
+    .hero-description { font-size: 1rem; }
+    .hero-copy > [data-reveal]:nth-child(2) { transition-delay: 60ms; }
+    .hero-copy > [data-reveal]:nth-child(3) { transition-delay: 120ms; }
+    .hero-copy > [data-reveal]:nth-child(4) { transition-delay: 180ms; }
+    .hero-copy > [data-reveal]:nth-child(5) { transition-delay: 220ms; }
+    .hero-stage[data-reveal] { transition-delay: 150ms; }
+  }
+  @media (min-width: 1280px) {
+    .hero-title { font-size: 4.625rem; }
+  }
+  @media (min-width: 1200px) and (max-width: 1279px) {
+    .hero-product-chip { font-size: 0.625rem; }
+  }
+  @media (max-width: 639px) {
+    .hero-grid { padding-top: 1.5rem; padding-bottom: 2rem; gap: 2.5rem; }
+    .hero-backplate { inset: 1rem -0.5rem; width: auto; height: auto; transform: rotate(-3deg); transform-origin: center; border-radius: 1rem; }
+    .hero-backplate-secondary { display: none; }
+    .hero-product-chip { min-height: 2.75rem; }
+    .hero-stats > div:nth-child(3) { padding-left: 0; border-left: 0; }
+    .hero-stats dd { white-space: normal; }
+    .hero-stats > div:last-child dd { font-size: 1.0625rem; }
+    .workspace-request-bar { min-height: 2.75rem; }
+    .workspace-send { min-height: 2.75rem; }
+    .workspace-main { grid-template-rows: 13rem 14rem; }
+    .hero-request-code :global(.codetabs__tab) { min-height: 2.75rem; font-size: 0.6875rem; }
+    .hero-request-code :global(.codetabs__copy) { top: 2.875rem; width: 2.75rem; height: 2.75rem; }
+    .hero-request-code :global(.codetabs__panel pre) { padding-right: 3rem; }
+    .hero-request-code :global(.codetabs__panel pre), .workspace-response-code :global(pre) { font-size: 0.625rem; }
+    .workspace-format select { min-height: 2.75rem; }
+    .workspace-environment-value, .workspace-dock a { min-height: 2.75rem; }
+    .workspace-dock a { flex-direction: column; gap: 0.25rem; }
+    .workspace-topbar { gap: 0.4375rem; }
+    .workspace-topbar > :global(svg) { display: none; }
+    .workspace-content-type { display: none; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hero-copy > [data-reveal], .hero-stage[data-reveal] { transition-delay: 0ms; }
+    .hero-product-chip:hover, .workspace-send:hover { transform: none; }
   }
 </style>

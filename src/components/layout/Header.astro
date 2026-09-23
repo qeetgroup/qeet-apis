@@ -18,13 +18,13 @@ const docsLinks = [
   { href: LINKS.postman, label: "Postman Collection", desc: "Import and run in Postman" },
   { href: LINKS.docs, label: "Product Docs", desc: "Guides for each Qeet product", external: true },
 ];
-const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
+const logo = "h-[1.65rem] w-[1.65rem] rounded-[7px]";
 ---
 
 <header
   class="site-header sticky top-0 z-header px-3 pb-3 pt-4"
 >
-  <div class="nav-shell mx-auto flex items-center gap-3 rounded-full border border-rule bg-surface/88 px-3 py-2 shadow-(--shadow-md) backdrop-blur-xl backdrop-saturate-150">
+  <div class="nav-shell mx-auto flex items-center gap-2 rounded-full border border-rule bg-surface/88 px-3 py-1 shadow-(--shadow-md) backdrop-blur-xl backdrop-saturate-150">
     <!-- Logo -->
     <a
       href="/"
@@ -137,16 +137,19 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
 
     <!-- Right side actions -->
     <div class="ml-auto flex items-center gap-2">
-      <a
-        class="hidden px-3 py-1.5 font-ui text-[0.88rem] font-medium text-ink-muted transition-colors duration-500 ease-(--ease-spring) hover:text-ink sm:block"
-        href={LINKS.console}
-        target="_blank"
-        rel="noopener"
+      <button
+        class="header-search"
+        type="button"
+        data-search-trigger
+        aria-label="Search documentation"
+        aria-haspopup="dialog"
       >
-        Sign In
-      </a>
-      <a class="btn btn-primary hidden py-2 pl-4 pr-2 text-[0.88rem] sm:flex" href={LINKS.quickstart}>
-        Get Started
+        <Icon name="search" class="h-3.5 w-3.5" />
+        <span>Search</span>
+        <kbd aria-hidden="true"><Icon name="command" class="h-2.5 w-2.5" />K</kbd>
+      </button>
+      <a class="btn btn-primary header-reference hidden sm:flex" href={LINKS.reference}>
+        Open API Reference
         <span class="btn-island h-7 w-7"><Icon name="arrow-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
       </a>
       <a
@@ -210,9 +213,9 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
       <a href="/#pricing" class="mobile-nav-link mobile-overlay__item" style="--i:11">Pricing</a>
       <a href="/#enterprise" class="mobile-nav-link mobile-overlay__item" style="--i:12">Enterprise</a>
       <div class="mobile-overlay__item mt-3 grid gap-2 border-t border-rule pt-3 sm:grid-cols-2" style="--i:13">
-        <a class="btn justify-center" href={LINKS.console} target="_blank" rel="noopener">Sign In</a>
-        <a class="btn btn-primary justify-center pl-5 pr-2" href={LINKS.quickstart}>
-          Get Started
+        <a class="btn justify-center" href={LINKS.quickstart}>View Quickstart</a>
+        <a class="btn btn-primary justify-center pl-5 pr-2" href={LINKS.reference}>
+          Open API Reference
           <span class="btn-island"><Icon name="arrow-right" class="h-3.5 w-3.5 stroke-[1.6]" /></span>
         </a>
       </div>
@@ -224,13 +227,44 @@ const logo = "h-[1.85rem] w-[1.85rem] rounded-[7px]";
 
 <style>
   .site-header {
-    --nav-w: min(80rem, calc(100vw - 1.5rem));
+    --nav-w: min(73.75rem, calc(100vw - 1.5rem));
+    padding-top: 1.125rem;
+    padding-bottom: 0.875rem;
   }
   .nav-shell {
     position: relative;
     z-index: var(--z-header);
     width: var(--nav-w);
     box-shadow: var(--shadow-bezel), 0 18px 54px -38px color-mix(in oklab, var(--ink) 38%, transparent);
+  }
+  .header-search {
+    display: flex;
+    width: 2.25rem;
+    min-height: 2.25rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    border: 1px solid var(--rule);
+    border-radius: 999px;
+    background: var(--surface);
+    font-family: var(--font-ui);
+    font-size: 0.6875rem;
+    color: var(--ink-muted);
+    cursor: pointer;
+    transition: border-color var(--dur) var(--ease);
+  }
+  .header-search:hover { border-color: var(--rule-strong); }
+  .header-search > span, .header-search kbd { display: none; }
+  .header-reference { min-height: 2.375rem; padding: 0.25rem 0.3125rem 0.25rem 1rem; font-size: 0.75rem; }
+  .header-reference .btn-island { width: 1.75rem; height: 1.75rem; }
+  .nav-link { font-size: 0.8125rem; letter-spacing: 0; }
+  @media (min-width: 1280px) {
+    .header-search { width: 7.5rem; padding-inline: 0.75rem; }
+    .header-search > span { display: inline; }
+    .header-search kbd { display: inline-flex; align-items: center; gap: 0.125rem; margin-left: auto; border-radius: 0.25rem; padding: 0.1875rem; background: var(--surface-2); font-size: 0.5625rem; color: var(--ink-subtle); }
+  }
+  @media (max-width: 639px) {
+    .header-search { width: 2.75rem; min-height: 2.75rem; }
   }
   /* Desktop nav: brand underline wipe on hover/active */
   @media (min-width: 1024px) {
