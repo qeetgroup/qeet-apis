@@ -22,7 +22,7 @@ import { execFileSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 
 const BASE = process.argv[2] ?? "http://localhost:3005";
-const SESSION = "qeet-smoke";
+const SESSION = `qeet-smoke-${process.pid}`;
 const HOMEPAGE_ONLY = process.argv.includes("--homepage-only");
 
 const ab = (...args) =>

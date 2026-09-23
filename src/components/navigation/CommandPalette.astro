@@ -267,6 +267,12 @@ import Icon from "../shared/Icon.astro";
       trigger.addEventListener("click", () => void open());
     }
     dialog.querySelector("[data-palette-close]")?.addEventListener("click", () => dialog.close());
+    dialog.addEventListener("keydown", (event) => {
+      if (event.key !== "Escape") return;
+      event.preventDefault();
+      event.stopPropagation();
+      dialog.close();
+    });
 
     input.addEventListener("input", () => render(input.value));
     input.addEventListener("keydown", (e) => {
