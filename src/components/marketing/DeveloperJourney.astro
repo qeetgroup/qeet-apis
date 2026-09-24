@@ -8,15 +8,41 @@ import { operationAnchor } from "../../lib/api/openapi";
 
 const product = PRODUCTS.find((entry) => entry.id === "qeet-id");
 const local = product?.environments.find((environment) => environment.name === "Local");
-if (!product || !local) throw new Error("The developer journey requires Qeet ID's local environment");
+if (!product || !local)
+  throw new Error("The developer journey requires Qeet ID's local environment");
 const endpoint = "/v1/auth/me";
 const endpointHref = `${referenceHref(product.id)}#${operationAnchor(product.id, "Auth", "GET", endpoint)}`;
 const steps = [
-  { name: "Discover", text: "Choose a product and find your endpoint.", icon: "search", href: LINKS.reference },
-  { name: "Understand", text: "Read the contract, inputs, and responses.", icon: "book", href: endpointHref },
-  { name: "Authenticate", text: "Choose the credential your product expects.", icon: "key", href: LINKS.authentication },
-  { name: "Integrate", text: "Make your first request against your local stack.", icon: "code", href: LINKS.quickstart },
-  { name: "Verify", text: "Inspect the response and handle errors.", icon: "circle-check", href: LINKS.errors },
+  {
+    name: "Discover",
+    text: "Choose a product and find your endpoint.",
+    icon: "search",
+    href: LINKS.reference,
+  },
+  {
+    name: "Understand",
+    text: "Read the contract, inputs, and responses.",
+    icon: "book",
+    href: endpointHref,
+  },
+  {
+    name: "Authenticate",
+    text: "Choose the credential your product expects.",
+    icon: "key",
+    href: LINKS.authentication,
+  },
+  {
+    name: "Integrate",
+    text: "Make your first request against your local stack.",
+    icon: "code",
+    href: LINKS.quickstart,
+  },
+  {
+    name: "Verify",
+    text: "Inspect the response and handle errors.",
+    icon: "circle-check",
+    href: LINKS.errors,
+  },
 ] as const;
 const examples = [
   {

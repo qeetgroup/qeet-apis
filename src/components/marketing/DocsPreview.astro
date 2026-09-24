@@ -3,12 +3,48 @@ import Icon from "../shared/Icon.astro";
 import { LINKS } from "../../data/catalog";
 
 const resources = [
-  { title: "API Reference", text: "Explore endpoints, schemas, and generated code for each Qeet product.", icon: "braces", href: LINKS.reference, action: "Explore the APIs" },
-  { title: "Quickstart", text: "Choose your environment and make your first authenticated request.", icon: "terminal", href: LINKS.quickstart, action: "Make a first request" },
-  { title: "Authentication", text: "Understand API keys, bearer tokens, scopes, and identity flows.", icon: "key", href: LINKS.authentication, action: "Find your auth flow" },
-  { title: "SDKs & Clients", text: "Find SDK source repositories, HTTP clients, and Postman collections.", icon: "package", href: LINKS.sdks, action: "Choose your tools" },
-  { title: "Errors & Rate Limits", text: "Interpret response codes, handle failures, and make retries predictable.", icon: "alert", href: LINKS.errors, action: "Handle the edge cases" },
-  { title: "Changelog", text: "Follow documented API additions and specification updates.", icon: "history", href: LINKS.changelog, action: "See what changed" },
+  {
+    title: "API Reference",
+    text: "Explore endpoints, schemas, and generated code for each Qeet product.",
+    icon: "braces",
+    href: LINKS.reference,
+    action: "Explore the APIs",
+  },
+  {
+    title: "Quickstart",
+    text: "Choose your environment and make your first authenticated request.",
+    icon: "terminal",
+    href: LINKS.quickstart,
+    action: "Make a first request",
+  },
+  {
+    title: "Authentication",
+    text: "Understand API keys, bearer tokens, scopes, and identity flows.",
+    icon: "key",
+    href: LINKS.authentication,
+    action: "Find your auth flow",
+  },
+  {
+    title: "SDKs & Clients",
+    text: "Find SDK source repositories, HTTP clients, and Postman collections.",
+    icon: "package",
+    href: LINKS.sdks,
+    action: "Choose your tools",
+  },
+  {
+    title: "Errors & Rate Limits",
+    text: "Interpret response codes, handle failures, and make retries predictable.",
+    icon: "alert",
+    href: LINKS.errors,
+    action: "Handle the edge cases",
+  },
+  {
+    title: "Changelog",
+    text: "Follow documented API additions and specification updates.",
+    icon: "history",
+    href: LINKS.changelog,
+    action: "See what changed",
+  },
 ] as const;
 ---
 

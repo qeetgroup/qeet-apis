@@ -44,7 +44,8 @@ const featuredProducts = [
     availability: product.lifecycle === "development" ? "In development" : "",
   })),
   ...CATALOG_PRODUCTS.filter(
-    (product) => product.status === "soon" && !PRODUCTS.some((entry) => entry.name === product.name),
+    (product) =>
+      product.status === "soon" && !PRODUCTS.some((entry) => entry.name === product.name),
   ).map((product) => {
     const id = product.name.toLowerCase().replaceAll(" ", "-");
     return {

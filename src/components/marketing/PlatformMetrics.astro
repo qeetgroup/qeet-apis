@@ -6,17 +6,53 @@ import { LINKS } from "../../data/catalog";
 
 const navigation = buildAllNavigation();
 const metrics = [
-  { value: navigation.reduce((total, product) => total + product.operationCount, 0), label: "Documented operations", detail: "Across the published product bundles" },
-  { value: PRODUCTS.reduce((total, product) => total + product.specs.length, 0), label: "API areas", detail: "Organized by product and capability" },
-  { value: PRODUCTS.length, label: "Product references", detail: "One extensible developer platform" },
+  {
+    value: navigation.reduce((total, product) => total + product.operationCount, 0),
+    label: "Documented operations",
+    detail: "Across the published product bundles",
+  },
+  {
+    value: PRODUCTS.reduce((total, product) => total + product.specs.length, 0),
+    label: "API areas",
+    detail: "Organized by product and capability",
+  },
+  {
+    value: PRODUCTS.length,
+    label: "Product references",
+    detail: "One extensible developer platform",
+  },
 ];
 const foundations = [
-  { icon: "braces", title: "OpenAPI-first contracts", text: "Versioned specifications describe endpoints, schemas, and authentication." },
-  { icon: "circle-check", title: "Vendored. Validated. Committed.", text: "CI checks references, operation IDs, and consistency between split and bundled specs." },
-  { icon: "key", title: "Product-scoped credentials", text: "Use the authentication scheme and permissions defined by each product." },
-  { icon: "alert", title: "Documented error handling", text: "Error envelopes, HTTP status codes, and retry guidance in one place." },
-  { icon: "search", title: "Searchable by design", text: "Guides, tags, and operations feed the same cross-product search index." },
-  { icon: "layers", title: "Ready for more products", text: "A shared product registry powers navigation, environments, and reference routes." },
+  {
+    icon: "braces",
+    title: "OpenAPI-first contracts",
+    text: "Versioned specifications describe endpoints, schemas, and authentication.",
+  },
+  {
+    icon: "circle-check",
+    title: "Vendored. Validated. Committed.",
+    text: "CI checks references, operation IDs, and consistency between split and bundled specs.",
+  },
+  {
+    icon: "key",
+    title: "Product-scoped credentials",
+    text: "Use the authentication scheme and permissions defined by each product.",
+  },
+  {
+    icon: "alert",
+    title: "Documented error handling",
+    text: "Error envelopes, HTTP status codes, and retry guidance in one place.",
+  },
+  {
+    icon: "search",
+    title: "Searchable by design",
+    text: "Guides, tags, and operations feed the same cross-product search index.",
+  },
+  {
+    icon: "layers",
+    title: "Ready for more products",
+    text: "A shared product registry powers navigation, environments, and reference routes.",
+  },
 ] as const;
 const pipeline = [
   { label: "Source specs", icon: "git-branch" },
